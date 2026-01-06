@@ -1,0 +1,228 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Smooth theme transitions */
+  transition: background-color 0.3s ease, color 0.3s ease;
+
+  /* Theme Colors - Default to Royal Blue */
+  --theme-primary: 217, 91%, 67%;
+  --theme-primary-hover: 221, 83%, 53%;
+  --theme-primary-light: 214, 100%, 97%;
+  --theme-primary-dark: 224, 76%, 36%;
+  --theme-secondary: 213, 96%, 85%;
+  --theme-accent: 212, 96%, 77%;
+
+  /* Font Size */
+  --font-size-base: 16px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+/* Dark mode (default) */
+html.dark body {
+  @apply bg-dark-300 text-gray-200;
+}
+
+/* Light mode */
+html:not(.dark) body {
+  @apply bg-light-200 text-gray-800;
+}
+
+/* Custom Scrollbar - Dark */
+html.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  @apply bg-dark-300;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  @apply bg-dark-100 rounded-full;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-600;
+}
+
+/* Custom Scrollbar - Light */
+html:not(.dark) ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html:not(.dark) ::-webkit-scrollbar-track {
+  @apply bg-light-300;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  @apply bg-light-500 rounded-full;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+/* Selection */
+::selection {
+  @apply bg-primary-600/50 text-white;
+}
+
+/* Focus styles */
+*:focus-visible {
+  @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+}
+
+html.dark *:focus-visible {
+  @apply ring-offset-dark-300;
+}
+
+html:not(.dark) *:focus-visible {
+  @apply ring-offset-light-200;
+}
+
+/* Theme transition utilities */
+.theme-transition {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Smooth transitions for theme color changes */
+.bg-theme-primary,
+.bg-theme-primary-hover,
+.bg-theme-secondary,
+.bg-theme-accent,
+.text-theme-primary,
+.text-theme-secondary,
+.text-theme-accent,
+.border-theme-primary,
+.border-theme-secondary,
+.border-theme-accent {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Prose overrides for markdown - Dark */
+html.dark .prose code {
+  @apply bg-dark-100 px-1.5 py-0.5 rounded text-primary-400;
+}
+
+html.dark .prose pre {
+  @apply bg-dark-100 p-4 rounded-lg overflow-x-auto;
+}
+
+/* Prose overrides for markdown - Light */
+html:not(.dark) .prose code {
+  @apply bg-light-400 px-1.5 py-0.5 rounded text-primary-700;
+}
+
+html:not(.dark) .prose pre {
+  @apply bg-light-300 p-4 rounded-lg overflow-x-auto;
+}
+
+.prose pre code {
+  @apply bg-transparent p-0;
+}
+
+/* Animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Transitions */
+.transition-colors {
+  transition-property: color, background-color, border-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Keyboard shortcuts hint */
+kbd {
+  @apply px-1.5 py-0.5 text-xs font-mono rounded;
+}
+
+html.dark kbd {
+  @apply bg-dark-100 border border-dark-300;
+}
+
+html:not(.dark) kbd {
+  @apply bg-light-400 border border-light-500;
+}
+
+/* Theme transition for smooth switching */
+body, .sidebar, .chat-area, .context-panel {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Highlight flash animation for search results */
+@keyframes highlight-flash {
+  0%, 100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+}
+
+.highlight-flash {
+  animation: highlight-flash 0.5s ease-in-out 3;
+}
+
+/* Search result highlight */
+mark {
+  background-color: #fbbf24;
+  color: #000;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* Modal backdrop blur */
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+}
+
+/* Rich text editor styles */
+.font-mono {
+  font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', Consolas, monospace;
+}
+
+/* List mode indicator animation */
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
