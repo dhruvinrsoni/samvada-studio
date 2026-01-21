@@ -5,7 +5,11 @@ import { fileURLToPath } from 'url'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
+// Use environment variable for base path (GitHub Pages needs /repo-name/)
+const base = process.env.BASE_URL || '/'
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     VitePWA({

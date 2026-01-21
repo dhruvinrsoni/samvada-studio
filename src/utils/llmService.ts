@@ -8,6 +8,31 @@ export interface LLMResponse {
   processingTime: number;
 }
 
+/**
+ * Sanitize LLM response content
+ * Cleans up common issues and ensures safe text output
+ */
+const sanitizeLLMResponse = (content: string | null | undefined): string => {
+  if (!content) return '';
+  
+  // Ensure it's a string
+  let text = String(content);
+  
+  // Trim whitespace
+  text = text.trim();
+  
+  // Remove any null bytes
+  text = text.replace(/\0/g, '');
+  
+  // Normalize line endings
+  text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  
+  // Remove control characters except common whitespace
+  text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  
+  return text;
+};
+
 // Real API call to LLM provider
 export const callLLMProvider = async (
   provider: LLMProviderConfig,
@@ -391,6 +416,135 @@ export const fetchOllamaModels = async (
       .map(m => m.name);
     
     return { success: true, models: filteredModels };
+  } catch (error) {
+    return {
+      success: false,
+      models: [],
+      error: error instanceof Error ? error.message : 'Failed to fetch models',
+    };
+  }
+};
+
+// Fetch available models from OpenAI
+export const fetchOpenAIModels = async (
+  apiKey: string
+): Promise<{ success: boolean; models: string[]; error?: string }> => {
+  try {
+    const response = await fetch('https://api.openai.com/v1/models', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Invalid API key');
+      }
+      throw new Error(`Failed to fetch models: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const models: string[] = (data.data || [])
+      .filter((m: { id: string; owned_by?: string }) => 
+        // Filter for chat models
+        (m.id.includes('gpt') || m.id.includes('o1') || m.id.includes('o3')) &&
+        !m.id.includes('instruct') &&
+        !m.id.includes('realtime') &&
+        !m.id.includes('audio')
+      )
+      .map((m: { id: string }) => m.id)
+      .sort((a: string, b: string) => {
+        // Sort by model generation (gpt-4 > gpt-3.5)
+        if (a.includes('gpt-4') && !b.includes('gpt-4')) return -1;
+        if (!a.includes('gpt-4') && b.includes('gpt-4')) return 1;
+        return a.localeCompare(b);
+      });
+    
+    return { success: true, models };
+  } catch (error) {
+    return {
+      success: false,
+      models: [],
+      error: error instanceof Error ? error.message : 'Failed to fetch models',
+    };
+  }
+};
+
+// Fetch available models from Anthropic
+export const fetchAnthropicModels = async (
+  apiKey: string
+): Promise<{ success: boolean; models: string[]; error?: string }> => {
+  // Anthropic doesn't have a models endpoint, but we can validate the key
+  // and return known models
+  try {
+    // Simple key validation by checking format
+    if (!apiKey.startsWith('sk-ant-')) {
+      throw new Error('Invalid API key format. Anthropic keys start with "sk-ant-"');
+    }
+    
+    // Return known Claude models (hardcoded as Anthropic doesn't have a models API)
+    const models = [
+      'claude-sonnet-4-20250514',
+      'claude-3-7-sonnet-20250219',
+      'claude-3-5-sonnet-20241022',
+      'claude-3-5-haiku-20241022',
+      'claude-3-opus-20240229',
+      'claude-3-sonnet-20240229',
+      'claude-3-haiku-20240307',
+    ];
+    
+    return { success: true, models };
+  } catch (error) {
+    return {
+      success: false,
+      models: [],
+      error: error instanceof Error ? error.message : 'Failed to validate key',
+    };
+  }
+};
+
+// Fetch available models from Google Gemini
+export const fetchGoogleModels = async (
+  apiKey: string
+): Promise<{ success: boolean; models: string[]; error?: string }> => {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 400 || response.status === 403) {
+        throw new Error('Invalid API key');
+      }
+      throw new Error(`Failed to fetch models: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const models: string[] = (data.models || [])
+      .filter((m: { name: string; supportedGenerationMethods?: string[] }) => 
+        // Filter for generative models that support generateContent
+        m.supportedGenerationMethods?.includes('generateContent') &&
+        m.name.includes('gemini')
+      )
+      .map((m: { name: string }) => m.name.replace('models/', ''))
+      .sort((a: string, b: string) => {
+        // Sort by version (2.0 > 1.5 > 1.0)
+        if (a.includes('2.0') && !b.includes('2.0')) return -1;
+        if (!a.includes('2.0') && b.includes('2.0')) return 1;
+        if (a.includes('1.5') && !b.includes('1.5')) return -1;
+        if (!a.includes('1.5') && b.includes('1.5')) return 1;
+        return a.localeCompare(b);
+      });
+    
+    return { success: true, models };
   } catch (error) {
     return {
       success: false,

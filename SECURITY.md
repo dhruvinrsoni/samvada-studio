@@ -195,6 +195,76 @@ const notifyDataBreach = async (affectedUsers: string[], breachDetails: any) => 
 - **No Cloud Storage**: No data stored on our servers
 - **No User Profiling**: No behavioral analysis or profiling
 
+## 🌐 GitHub Pages Hosting Security
+
+### Client-Side Security for Hosted Demo
+
+When using the GitHub Pages hosted version at `https://dhruvinrsoni.github.io/samvada-studio/`, the following security measures are in place:
+
+#### 🔑 API Key Handling
+- **Local Storage Only**: API keys are stored ONLY in your browser's localStorage
+- **Never Transmitted**: Your keys are NEVER sent to our servers (we don't have any!)
+- **Per-Device Storage**: Keys are isolated to the specific browser/device
+- **Easy Removal**: Clear browser data to remove all stored keys instantly
+
+#### ⚠️ User Responsibilities
+When using the hosted version, users should:
+
+1. **Use Browser Incognito/Private Mode** for temporary sessions
+2. **Clear localStorage** after use on shared/public computers
+3. **Never share browser data** with untrusted parties
+4. **Consider using restricted API keys** with spending limits
+5. **Monitor API usage** through provider dashboards
+
+#### 🛡️ Technical Protections
+
+```javascript
+// API keys are stored with origin-restricted localStorage
+// Each origin (domain) has isolated storage
+localStorage.setItem('samvada-providers', encryptedConfig);
+
+// Keys are encrypted before storage
+const encryptedKey = encrypt(apiKey, deviceFingerprint);
+
+// Automatic cleanup on suspicious activity
+if (detectTampering()) {
+  localStorage.clear();
+}
+```
+
+#### 🔒 Best Practices for Hosted Usage
+
+| Scenario | Recommendation |
+|----------|----------------|
+| Testing/Development | Use restricted API keys with low limits |
+| Public Computer | Always use incognito mode |
+| Personal Device | Fine to store keys, keep browser secure |
+| Production Use | Self-host for maximum control |
+
+#### 📋 API Key Security Checklist
+
+- [ ] Use API keys with spending limits set in provider dashboard
+- [ ] Rotate keys periodically (monthly recommended)
+- [ ] Use separate keys for testing vs production
+- [ ] Monitor API usage for anomalies
+- [ ] Never commit keys to version control
+- [ ] Clear browser data on public computers
+
+### Self-Hosting for Maximum Security
+
+For production use or maximum security, we recommend self-hosting:
+
+```bash
+# Clone and build
+git clone https://github.com/dhruvinrsoni/samvada-studio
+cd samvada-studio
+npm install
+npm run build
+
+# Deploy to your server
+# Your keys stay on YOUR infrastructure
+```
+
 ## 📞 Contact & Security Reporting
 
 ### Security Vulnerabilities

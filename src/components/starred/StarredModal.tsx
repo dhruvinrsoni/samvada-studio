@@ -20,10 +20,6 @@ export default function StarredModal({ onClose }: StarredModalProps) {
     dispatch({ type: 'TOGGLE_STAR_MESSAGE', payload: { chatId, pnrId, messageId } });
   };
 
-  const handleUnstarPnR = (chatId: string, pnrId: string) => {
-    dispatch({ type: 'TOGGLE_STAR_PNR', payload: { chatId, pnrId } });
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className={`w-full max-w-4xl max-h-[80vh] rounded-lg shadow-xl ${

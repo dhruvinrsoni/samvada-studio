@@ -191,7 +191,7 @@ export const checkConnectivity = async (): Promise<{
 
   // Check internet (using public API)
   try {
-    const internetResponse = await fetch('https://www.google.com/favicon.ico', {
+    await fetch('https://www.google.com/favicon.ico', {
       method: 'HEAD',
       mode: 'no-cors',
       signal: AbortSignal.timeout(2000),

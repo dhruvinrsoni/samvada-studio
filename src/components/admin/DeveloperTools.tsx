@@ -518,20 +518,20 @@ export default function DeveloperTools() {
                   className={`p-2 rounded flex items-start gap-2 ${
                     log.level === 'error'
                       ? isDark ? 'bg-red-500/10' : 'bg-red-50'
-                      : log.level === 'warning'
+                      : log.level === 'warn'
                       ? isDark ? 'bg-yellow-500/10' : 'bg-yellow-50'
                       : isDark ? 'bg-dark-100' : 'bg-light-200'
                   }`}
                 >
                   <span className="shrink-0">
-                    {log.level === 'error' ? '❌' : log.level === 'warning' ? '⚠️' : 'ℹ️'}
+                    {log.level === 'error' ? '❌' : log.level === 'warn' ? '⚠️' : 'ℹ️'}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className={`font-medium ${
                         log.level === 'error'
                           ? isDark ? 'text-red-400' : 'text-red-600'
-                          : log.level === 'warning'
+                          : log.level === 'warn'
                           ? isDark ? 'text-yellow-400' : 'text-yellow-600'
                           : isDark ? 'text-gray-300' : 'text-gray-700'
                       }`}>

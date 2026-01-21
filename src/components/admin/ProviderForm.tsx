@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
-import { fetchOllamaModels } from '../../utils/llmService';
+import { fetchOllamaModels, fetchOpenAIModels, fetchAnthropicModels, fetchGoogleModels } from '../../utils/llmService';
 import type { LLMProviderConfig, LLMProviderType } from '../../types';
 
 interface ProviderFormProps {
@@ -60,6 +60,9 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [modelFetchError, setModelFetchError] = useState<string | null>(null);
+  
+  // State for dynamic models from API providers
+  const [dynamicModels, setDynamicModels] = useState<string[]>([]);
 
   // Fetch Ollama models when type is ollama and endpoint changes
   useEffect(() => {
@@ -85,6 +88,58 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
       return () => clearTimeout(timeoutId);
     }
   }, [formData.type, formData.apiEndpoint]);
+  
+  // Fetch models dynamically when API key is added for supported providers
+  useEffect(() => {
+    const fetchDynamicModels = async () => {
+      // Only fetch if we have an API key and it's a supported type
+      if (!formData.apiKey || formData.type === 'ollama' || formData.type === 'azure' || formData.type === 'custom') {
+        setDynamicModels([]);
+        return;
+      }
+      
+      // Minimum key length check to avoid unnecessary API calls
+      if (formData.apiKey.length < 10) {
+        return;
+      }
+      
+      setIsFetchingModels(true);
+      setModelFetchError(null);
+      
+      let result: { success: boolean; models: string[]; error?: string };
+      
+      switch (formData.type) {
+        case 'openai':
+          result = await fetchOpenAIModels(formData.apiKey);
+          break;
+        case 'anthropic':
+          result = await fetchAnthropicModels(formData.apiKey);
+          break;
+        case 'google':
+          result = await fetchGoogleModels(formData.apiKey);
+          break;
+        default:
+          result = { success: false, models: [], error: 'Unsupported provider type' };
+      }
+      
+      if (result.success && result.models.length > 0) {
+        setDynamicModels(result.models);
+        // Select first model if current model not in list
+        if (!result.models.includes(formData.model)) {
+          setFormData(prev => ({ ...prev, model: result.models[0] }));
+        }
+      } else if (result.error) {
+        setModelFetchError(result.error);
+        setDynamicModels([]);
+      }
+      
+      setIsFetchingModels(false);
+    };
+    
+    // Debounce the fetch (wait for user to finish typing)
+    const timeoutId = setTimeout(fetchDynamicModels, 800);
+    return () => clearTimeout(timeoutId);
+  }, [formData.type, formData.apiKey]);
 
   // Update defaults when type changes
   useEffect(() => {
@@ -212,25 +267,60 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
                   </p>
                 )}
               </div>
-            ) : DEFAULT_MODELS[formData.type].length > 0 ? (
-              <select
-                value={formData.model}
-                onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                className={inputClass}
-              >
-                {DEFAULT_MODELS[formData.type].map(model => (
-                  <option key={model} value={model}>{model}</option>
-                ))}
-              </select>
             ) : (
-              <input
-                type="text"
-                value={formData.model}
-                onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                className={inputClass}
-                placeholder="model-name"
-                required
-              />
+              // For other providers - use dynamic models if available
+              <div>
+                {isFetchingModels ? (
+                  <div className={`${inputClass} flex items-center gap-2`}>
+                    <div className="animate-spin w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full" />
+                    <span className="text-sm">Fetching models from API...</span>
+                  </div>
+                ) : dynamicModels.length > 0 ? (
+                  <select
+                    value={formData.model}
+                    onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                    className={inputClass}
+                  >
+                    {dynamicModels.map(model => (
+                      <option key={model} value={model}>{model}</option>
+                    ))}
+                  </select>
+                ) : DEFAULT_MODELS[formData.type].length > 0 ? (
+                  <select
+                    value={formData.model}
+                    onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                    className={inputClass}
+                  >
+                    {DEFAULT_MODELS[formData.type].map(model => (
+                      <option key={model} value={model}>{model}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={formData.model}
+                    onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                    className={inputClass}
+                    placeholder="model-name"
+                    required
+                  />
+                )}
+                {dynamicModels.length > 0 && (
+                  <p className="text-xs text-green-500 mt-1">
+                    ✓ Loaded {dynamicModels.length} models from API
+                  </p>
+                )}
+                {modelFetchError && (
+                  <p className="text-xs text-yellow-500 mt-1">
+                    ⚠️ {modelFetchError}. Using default models.
+                  </p>
+                )}
+                {!dynamicModels.length && !isFetchingModels && formData.apiKey && formData.type !== 'azure' && formData.type !== 'custom' && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Add your API key to load available models
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </div>

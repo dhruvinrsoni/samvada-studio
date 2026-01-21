@@ -383,6 +383,7 @@ export type ChatAction =
   | { type: 'DELETE_PROMPT_RESPONSE'; payload: { chatId: string; pnrId: string } }
   | { type: 'TOGGLE_COLLAPSE'; payload: { chatId: string; pnrId: string } }
   | { type: 'TOGGLE_PIN_PNR'; payload: { chatId: string; pnrId: string } }
+  | { type: 'TOGGLE_STAR_PNR'; payload: { chatId: string; pnrId: string } }
   | { type: 'TOGGLE_STAR_MESSAGE'; payload: { chatId: string; pnrId: string; messageId: string } }
   | { type: 'SET_MESSAGE_REACTION'; payload: { chatId: string; pnrId: string; messageId: string; reaction: ReactionType | null } }
   | { type: 'REGENERATE_RESPONSE'; payload: { chatId: string; pnrId: string } }
