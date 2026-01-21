@@ -1,6 +1,7 @@
 // LLM Service - Supports multiple providers
 import { generateId } from './helpers';
 import type { Message, Draft, LLMProviderConfig } from '../types';
+import { logDebug, logError, logWarning } from './debug';
 
 export interface LLMResponse {
   message: Message;
@@ -14,10 +15,23 @@ export const callLLMProvider = async (
   systemPrompt?: string
 ): Promise<LLMResponse> => {
   const startTime = Date.now();
+  const requestId = generateId();
+
+  logDebug('LLM Request', {
+    requestId,
+    provider: provider.name,
+    providerType: provider.type,
+    endpoint: provider.apiEndpoint,
+    model: provider.model,
+    promptLength: prompt.length,
+    hasSystemPrompt: !!systemPrompt,
+  });
 
   // Ensure API endpoint is defined
   if (!provider.apiEndpoint) {
-    throw new Error(`API endpoint not configured for provider: ${provider.name}`);
+    const error = new Error(`API endpoint not configured for provider: ${provider.name}`);
+    logError('LLM Configuration Error', error, { provider: provider.name });
+    throw error;
   }
 
   const endpoint = provider.apiEndpoint;
@@ -103,27 +117,79 @@ export const callLLMProvider = async (
         break;
 
       case 'ollama':
-        response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: provider.model,
-            prompt: systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt,
-            stream: false,
-            options: {
-              temperature: provider.settings.temperature,
-            },
-          }),
+        logDebug('Ollama Request', {
+          requestId,
+          endpoint,
+          model: provider.model,
+          temperature: provider.settings.temperature,
         });
 
-        if (!response.ok) {
-          throw new Error(`Ollama API error: ${response.status}`);
-        }
+        try {
+          response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: provider.model,
+              prompt: systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt,
+              stream: false,
+              options: {
+                temperature: provider.settings.temperature,
+              },
+            }),
+          });
 
-        const ollamaData = await response.json();
-        content = ollamaData.response;
+          if (!response.ok) {
+            const errorText = await response.text();
+            logError('Ollama API Error', new Error(`HTTP ${response.status}`), {
+              requestId,
+              status: response.status,
+              statusText: response.statusText,
+              errorBody: errorText,
+              endpoint,
+            });
+
+            // Provide helpful error messages
+            if (response.status === 404) {
+              throw new Error(
+                `Ollama model "${provider.model}" not found. ` +
+                `Please ensure Ollama is running and the model is installed. ` +
+                `Run: ollama pull ${provider.model}`
+              );
+            } else if (response.status === 500) {
+              throw new Error(
+                `Ollama server error. Please check if the model is loaded correctly. ` +
+                `Error: ${errorText}`
+              );
+            } else {
+              throw new Error(`Ollama API error: ${response.status} - ${errorText}`);
+            }
+          }
+
+          const ollamaData = await response.json();
+          content = ollamaData.response;
+          
+          logDebug('Ollama Response', {
+            requestId,
+            responseLength: content.length,
+            processingTime: Date.now() - startTime,
+          });
+        } catch (error) {
+          if (error instanceof TypeError && error.message.includes('fetch')) {
+            logError('Ollama Connection Error', error, {
+              requestId,
+              endpoint,
+              suggestion: 'Is Ollama running? Start with: ollama serve',
+            });
+            throw new Error(
+              `Cannot connect to Ollama at ${endpoint}. ` +
+              `Please ensure Ollama is installed and running. ` +
+              `Start Ollama with: ollama serve`
+            );
+          }
+          throw error;
+        }
         break;
 
       default:
@@ -156,6 +222,13 @@ export const callLLMProvider = async (
 
     const processingTime = Date.now() - startTime;
 
+    logDebug('LLM Success', {
+      requestId,
+      provider: provider.name,
+      processingTime,
+      contentLength: content.length,
+    });
+
     return {
       message: {
         id: generateId(),
@@ -167,7 +240,13 @@ export const callLLMProvider = async (
       processingTime,
     };
   } catch (error) {
-    console.error('LLM API call failed:', error);
+    logError('LLM API Call Failed', error, {
+      requestId,
+      provider: provider.name,
+      providerType: provider.type,
+      endpoint: provider.apiEndpoint,
+      processingTime: Date.now() - startTime,
+    });
     throw error;
   }
 };
@@ -191,11 +270,31 @@ export const getLLMResponse = async (
   provider?: LLMProviderConfig | null
 ): Promise<LLMResponse> => {
   if (!provider) {
-    throw new Error('No LLM provider selected. Please configure a provider in Admin Settings.');
+    const error = new Error('No LLM provider selected. Please configure a provider in Admin Settings.');
+    logWarning('No Provider Selected', { prompt: prompt.substring(0, 50) });
+    throw error;
+  }
+
+  if (!provider.isEnabled) {
+    const error = new Error(`Provider "${provider.name}" is disabled. Please enable it in Admin Settings.`);
+    logWarning('Provider Disabled', { provider: provider.name });
+    throw error;
   }
 
   if (!isProviderConfigured(provider)) {
-    throw new Error(`LLM provider "${provider.name}" is not properly configured. Please check your API keys and settings in Admin Settings.`);
+    const error = new Error(
+      `LLM provider "${provider.name}" is not properly configured. ` +
+      (provider.type === 'ollama' 
+        ? 'Please ensure Ollama is running (ollama serve) and the model is installed.'
+        : 'Please check your API keys and settings in Admin Settings.')
+    );
+    logWarning('Provider Not Configured', { 
+      provider: provider.name,
+      type: provider.type,
+      hasEndpoint: !!provider.apiEndpoint,
+      hasApiKey: !!provider.apiKey,
+    });
+    throw error;
   }
 
   try {

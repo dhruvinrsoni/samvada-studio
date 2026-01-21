@@ -4,10 +4,11 @@ import { generateId } from '../../utils/helpers';
 import type { LLMProviderConfig } from '../../types';
 import ProviderCard from './ProviderCard';
 import ProviderForm from './ProviderForm';
+import DeveloperTools from './DeveloperTools';
 
 export default function AdminPanel() {
   const { state, dispatch } = useChat();
-  const [activeTab, setActiveTab] = useState<'providers' | 'settings'>('providers');
+  const [activeTab, setActiveTab] = useState<'providers' | 'settings' | 'developer'>('providers');
   const [editingProvider, setEditingProvider] = useState<LLMProviderConfig | null>(null);
   const [isAddingProvider, setIsAddingProvider] = useState(false);
   const isDark = state.theme === 'dark';
@@ -113,6 +114,18 @@ export default function AdminPanel() {
                 }`}
               >
                 🔧 General
+              </button>
+              <button
+                onClick={() => setActiveTab('developer')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'developer'
+                    ? 'bg-primary-600 text-white'
+                    : isDark 
+                      ? 'text-gray-400 hover:bg-dark-100' 
+                      : 'text-gray-600 hover:bg-light-300'
+                }`}
+              >
+                🛠️ Developer
               </button>
             </div>
           </div>
@@ -307,6 +320,11 @@ export default function AdminPanel() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Developer Tab */}
+          {activeTab === 'developer' && (
+            <DeveloperTools />
           )}
         </div>
       </div>

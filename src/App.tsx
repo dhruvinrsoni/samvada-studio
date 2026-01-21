@@ -11,6 +11,7 @@ import TemplatesLibrary from './components/templates/TemplatesLibrary';
 import ExportModal from './components/export/ExportModal';
 import StarredModal from './components/starred/StarredModal';
 import ThemeSettingsModal from './components/common/ThemeSettingsModal';
+import ConnectionStatus from './components/common/ConnectionStatus';
 import ToastContainer from './components/toast/ToastContainer';
 import { useState, useEffect } from 'react';
 import BRAND from './constants/brand';
@@ -168,6 +169,9 @@ function AppContent() {
 
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onRemove={removeToast} position="top-right" />
+
+      {/* Connection Status Indicator */}
+      <ConnectionStatus />
     </div>
 
     {/* Bottom Right Floating Action Buttons */}

@@ -66,7 +66,7 @@ export const clearAllData = () => {
 // 4. Export backup
 export const exportBackup = () => {
   const state = localStorage.getItem('samvada-studio-state');
-  const sensitive = localStorage.getItem('samvada-studio-sensitive');
+
   
   if (!state) {
     console.error('❌ No data to export');
