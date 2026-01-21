@@ -74,9 +74,20 @@ export default function StarredModal({ onClose }: StarredModalProps) {
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               {starredMessages.map(({ chat, pnr, message, isPnrStar }) => {
                 try {
+                  // Safety checks
+                  if (!chat || !pnr) {
+                    console.error('Missing chat or pnr in starred message');
+                    return null;
+                  }
+
                   // Render entire PnR conversation
                   if (isPnrStar) {
-                    const activeResponse = pnr.responses[pnr.activeResponseIndex];
+                    const activeResponse = pnr.responses?.[pnr.activeResponseIndex];
+                    if (!activeResponse) {
+                      console.error('No active response for starred PnR:', pnr);
+                      return null;
+                    }
+                    
                     return (
                       <div key={`pnr-${pnr.id}`} className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-4 border-yellow-500`}>
                         <div className="flex items-start justify-between gap-4">
@@ -90,7 +101,16 @@ export default function StarredModal({ onClose }: StarredModalProps) {
                                 {chat.title || 'Untitled Chat'}
                               </span>
                               <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                                {pnr.createdAt ? new Date(pnr.createdAt).toLocaleString() : 'Unknown time'}
+                                {(() => {
+                                  try {
+                                    const date = pnr.createdAt;
+                                    if (!date) return 'Unknown time';
+                                    const dateObj = typeof date === 'string' ? new Date(date) : date;
+                                    return dateObj.toLocaleString();
+                                  } catch (e) {
+                                    return 'Unknown time';
+                                  }
+                                })()}
                               </span>
                             </div>
 
@@ -169,7 +189,16 @@ export default function StarredModal({ onClose }: StarredModalProps) {
                               {chat.title || 'Untitled Chat'}
                             </span>
                             <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                              {message.timestamp ? new Date(message.timestamp).toLocaleString() : 'Unknown time'}
+                              {(() => {
+                                try {
+                                  const date = message.timestamp;
+                                  if (!date) return 'Unknown time';
+                                  const dateObj = typeof date === 'string' ? new Date(date) : date;
+                                  return dateObj.toLocaleString();
+                                } catch (e) {
+                                  return 'Unknown time';
+                                }
+                              })()}
                             </span>
                             <span className={`px-2 py-0.5 text-xs rounded-full ${
                               message.role === 'user'
@@ -235,21 +264,30 @@ export default function StarredModal({ onClose }: StarredModalProps) {
                     </div>
                   );
                 } catch (error) {
-                  console.error('Error rendering starred message item:', error, { chat, pnr, message });
+                  console.error('Error rendering starred message item:', error, { chat, pnr, message, isPnrStar });
+                  const errorKey = isPnrStar ? `pnr-error-${pnr?.id || Math.random()}` : `msg-error-${message?.id || Math.random()}`;
                   return (
-                    <div key={`${pnr.id}-${message.id || 'unknown'}`} className={`p-4 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20`}>
+                    <div key={errorKey} className={`p-4 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20`}>
                       <div className="flex items-center gap-2">
                         <span className="text-red-500">⚠️</span>
                         <span className="text-red-700 dark:text-red-400 text-sm">
-                          Failed to load starred message (corrupted data)
+                          Failed to load starred {isPnrStar ? 'conversation' : 'message'} (corrupted data)
                         </span>
-                        <button
-                          onClick={() => handleUnstarMessage(chat.id, pnr.id, message.id)}
-                          className="ml-auto px-2 py-1 text-xs bg-red-100 hover:bg-red-200 dark:bg-red-800 dark:hover:bg-red-700 text-red-700 dark:text-red-300 rounded"
-                          title="Remove corrupted star"
-                        >
-                          Remove
-                        </button>
+                        {chat?.id && pnr?.id && (
+                          <button
+                            onClick={() => {
+                              if (isPnrStar) {
+                                dispatch({ type: 'TOGGLE_STAR_PNR', payload: { chatId: chat.id, pnrId: pnr.id } });
+                              } else if (message?.id) {
+                                dispatch({ type: 'TOGGLE_STAR_MESSAGE', payload: { chatId: chat.id, pnrId: pnr.id, messageId: message.id } });
+                              }
+                            }}
+                            className="ml-auto px-2 py-1 text-xs bg-red-100 hover:bg-red-200 dark:bg-red-800 dark:hover:bg-red-700 text-red-700 dark:text-red-300 rounded"
+                            title="Remove corrupted star"
+                          >
+                            Remove
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

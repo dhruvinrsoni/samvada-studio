@@ -798,8 +798,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       });
     });
     return starred.sort((a, b) => {
-      const aTime = a.isPnrStar ? a.pnr.createdAt.getTime() : (a.message?.timestamp.getTime() || 0);
-      const bTime = b.isPnrStar ? b.pnr.createdAt.getTime() : (b.message?.timestamp.getTime() || 0);
+      // Helper to safely get time from Date or string
+      const getTime = (dateValue: Date | string | undefined): number => {
+        if (!dateValue) return 0;
+        if (typeof dateValue === 'string') return new Date(dateValue).getTime();
+        if (dateValue instanceof Date) return dateValue.getTime();
+        return 0;
+      };
+      
+      const aTime = a.isPnrStar ? getTime(a.pnr.createdAt) : getTime(a.message?.timestamp);
+      const bTime = b.isPnrStar ? getTime(b.pnr.createdAt) : getTime(b.message?.timestamp);
       return bTime - aTime;
     });
   };
