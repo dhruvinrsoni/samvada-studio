@@ -229,6 +229,25 @@ function chatReducer(state: AppState, action: ChatAction): AppState {
       };
     }
 
+    case 'TOGGLE_STAR_PNR': {
+      const { chatId, pnrId } = action.payload;
+      return {
+        ...state,
+        chats: state.chats.map(chat =>
+          chat.id === chatId
+            ? {
+                ...chat,
+                promptResponses: chat.promptResponses.map(pnr =>
+                  pnr.id === pnrId
+                    ? { ...pnr, isStarred: !pnr.isStarred }
+                    : pnr
+                ),
+              }
+            : chat
+        ),
+      };
+    }
+
     case 'TOGGLE_STAR_MESSAGE': {
       const { chatId, pnrId, messageId } = action.payload;
       return {
@@ -608,7 +627,7 @@ interface ChatContextType {
   getDefaultProvider: () => LLMProviderConfig | null;
   getTemplate: (id: string) => PromptTemplate | undefined;
   getFolder: (id: string) => ChatFolder | undefined;
-  getStarredMessages: () => { chat: Chat; pnr: PromptResponse; message: Message }[];
+  getStarredMessages: () => { chat: Chat; pnr: PromptResponse; message?: Message; isPnrStar?: boolean }[];
   exportChat: (chatId: string, format: 'json' | 'markdown' | 'html') => string;
   estimateTokens: (text: string) => number;
   speakText: (text: string) => void;
@@ -760,9 +779,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const getFolder = (id: string) => state.folders.find(f => f.id === id);
 
   const getStarredMessages = () => {
-    const starred: { chat: Chat; pnr: PromptResponse; message: Message }[] = [];
+    const starred: { chat: Chat; pnr: PromptResponse; message?: Message; isPnrStar?: boolean }[] = [];
     state.chats.forEach(chat => {
       chat.promptResponses.forEach(pnr => {
+        // Check if entire PnR is starred
+        if (pnr.isStarred) {
+          starred.push({ chat, pnr, isPnrStar: true });
+        }
+        // Also check individual messages
         if (pnr.prompt.isStarred) {
           starred.push({ chat, pnr, message: pnr.prompt });
         }
@@ -773,7 +797,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         });
       });
     });
-    return starred.sort((a, b) => b.message.timestamp.getTime() - a.message.timestamp.getTime());
+    return starred.sort((a, b) => {
+      const aTime = a.isPnrStar ? a.pnr.createdAt.getTime() : (a.message?.timestamp.getTime() || 0);
+      const bTime = b.isPnrStar ? b.pnr.createdAt.getTime() : (b.message?.timestamp.getTime() || 0);
+      return bTime - aTime;
+    });
   };
 
   // Export chat to various formats

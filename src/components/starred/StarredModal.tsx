@@ -20,6 +20,10 @@ export default function StarredModal({ onClose }: StarredModalProps) {
     dispatch({ type: 'TOGGLE_STAR_MESSAGE', payload: { chatId, pnrId, messageId } });
   };
 
+  const handleUnstarPnR = (chatId: string, pnrId: string) => {
+    dispatch({ type: 'TOGGLE_STAR_PNR', payload: { chatId, pnrId } });
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className={`w-full max-w-4xl max-h-[80vh] rounded-lg shadow-xl ${
@@ -68,8 +72,93 @@ export default function StarredModal({ onClose }: StarredModalProps) {
             </div>
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {starredMessages.map(({ chat, pnr, message }) => {
+              {starredMessages.map(({ chat, pnr, message, isPnrStar }) => {
                 try {
+                  // Render entire PnR conversation
+                  if (isPnrStar) {
+                    const activeResponse = pnr.responses[pnr.activeResponseIndex];
+                    return (
+                      <div key={`pnr-${pnr.id}`} className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-4 border-yellow-500`}>
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            {/* Header */}
+                            <div className="flex items-center gap-2 mb-3">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200`}>
+                                ⭐ Full Conversation
+                              </span>
+                              <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                {chat.title || 'Untitled Chat'}
+                              </span>
+                              <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                                {pnr.createdAt ? new Date(pnr.createdAt).toLocaleString() : 'Unknown time'}
+                              </span>
+                            </div>
+
+                            {/* Prompt */}
+                            <div className="mb-3">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="w-6 h-6 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-medium">U</span>
+                                <span className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>You</span>
+                              </div>
+                              <div className={`text-sm pl-8 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                {toPlainTextPreview(pnr.prompt.content, 200)}
+                              </div>
+                            </div>
+
+                            {/* Response */}
+                            {activeResponse && (
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="w-6 h-6 rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-medium">AI</span>
+                                  <span className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Assistant</span>
+                                  {pnr.responses.length > 1 && (
+                                    <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                                      (Draft {pnr.activeResponseIndex + 1} of {pnr.responses.length})
+                                    </span>
+                                  )}
+                                </div>
+                                <div className={`text-sm pl-8 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                  {toPlainTextPreview(activeResponse.content, 200)}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleNavigateToMessage(chat.id)}
+                              className={`p-2 rounded-lg transition-colors ${
+                                isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
+                              }`}
+                              title="Go to conversation"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => {
+                                dispatch({ type: 'TOGGLE_STAR_PNR', payload: { chatId: chat.id, pnrId: pnr.id } });
+                              }}
+                              className={`p-2 rounded-lg transition-colors ${
+                                isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
+                              }`}
+                              title="Unstar conversation"
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Render individual message (existing code)
+                  if (!message) return null;
+                  
                   return (
                     <div key={`${pnr.id}-${message.id}`} className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors`}>
                       <div className="flex items-start justify-between gap-4">

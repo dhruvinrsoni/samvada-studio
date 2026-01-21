@@ -40,6 +40,13 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
     });
   };
 
+  const handleStarPnR = () => {
+    dispatch({
+      type: 'TOGGLE_STAR_PNR',
+      payload: { chatId, pnrId: promptResponse.id },
+    });
+  };
+
   const handleStarPrompt = () => {
     dispatch({
       type: 'TOGGLE_STAR_MESSAGE',
@@ -173,6 +180,19 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
           <span className="text-xs text-gray-500">
             {formatTimestamp(promptResponse.createdAt)}
           </span>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleStarPnR(); }}
+            className={`p-1 rounded transition-all duration-200 ${
+              promptResponse.isStarred
+                ? 'text-yellow-500 scale-110'
+                : isDark
+                ? 'text-gray-500 hover:text-yellow-400 hover:scale-105'
+                : 'text-gray-400 hover:text-yellow-400 hover:scale-105'
+            }`}
+            title={promptResponse.isStarred ? 'Unstar conversation' : 'Star entire conversation'}
+          >
+            {promptResponse.isStarred ? '⭐' : '✨'}
+          </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleTogglePin(); }}
             className={`p-1 rounded ${promptResponse.isPinned ? 'text-yellow-500' : isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
