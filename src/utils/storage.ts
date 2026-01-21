@@ -1,26 +1,85 @@
-import type { AppState, SafeAppState, SafeLLMProviderConfig } from '../types';
+import type { AppState, SafeAppState, SafeLLMProviderConfig, LLMProviderConfig } from '../types';
 
 export const STORAGE_KEY = 'samvada-studio-state';
+export const SENSITIVE_STORAGE_KEY = 'samvada-studio-sensitive';
+
+// Simple XOR-based encoding (better than plaintext, not cryptographically secure)
+// For true security, users should use environment variables or a proper secrets manager
+const encode = (str: string): string => {
+  const key = 'samvada-secret-key-2026';
+  return btoa(
+    str
+      .split('')
+      .map((char, i) => String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length)))
+      .join('')
+  );
+};
+
+const decode = (encoded: string): string => {
+  const key = 'samvada-secret-key-2026';
+  try {
+    return atob(encoded)
+      .split('')
+      .map((char, i) => String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length)))
+      .join('');
+  } catch {
+    return '';
+  }
+};
+
+// Store sensitive data separately (API keys)
+const saveSensitiveData = (providers: LLMProviderConfig[]): void => {
+  try {
+    const sensitiveData: Record<string, string> = {};
+    providers.forEach(provider => {
+      if (provider.apiKey) {
+        sensitiveData[provider.id] = encode(provider.apiKey);
+      }
+    });
+    localStorage.setItem(SENSITIVE_STORAGE_KEY, JSON.stringify(sensitiveData));
+  } catch (error) {
+    console.error('Failed to save sensitive data:', error);
+  }
+};
+
+const loadSensitiveData = (): Record<string, string> => {
+  try {
+    const stored = localStorage.getItem(SENSITIVE_STORAGE_KEY);
+    if (!stored) return {};
+    const encoded = JSON.parse(stored);
+    const decoded: Record<string, string> = {};
+    Object.entries(encoded).forEach(([id, encodedKey]) => {
+      decoded[id] = decode(encodedKey as string);
+    });
+    return decoded;
+  } catch (error) {
+    console.error('Failed to load sensitive data:', error);
+    return {};
+  }
+};
 
 // Convert full provider config to safe version (removes API keys)
-const toSafeProvider = (provider: any): SafeLLMProviderConfig => {
+const toSafeProvider = (provider: LLMProviderConfig): SafeLLMProviderConfig => {
   const { apiKey, ...safeProvider } = provider;
   return safeProvider;
 };
 
-// Convert safe state to full state (API keys will be empty)
-const fromSafeState = (safeState: SafeAppState): AppState => {
-  return {
-    ...safeState,
-    providers: safeState.providers.map(provider => ({
-      ...provider,
-      apiKey: undefined, // API keys are not stored, will be set by user
-    })),
-  };
+// Restore API keys to providers
+const restoreProviderKeys = (
+  providers: SafeLLMProviderConfig[],
+  sensitiveData: Record<string, string>
+): LLMProviderConfig[] => {
+  return providers.map(provider => ({
+    ...provider,
+    apiKey: sensitiveData[provider.id] || undefined,
+  }));
 };
 
 export const saveState = (state: AppState): void => {
   try {
+    // Save sensitive data separately
+    saveSensitiveData(state.providers);
+
     // Create safe version for storage (remove sensitive data)
     const safeState: SafeAppState = {
       ...state,
@@ -51,8 +110,15 @@ export const loadState = (): AppState | null => {
       return value;
     });
 
-    // Convert back to full state
-    return fromSafeState(safeState);
+    // Load and restore sensitive data
+    const sensitiveData = loadSensitiveData();
+    const providers = restoreProviderKeys(safeState.providers, sensitiveData);
+
+    // Convert back to full state with API keys restored
+    return {
+      ...safeState,
+      providers,
+    };
   } catch (error) {
     console.error('Failed to load state:', error);
     return null;
@@ -62,6 +128,7 @@ export const loadState = (): AppState | null => {
 export const clearState = (): void => {
   try {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SENSITIVE_STORAGE_KEY);
   } catch (error) {
     console.error('Failed to clear state:', error);
   }

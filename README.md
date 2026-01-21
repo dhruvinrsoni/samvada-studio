@@ -63,8 +63,9 @@ Integration
 - React Markdown for rendering responses and code blocks
 
 Important operational notes
-- API keys are intentionally not persisted to localStorage for security; they remain in memory only. Use the Admin panel to re-enter keys after a hard refresh.
-- The code includes a hydration guard to avoid initial-save race conditions; if providers appear missing after reload, allow the app to finish loading.
+- **Persistence**: All chats, provider configs (including API keys), templates, folders, and preferences are automatically saved to localStorage and restored on page reload. See [docs/PERSISTENCE.md](docs/PERSISTENCE.md) for technical details.
+- **Security**: API keys are stored separately with basic encoding (better than plaintext). For production use, consider environment variables or proper secrets management.
+- The code includes a hydration guard to avoid initial-save race conditions; state is loaded once on mount and saved on every subsequent change.
 
 Brand & roadmap note
 - This repo is the first module of a broader vision: "Samvada Suite" (coming soon). Samvada Studio is the creation and authoring module; future modules may include Samvada Labs (experimentation) and Samvada Hub (enterprise connectors). See `docs/BRAND.md` for naming rationale and brand guidance.

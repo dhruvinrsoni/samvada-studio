@@ -619,10 +619,9 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(chatReducer, initialState);
-  const hasHydrated = useRef(false);
-  const didAttemptLoad = useRef(false);
+  const isInitialMount = useRef(true);
 
-  // Load state from localStorage on mount. Mark hydrated after applying load
+  // Load state from localStorage on mount (runs once)
   useEffect(() => {
     const savedState = loadState();
     if (savedState) {
@@ -631,21 +630,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Fresh install: apply defaults so users get the local Ollama provider
       dispatch({ type: 'LOAD_STATE', payload: { ...initialState, providers: createDefaultProviders() } });
     }
-    // Note we've attempted a load; we'll mark hydrated after state reflects the load
-    didAttemptLoad.current = true;
+    
+    // Mark that initial mount is complete
+    // Use requestAnimationFrame to ensure the state has been applied before we start saving
+    requestAnimationFrame(() => {
+      isInitialMount.current = false;
+    });
   }, []);
 
-  // After we attempted load, mark hydrated once the reducer has applied the loaded state
+  // Save state to localStorage whenever it changes (but skip the initial mount)
   useEffect(() => {
-    if (didAttemptLoad.current && !hasHydrated.current) {
-      hasHydrated.current = true;
+    if (isInitialMount.current) {
       return;
     }
-  }, [state]);
-
-  // Save state to localStorage on change, but only after initial hydration
-  useEffect(() => {
-    if (!hasHydrated.current) return;
     saveState(state);
   }, [state]);
 
