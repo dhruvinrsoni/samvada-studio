@@ -301,6 +301,8 @@ Special thanks to the open-source community for amazing tools like React, Vite, 
 
 </div>
 
+### 🎯 Smart Input Features
+| Feature | Description |
 |---------|-------------|
 | **Formatting Toolbar** | Bold, Italic, Code, Link buttons |
 | **Auto-List Mode** | Type "1." or "-" to enable list mode |
