@@ -200,9 +200,10 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                   </span>
                   <button
                     onClick={handleStarPrompt}
-                    className={`text-sm ${promptResponse.prompt.isStarred ? 'text-yellow-500' : 'text-gray-500 opacity-0 group-hover:opacity-100'}`}
+                    className={`text-base transition-all duration-200 ${promptResponse.prompt.isStarred ? 'text-yellow-500 scale-110' : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:text-yellow-400 hover:scale-105'}`}
+                    title={promptResponse.prompt.isStarred ? 'Unstar message' : 'Star message'}
                   >
-                    ⭐
+                    {promptResponse.prompt.isStarred ? '⭐' : '✨'}
                   </button>
                 </div>
                 {isEditingPrompt ? (
@@ -265,9 +266,10 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                     </span>
                     <button
                       onClick={handleStarResponse}
-                      className={`text-sm ${activeResponse.isStarred ? 'text-yellow-500' : 'text-gray-500 opacity-0 group-hover:opacity-100'}`}
+                      className={`text-base transition-all duration-200 ${activeResponse.isStarred ? 'text-yellow-500 scale-110' : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:text-yellow-400 hover:scale-105'}`}
+                      title={activeResponse.isStarred ? 'Unstar response' : 'Star response'}
                     >
-                      ⭐
+                      {activeResponse.isStarred ? '⭐' : '✨'}
                     </button>
                   </div>
 
