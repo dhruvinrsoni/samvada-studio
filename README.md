@@ -1,203 +1,306 @@
+<div align="center">
 
-<!-- Enhanced README: concise product brief, architecture and quick start -->
-# Samvada Studio
+# 🗣️ Samvada Studio
 
-Samvada Studio is a keyboard-first, multi-provider conversation workbench for power users. It helps you design, iterate, and manage multi-turn conversational workflows across many LLM providers (OpenAI, Anthropic, Google, Ollama, Azure).
+### *संवाद स्टूडियो* (Saṃvāda Studio)
 
-Etymology: Saṃvāda (IAST: Saṃvāda; Devanagari: संवाद) means "dialogue" or "conversation" in Sanskrit — the name reflects the product focus on conversation design and orchestration.
+**A power-user workspace for designing, testing, and managing conversational AI across multiple LLM providers**
 
-TL;DR — What this is
-- A central hub for prompt/response experiments, templates, exports, and conversation management.
-- Designed for developers, researchers, and content professionals who need deterministic workflows and provider comparison.
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-Core ideas (one-liner)
-- Conversation orchestration: treat each prompt-response pair (PnR) as a first-class unit for editing, drafting, and regenerating across providers.
+[Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Contributing](#-contributing)
 
-Quick start
+---
+
+</div>
+
+## 📖 What is Samvada Studio?
+
+**Samvada** (संवाद, *Saṃvāda*) means "dialogue" or "conversation" in Sanskrit — reflecting our focus on conversation design and orchestration.
+
+Samvada Studio is a feature-rich LLM Chat UI that combines the **best UX features** from:
+- 💎 **Gemini** — Inline editing, drafts
+- 💬 **ChatGPT** — Quote text, conversation flow
+- 🤖 **GitHub Copilot** — Command palette, keyboard shortcuts
+- ✨ **And much more!**
+
+Perfect for **developers**, **prompt engineers**, **researchers**, and **content professionals** who need a powerful, keyboard-first interface for working with AI.
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Node.js** 18+ and npm/yarn/pnpm
+- Modern browser (Chrome, Edge, Firefox, Safari)
+
+### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/dhruvinrsoni/samvada-studio.git
+cd samvada-studio
+
+# Install dependencies
 npm install
+
+# Start development server
 npm run dev
-# open http://localhost:5173
+
+# Open http://localhost:5173
 ```
 
-Where to look (important files)
-- State & reducer: `src/context/ChatContext.tsx`
-- Provider integration: `src/utils/llmService.ts`
-- Persistence: `src/utils/storage.ts`
-- Core chat UI: `src/components/chat/*`
-- Admin + provider UI: `src/components/admin/*`
-- Theme system: `src/utils/theme.ts`
+### First Steps
 
-- Product brief (concise)
-- Multi-provider architecture with per-chat provider selection and dynamic provider/model fetching.
-- Prompt-Response Items (PnR) with drafts, inline edits, pinning, and regeneration.
-- Premium UX: Command Palette, Global Search, Keyboard Shortcuts, Voice Input, Templates, Export.
+1. **Configure a Provider** — Click the ⚙️ Admin button → Add OpenAI, Anthropic, or Ollama
+2. **Test Connection** — Use the "Test" button to verify your API key
+3. **Create a Chat** — Click "New Chat" in the sidebar
+4. **Start Conversing** — Type your prompt and press `Ctrl+Enter`
 
-Selected features
-- Provider-agnostic LLM calls via `llmService` (OpenAI, Anthropic, Google, Ollama, Azure)
-- Inline editing of prompts and responses (Gemini-style)
-- Drafts & regenerate workflow
-- Folders, Pinning, Starred messages
-- Export (MD/JSON/HTML/TXT) with full workspace backup
-- Token estimation + rough cost preview
+👉 **See [GETTING_STARTED.md](docs/GETTING_STARTED.md) for detailed onboarding**
 
-Architecture (high level)
 
-UI (React + TypeScript)
-- Sidebar (chats, folders, search)
-- ChatArea (PnR rendering, provider selection)
-- PromptInput (smart enter, lists, voice)
-- Admin (provider management)
+---
 
-State
-- `ChatContext` — single source of truth (reducer + actions)
+## ✨ Features
 
-Business Logic
-- `utils/llmService.ts` — provider adapter and request orchestration
-- `utils/storage.ts` — safe serialization (no API keys), Date round-trip
+<details open>
+<summary><h3>🎯 Core Features (20+ Production-Ready)</h3></summary>
 
-Integration
-- LocalStorage for state persistence (safe form)
-- Web Speech API for voice input
-- React Markdown for rendering responses and code blocks
+| Category | Feature | Description |
+|----------|---------|-------------|
+| **✏️ Editing** | Inline Response Editing | Edit AI responses directly (Gemini-style) |
+| | Inline Prompt Editing | Modify your prompts after sending |
+| | Drafts & Regenerate | Generate multiple response drafts, switch between them |
+| **📌 Organization** | Pin Conversations | Pin important prompt-response pairs |
+| | Archive Chats | Archive old chats, toggle archived view |
+| | Star Messages | Star individual messages or entire conversations |
+| | Chat Folders | Organize chats with drag-drop folders (8 colors, 10 icons) |
+| **💬 Prompting** | Markdown Editor | Bold, italic, code, links with toolbar |
+| | List Support | Auto-continue numbered & bullet lists |
+| | Quote Text | Quote responses in next prompt (ChatGPT-style) |
+| | Voice Input | Dictate with speech-to-text (Ctrl+M) |
+| | Prompt Templates | Save & reuse common prompts with categories |
+| **🔍 Discovery** | Global Search | Search across all chats (Ctrl+Shift+F) |
+| | Highlight Matches | Jump to results with highlighting |
+| | Command Palette | VS Code-style quick actions (Ctrl+K) |
+| **⚙️ Settings** | Chat-Wise Settings | Per-chat role, instructions, examples |
+| | Few-Shot Examples | Add input/output example pairs |
+| | Always Include/Exclude | Formatting rules per chat |
+| | Temperature & Tokens | Fine-tune model parameters |
+| **🛠️ Power User** | Keyboard Shortcuts | Full keyboard navigation (press ?) |
+| | Bulk Operations | Select multiple chats, bulk delete/archive |
+| | Collapsible PnRs | Collapse/expand prompt-response items |
+| | Context Panel Mode | Side panel for custom context injection |
+| | Copyable PnR IDs | Click to copy unique conversation IDs |
+| **📊 Analytics** | Timestamps | On every message and conversation |
+| | Processing Time | See how long responses took |
+| | Token Counter | Live token count & cost estimation |
+| | Debug Info | Processing times and diagnostics |
+| **📤 Export** | Multiple Formats | Export as MD, JSON, HTML, TXT |
+| | Full Backup | Export all data at once |
+| | Code Highlighting | Syntax-highlighted code blocks with copy |
 
-Important operational notes
-- **Persistence**: All chats, provider configs (including API keys), templates, folders, and preferences are automatically saved to localStorage and restored on page reload. See [docs/PERSISTENCE.md](docs/PERSISTENCE.md) for technical details.
-- **Security**: API keys are stored separately with basic encoding (better than plaintext). For production use, consider environment variables or proper secrets management.
-- The code includes a hydration guard to avoid initial-save race conditions; state is loaded once on mount and saved on every subsequent change.
+</details>
 
-Brand & roadmap note
-- This repo is the first module of a broader vision: "Samvada Suite" (coming soon). Samvada Studio is the creation and authoring module; future modules may include Samvada Labs (experimentation) and Samvada Hub (enterprise connectors). See `docs/BRAND.md` for naming rationale and brand guidance.
+<details>
+<summary><h3>🤖 Multi-Provider LLM Support</h3></summary>
 
-Contributing (short)
-- Fork, create a small focused branch, open PRs with linked issues.
-- Keep changes typed in TypeScript; follow existing formatting and lint rules.
+Connect to **6 LLM providers** with unified interface:
 
-Minimal troubleshooting
-- If the app doesn't start: check Node/npm versions and run `npm install`.
--- If providers don't persist: re-enter API keys (design choice) and ensure saved providers are visible in `window.__SAMVADA_DEBUG__` (dev helper).
+| Provider | Models | Type |
+|----------|--------|------|
+| 🟢 **OpenAI** | GPT-4, GPT-4 Turbo, GPT-3.5 | Cloud API |
+| 🟣 **Anthropic** | Claude 3.5 Sonnet, Claude 3 Opus | Cloud API |
+| 🔵 **Google** | Gemini 1.5 Pro, Gemini 1.5 Flash | Cloud API |
+| 🦙 **Ollama** | Llama, Mistral, Code Llama, etc. | Local |
+| ☁️ **Azure OpenAI** | Enterprise-hosted models | Cloud API |
+| 🔧 **Custom** | Any OpenAI-compatible endpoint | Self-hosted |
 
-License
-- MIT
+**Features:**
+- ✅ Per-chat provider selection
+- ✅ Test connections before use
+- ✅ Set default provider
+- ✅ Multiple providers simultaneously
+- ✅ Sandbox mode (temperature, top-p, frequency penalty, etc.)
 
-# Samvada Studio
+</details>
 
-A feature-rich conversational UI combining the best UX features from Gemini, ChatGPT, Copilot, and more — all in one powerful interface.
+<details>
+<summary><h3>🎨 Theming & Customization</h3></summary>
 
-![Samvada Studio](https://img.shields.io/badge/React-18.3-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue) ![Tailwind](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8) ![Vite](https://img.shields.io/badge/Vite-6.0-646cff)
-
-## 🚀 Features
-
-### 🎯 Command Palette (NEW!)
-| Feature | Description |
-|---------|-------------|
-| **Quick Actions** | Press `Ctrl+K` to open VS Code-style command palette |
-| **Search Commands** | Instantly find and execute any action |
-| **Categories** | Chat, Navigation, Settings, Export, Templates |
-| **Keyboard Navigation** | Arrow keys + Enter to select |
-
-### 🎤 Voice Input (NEW!)
-| Feature | Description |
-|---------|-------------|
-| **Speech-to-Text** | Click mic button or press `Ctrl+M` to dictate |
-| **Real-time Preview** | See interim transcription as you speak |
-| **Continuous Mode** | Keep dictating until you click stop |
-| **Browser Native** | Uses Web Speech API (Chrome, Edge, Safari) |
-
-### 📁 Chat Folders (NEW!)
-| Feature | Description |
-|---------|-------------|
-| **Organize Chats** | Create folders with custom names, colors, and icons |
-| **Drag & Drop** | Drag chats into folders to organize |
-| **Expand/Collapse** | Toggle folder visibility |
-| **8 Color Options** | Blue, Purple, Green, Orange, Pink, Cyan, Red, Yellow |
-| **10 Icon Options** | Various emoji icons for folders |
-
-### 📝 Prompt Templates (NEW!)
-| Feature | Description |
-|---------|-------------|
-| **Template Library** | Save and reuse common prompts |
-| **Categories** | General, Code, Writing, Analysis, Creative, Custom |
-| **Favorites** | Mark frequently used templates as favorites |
-| **Usage Tracking** | See how often each template is used |
-| **Quick Apply** | Click to insert template content into prompt |
-
-### 📤 Export Options (NEW!)
-| Feature | Description |
-|---------|-------------|
-| **Multiple Formats** | Export as Markdown, JSON, HTML, or Plain Text |
-| **Single or Multi-Chat** | Export one chat or select multiple |
-| **Full Backup** | Export All Data option for complete backup |
-| **Include Timestamps** | Optional timestamp inclusion |
-
-### 🎨 Enhanced Code Blocks (NEW!)
-| Feature | Description |
-|---------|-------------|
-| **Syntax Highlighting** | Colorized keywords, strings, comments, numbers |
-| **Language Detection** | JavaScript, TypeScript, Python, Java, and more |
-| **Copy Button** | Per-block copy with success feedback |
-| **Language Label** | Shows detected language in header |
-
-### 👍 Message Reactions (NEW!)
-| Feature | Description |
-|---------|-------------|
-| **Thumbs Up/Down** | Rate AI responses for feedback |
-| **Bookmark** | Save important responses |
-| **Text-to-Speech** | Click speaker to hear response read aloud |
-| **Visual Feedback** | Active reactions are highlighted |
-
-### 📊 Token Counter (NEW!)
-| Feature | Description |
-|---------|-------------|
-| **Live Estimation** | See token count as you type |
-| **Cost Estimation** | Approximate cost per model (GPT-4, Claude, etc.) |
-| **Chat Stats** | Total tokens, messages, and estimated cost |
-
-### ⌨️ Keyboard Shortcuts Panel (NEW!)
-| Feature | Description |
-|---------|-------------|
-| **Help Modal** | Press `?` to view all shortcuts |
-| **5 Categories** | General, Chat, Prompt Input, Navigation, Voice |
-| **Styled Keys** | Beautiful key badge display |
-
-### 🎨 Theme System (ENHANCED!)
-| Feature | Description |
-|---------|-------------|
-| **Dark/Light Mode** | Toggle with sun/moon button |
-| **8 Accent Colors** | Blue, Purple, Green, Orange, Pink, Cyan, Red, Yellow |
-| **Font Size Options** | Small, Medium, Large |
+| Feature | Options |
+|---------|---------|
+| **Color Modes** | Dark, Light, Auto (follows system) |
+| **Accent Colors** | 8 colors (Blue, Purple, Green, Orange, Pink, Cyan, Red, Yellow) |
+| **Font Sizes** | Small, Medium, Large |
 | **Compact Mode** | Reduce spacing for more content |
+| **Custom Themes** | Full CSS variable system |
 
-### 🔌 Multi-Provider LLM Support
-| Provider | API Type | Description |
-|----------|----------|-------------|
-| **OpenAI (ChatGPT)** | Cloud | GPT-4, GPT-4o, GPT-3.5-turbo |
-| **Anthropic (Claude)** | Cloud | Claude 3.5 Sonnet, Claude 3 Opus |
-| **Google (Gemini)** | Cloud | Gemini 1.5 Pro, Gemini 1.5 Flash |
-| **Ollama** | Local | Run models locally (Llama, Mistral, etc.) |
-| **Azure OpenAI** | Cloud | Enterprise Azure-hosted models |
-| **Custom** | Any | OpenAI-compatible API endpoints |
+</details>
 
-### ⚙️ Admin Settings Panel
-| Feature | Description |
-|---------|-------------|
-| **Provider Configuration** | Add/edit/delete LLM provider configs |
-| **Sandbox Settings** | Temperature, max tokens, top-p, frequency/presence penalty |
-| **Test Connection** | Verify provider configs work before using |
-| **Set Default Provider** | Choose which provider to use for new chats |
-| **Data Management** | Export data or clear all data |
+<details>
+<summary><h3>⌨️ Keyboard Shortcuts</h3></summary>
 
-### 🔍 Enhanced Global Search
-| Feature | Description |
-|---------|-------------|
-| **Cross-Chat Search** | Search across all chats instantly |
-| **Highlighting** | Matching text is highlighted in results |
-| **Navigate to Result** | Click to jump directly to the specific prompt/response |
-| **Keyboard Navigation** | Arrow keys to navigate, Enter to select |
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+K` | Command Palette |
+| `?` | Keyboard Shortcuts Help |
+| `Ctrl+Enter` / `Shift+Enter` | Send Message |
+| `Enter` | New line (multi-line mode) |
+| `Ctrl+M` | Voice Input |
+| `Ctrl+.` | Text-to-Speech |
+| `Ctrl+Shift+F` | Global Search |
+| `Ctrl+Shift+E` | Export Modal |
+| `Ctrl+Shift+T` | Templates Library |
+| `↑` / `↓` | Navigate prompt history |
 
-### 📝 Rich Text Prompt Input
-| Feature | Description |
+**Press `?` in the app to see all shortcuts!**
+
+</details>
+
+---
+
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [📋 FEATURES.md](docs/FEATURES.md) | Complete feature documentation with examples |
+| [🚀 GETTING_STARTED.md](docs/GETTING_STARTED.md) | Step-by-step onboarding guide |
+| [🎨 BRAND.md](docs/BRAND.md) | Naming, etymology, and brand guidelines |
+| [💾 PERSISTENCE.md](docs/PERSISTENCE.md) | How data is saved and restored |
+| [🔒 CONTENT_SANITIZATION.md](docs/CONTENT_SANITIZATION.md) | Content security and validation |
+| [🐛 TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions |
+| [🤝 CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute to the project |
+
+---
+
+## 🏗️ Architecture
+
+```
+Samvada Studio
+├── 🎨 UI Layer (React 18 + TypeScript)
+│   ├── Sidebar (chats, folders, search)
+│   ├── ChatArea (conversations, provider selection)
+│   ├── PromptInput (smart input with markdown)
+│   └── Admin (provider management)
+│
+├── 🧠 State Management (Context + Reducer)
+│   └── ChatContext — Single source of truth
+│
+├── 🔧 Business Logic
+│   ├── llmService.ts — Provider adapters
+│   ├── storage.ts — Safe persistence
+│   ├── helpers.ts — Utilities
+│   └── contentSanitizer.ts — Security
+│
+└── 💾 Persistence (localStorage)
+    ├── Chats & conversations
+    ├── Provider configs (API keys encoded)
+    ├── Templates & folders
+    └── User preferences
+```
+
+**Key Design Decisions:**
+- ✅ **Offline-first** — Works without backend
+- ✅ **No database required** — Everything in localStorage
+- ✅ **Privacy-focused** — API keys stay in your browser
+- ✅ **Extensible** — Easy to add new providers
+
+---
+
+## 🛠️ Tech Stack
+
+| Technology | Purpose |
+|------------|---------|
+| **React 18.3** | UI framework with Hooks |
+| **TypeScript 5.6** | Type-safe development |
+| **Vite 6.0** | Lightning-fast build tool |
+| **Tailwind CSS 3.4** | Utility-first styling |
+| **Web Speech API** | Voice input & TTS |
+| **React Markdown** | Markdown rendering |
+| **UUID** | Unique ID generation |
+
+---
+
+## 🎯 Roadmap
+
+### ✅ Completed (v1.0)
+- [x] Multi-provider LLM support (6 providers)
+- [x] 20+ core features implemented
+- [x] Keyboard shortcuts & command palette
+- [x] Voice input & text-to-speech
+- [x] Export in 4 formats
+- [x] Theme customization
+- [x] Token counter & cost estimation
+
+### 🚧 In Progress
+- [ ] Image generation support (DALL-E, Midjourney)
+- [ ] Conversation branching & tree view
+- [ ] Cloud sync (optional)
+- [ ] Browser extension
+
+### 🔮 Future (Samvada Suite)
+- **Samvada Labs** — A/B testing & experimentation module
+- **Samvada Hub** — Enterprise connectors & team features
+- **Samvada Forge** — Custom model fine-tuning
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Whether it's:
+- 🐛 Bug reports
+- 💡 Feature requests
+- 📝 Documentation improvements
+- 🎨 UI/UX enhancements
+- 🔧 Code contributions
+
+**See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.**
+
+---
+
+## 📜 License
+
+**MIT License** — See [LICENSE](LICENSE) for details.
+
+---
+
+## 💬 Community & Support
+
+- 🐛 **Issues** — [GitHub Issues](https://github.com/dhruvinrsoni/samvada-studio/issues)
+- 💡 **Discussions** — [GitHub Discussions](https://github.com/dhruvinrsoni/samvada-studio/discussions)
+- 📧 **Contact** — [@dhruvinrsoni](https://github.com/dhruvinrsoni)
+
+---
+
+## 🙏 Acknowledgments
+
+Samvada Studio is inspired by the best features from:
+- **Google Gemini** — Inline editing and drafts
+- **ChatGPT** — Conversation flow and quote functionality
+- **GitHub Copilot** — Command palette and keyboard-first UX
+- **VS Code** — Keyboard shortcuts and command system
+
+Special thanks to the open-source community for amazing tools like React, Vite, and Tailwind CSS.
+
+---
+
+<div align="center">
+
+**Made with ❤️ by [Dhruvin Soni](https://github.com/dhruvinrsoni)**
+
+*"संवाद करें, सीखें, बढ़ें"* (Converse, Learn, Grow)
+
+⭐ **Star this repo if you find it useful!** ⭐
+
+</div>
+
 |---------|-------------|
 | **Formatting Toolbar** | Bold, Italic, Code, Link buttons |
 | **Auto-List Mode** | Type "1." or "-" to enable list mode |

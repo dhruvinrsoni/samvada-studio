@@ -166,7 +166,17 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
           <button className={isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}>
             {promptResponse.isCollapsed ? '▶' : '▼'}
           </button>
-          <span className={`text-xs font-mono ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>#{promptResponse.id.slice(0, 8)}</span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(promptResponse.id);
+              addToast('success', 'Copied!', `PnR ID ${promptResponse.id.slice(0, 8)} copied to clipboard`);
+            }}
+            className={`text-xs font-mono hover:underline cursor-pointer transition-colors ${isDark ? 'text-gray-500 hover:text-primary-400' : 'text-gray-500 hover:text-primary-600'}`}
+            title="Click to copy full PnR ID"
+          >
+            #{promptResponse.id.slice(0, 8)}
+          </button>
           <span className={`text-sm truncate max-w-xs ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
             {getFirstWords(promptResponse.prompt.content, 6)}
           </span>
@@ -383,6 +393,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(activeResponse?.content || '');
+                  addToast('success', 'Copied!', 'Response copied to clipboard');
                 }}
                 className={`flex items-center gap-1 px-3 py-1 text-sm rounded ${
                   isDark 
@@ -394,11 +405,14 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
               </button>
               {onQuote && activeResponse && (
                 <button
-                  onClick={() => onQuote(activeResponse.content)}
-                  className={`flex items-center gap-1 px-3 py-1 text-sm rounded ${
+                  onClick={() => {
+                    onQuote(activeResponse.content);
+                    addToast('success', 'Quoted!', 'Response added to your next prompt');
+                  }}
+                  className={`flex items-center gap-1 px-3 py-1 text-sm rounded border-2 border-dashed ${
                     isDark 
-                      ? 'bg-dark-100 text-gray-300 hover:bg-dark-300' 
-                      : 'bg-light-300 text-gray-700 hover:bg-light-400'
+                      ? 'border-primary-500/50 bg-primary-600/10 text-primary-400 hover:bg-primary-600/20 hover:border-primary-400' 
+                      : 'border-primary-400/50 bg-primary-50 text-primary-600 hover:bg-primary-100 hover:border-primary-500'
                   }`}
                   title="Quote in next prompt (ChatGPT-style)"
                 >

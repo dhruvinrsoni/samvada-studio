@@ -149,15 +149,31 @@ function chatReducer(state: AppState, action: ChatAction): AppState {
       const { chatId, promptResponse } = action.payload;
       return {
         ...state,
-        chats: state.chats.map(chat =>
-          chat.id === chatId
-            ? {
-                ...chat,
-                promptResponses: [...chat.promptResponses, promptResponse],
-                updatedAt: new Date(),
-              }
-            : chat
-        ),
+        chats: state.chats.map(chat => {
+          if (chat.id !== chatId) return chat;
+          
+          // Auto-generate title from first prompt if chat has default title
+          const isFirstPrompt = chat.promptResponses.length === 0;
+          const hasDefaultTitle = chat.title.startsWith('Chat ') && /Chat \d+\/\d+\/\d+/.test(chat.title);
+          let newTitle = chat.title;
+          
+          if (isFirstPrompt && hasDefaultTitle) {
+            // Generate title from first 6 words of prompt
+            const words = promptResponse.prompt.content.trim().split(/\s+/).slice(0, 6);
+            newTitle = words.join(' ') + (words.length >= 6 ? '...' : '');
+            // Truncate if too long
+            if (newTitle.length > 50) {
+              newTitle = newTitle.substring(0, 47) + '...';
+            }
+          }
+          
+          return {
+            ...chat,
+            title: newTitle,
+            promptResponses: [...chat.promptResponses, promptResponse],
+            updatedAt: new Date(),
+          };
+        }),
       };
     }
 
