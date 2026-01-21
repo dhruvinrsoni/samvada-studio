@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Chat, ChatSettings, PromptResponse, Message, Example, ContextPanel, LLMProviderConfig } from '../types';
+import { sanitizeUserInput, sanitizeLLMResponse } from './contentSanitizer';
 
 export const generateId = (): string => uuidv4();
 
@@ -31,7 +32,7 @@ export const createMessage = (
 ): Message => ({
   id: generateId(),
   role,
-  content,
+  content: role === 'user' ? sanitizeUserInput(content) : sanitizeLLMResponse(content),
   timestamp: new Date(),
   isStarred: false,
 });

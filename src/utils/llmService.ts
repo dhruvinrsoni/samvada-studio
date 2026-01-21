@@ -65,7 +65,7 @@ export const callLLMProvider = async (
         }
 
         const openaiData = await response.json();
-        content = openaiData.choices[0].message.content;
+        content = sanitizeLLMResponse(openaiData.choices[0].message.content);
         break;
 
       case 'anthropic':
@@ -89,7 +89,7 @@ export const callLLMProvider = async (
         }
 
         const anthropicData = await response.json();
-        content = anthropicData.content[0].text;
+        content = sanitizeLLMResponse(anthropicData.content[0].text);
         break;
 
       case 'google':
@@ -113,7 +113,7 @@ export const callLLMProvider = async (
         }
 
         const googleData = await response.json();
-        content = googleData.candidates[0].content.parts[0].text;
+        content = sanitizeLLMResponse(googleData.candidates[0].content.parts[0].text);
         break;
 
       case 'ollama':
@@ -168,7 +168,7 @@ export const callLLMProvider = async (
           }
 
           const ollamaData = await response.json();
-          content = ollamaData.response;
+          content = sanitizeLLMResponse(ollamaData.response);
           
           logDebug('Ollama Response', {
             requestId,
@@ -216,7 +216,7 @@ export const callLLMProvider = async (
         }
 
         const customData = await response.json();
-        content = customData.choices?.[0]?.message?.content || customData.response || customData.text || '';
+        content = sanitizeLLMResponse(customData.choices?.[0]?.message?.content || customData.response || customData.text || '');
         break;
     }
 

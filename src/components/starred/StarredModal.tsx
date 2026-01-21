@@ -1,4 +1,5 @@
 import { useChat } from '../../context/ChatContext';
+import { toPlainTextPreview } from '../../utils/contentSanitizer';
 
 interface StarredModalProps {
   onClose: () => void;
@@ -67,64 +68,104 @@ export default function StarredModal({ onClose }: StarredModalProps) {
             </div>
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {starredMessages.map(({ chat, pnr, message }) => (
-                <div key={`${pnr.id}-${message.id}`} className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors`}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      {/* Chat and timestamp info */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                          {chat.title}
-                        </span>
-                        <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                          {new Date(message.timestamp).toLocaleString()}
-                        </span>
-                        <span className={`px-2 py-0.5 text-xs rounded-full ${
-                          message.role === 'user'
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                            : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                        }`}>
-                          {message.role === 'user' ? 'You' : 'AI'}
-                        </span>
-                      </div>
+              {starredMessages.map(({ chat, pnr, message }) => {
+                try {
+                  return (
+                    <div key={`${pnr.id}-${message.id}`} className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors`}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          {/* Chat and timestamp info */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                              {chat.title || 'Untitled Chat'}
+                            </span>
+                            <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                              {message.timestamp ? new Date(message.timestamp).toLocaleString() : 'Unknown time'}
+                            </span>
+                            <span className={`px-2 py-0.5 text-xs rounded-full ${
+                              message.role === 'user'
+                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            }`}>
+                              {message.role === 'user' ? 'You' : 'AI'}
+                            </span>
+                          </div>
 
-                      {/* Message content */}
-                      <div className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} leading-relaxed`}>
-                        {message.content.length > 200
-                          ? `${message.content.substring(0, 200)}...`
-                          : message.content
-                        }
+                          {/* Message content - clean plain text preview */}
+                          <div className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} leading-relaxed`}>
+                            {(() => {
+                              try {
+                                const content = message.content;
+                                if (!content || typeof content !== 'string') {
+                                  return <span className="text-red-500 italic text-xs">[Invalid content]</span>;
+                                }
+                                if (content.trim().length === 0) {
+                                  return <span className="text-gray-500 italic text-xs">[Empty message]</span>;
+                                }
+                                
+                                // Use plain text preview - this removes markdown/code for clean display
+                                return toPlainTextPreview(content, 300);
+                              } catch (error) {
+                                console.error('Error rendering starred message:', error, message);
+                                return (
+                                  <span className="text-red-500 italic text-xs">
+                                    [Error - click "Go to message" to view]
+                                  </span>
+                                );
+                              }
+                            })()}
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleNavigateToMessage(chat.id)}
+                            className={`p-2 rounded-lg transition-colors ${
+                              isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
+                            }`}
+                            title="Go to message"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleUnstarMessage(chat.id, pnr.id, message.id)}
+                            className={`p-2 rounded-lg transition-colors ${
+                              isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
+                            }`}
+                            title="Remove star"
+                          >
+                            <svg className="w-4 h-4" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleNavigateToMessage(chat.id)}
-                        className={`p-2 rounded-lg transition-colors ${
-                          isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
-                        }`}
-                        title="Go to message"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handleUnstarMessage(chat.id, pnr.id, message.id)}
-                        className={`p-2 rounded-lg transition-colors ${
-                          isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
-                        }`}
-                        title="Remove star"
-                      >
-                        <svg className="w-4 h-4" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                        </svg>
-                      </button>
+                  );
+                } catch (error) {
+                  console.error('Error rendering starred message item:', error, { chat, pnr, message });
+                  return (
+                    <div key={`${pnr.id}-${message.id || 'unknown'}`} className={`p-4 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20`}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-red-500">⚠️</span>
+                        <span className="text-red-700 dark:text-red-400 text-sm">
+                          Failed to load starred message (corrupted data)
+                        </span>
+                        <button
+                          onClick={() => handleUnstarMessage(chat.id, pnr.id, message.id)}
+                          className="ml-auto px-2 py-1 text-xs bg-red-100 hover:bg-red-200 dark:bg-red-800 dark:hover:bg-red-700 text-red-700 dark:text-red-300 rounded"
+                          title="Remove corrupted star"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                }
+              })}
             </div>
           )}
         </div>

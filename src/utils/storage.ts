@@ -1,4 +1,5 @@
 import type { AppState, SafeAppState, SafeLLMProviderConfig, LLMProviderConfig } from '../types';
+import { validateStoredContent } from './contentSanitizer';
 
 export const STORAGE_KEY = 'samvada-studio-state';
 export const SENSITIVE_STORAGE_KEY = 'samvada-studio-sensitive';
@@ -103,9 +104,13 @@ export const loadState = (): AppState | null => {
     const serialized = localStorage.getItem(STORAGE_KEY);
     if (!serialized) return null;
 
-    const safeState: SafeAppState = JSON.parse(serialized, (_key, value) => {
+    const safeState: SafeAppState = JSON.parse(serialized, (key, value) => {
       if (value && typeof value === 'object' && value.__type === 'Date') {
         return new Date(value.value);
+      }
+      // Validate message content when loading
+      if (key === 'content' && typeof value === 'string') {
+        return validateStoredContent(value);
       }
       return value;
     });
