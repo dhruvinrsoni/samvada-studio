@@ -378,6 +378,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
           onKeyDown={handleKeyDownInternal}
+          onMouseEnter={() => textareaRef.current?.focus()}
           disabled={disabled}
           placeholder={
             !hasProvider
