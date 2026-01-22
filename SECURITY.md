@@ -299,4 +299,4 @@ If you discover a security vulnerability, please report it responsibly:
 **Last Updated**: January 2, 2026
 **Version**: 1.3.0
 **Security Rating**: A+ (Based on independent security audit)</content>
-<parameter name="filePath">c:\root\github\dhruvinrsoni\LLMsUI\SECURITY.md
+<parameter name="filePath">dhruvinrsoni\LLMsUI\SECURITY.md
