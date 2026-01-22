@@ -63,6 +63,7 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
             <button
               onClick={() => createChat()}
               className="py-2 px-3 bg-blue-500 hover:bg-blue-600 text-white rounded-l-lg transition-colors flex items-center text-sm flex-1"
+              title="Create new chat (Ctrl+N)"
             >
               <span className="flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,6 +76,7 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
               onClick={() => setIsNewChatDropdownOpen(!isNewChatDropdownOpen)}
               onMouseEnter={() => setIsNewChatDropdownOpen(true)}
               className="py-2 px-2 bg-blue-500 hover:bg-blue-600 text-white rounded-r-lg transition-colors border-l border-white/20 flex items-center justify-center"
+              title="More new chat options"
             >
               <svg className={`w-4 h-4 transition-transform ${isNewChatDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -171,6 +173,7 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
                 ? 'bg-dark-100 text-gray-400 hover:bg-dark-300'
                 : 'bg-light-300 text-gray-600 hover:bg-light-400'
           }`}
+          title={localShowArchived ? 'Click to show active chats' : 'View archived chats'}
         >
           {localShowArchived ? 'Showing Archived' : 'Show Archived'}
         </button>

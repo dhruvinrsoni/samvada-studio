@@ -152,12 +152,12 @@ function AppContent() {
             onClick={() => dispatch({ type: 'TOGGLE_CONTEXT_PANEL_MODE' })}
             className={`p-2 rounded-lg transition-colors hover:scale-105 ${
               state.isContextPanelMode
-                ? 'bg-theme-primary text-white'
+                ? 'bg-theme-primary text-white shadow-md'
                 : state.theme === 'dark' 
                   ? 'text-gray-400 hover:bg-dark-100' 
                   : 'text-gray-600 hover:bg-light-300'
             }`}
-            title="Context Panel"
+            title={`Context Panel - ${state.isContextPanelMode ? 'Click to close' : 'Add custom context snippets for on-demand inclusion'}`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />

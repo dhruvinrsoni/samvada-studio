@@ -185,13 +185,13 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
                 </svg>
               </div>
               
-              {/* Dropdown Options - positioned with no gap */}
+              {/* Dropdown Options - positioned with NO gap to prevent collapse */}
               {isProviderDropdownOpen && (
                 <div 
                   className={`absolute top-full left-0 w-64 rounded-lg border shadow-lg z-50 ${
                     isDark ? 'bg-dark-200 border-dark-300' : 'bg-light-100 border-light-400'
                   }`}
-                  style={{ marginTop: '1px' }} // Ensure no gap
+                  style={{ marginTop: '0px' }}
                 >
                   {enabledProviders.map(provider => (
                     <div
@@ -233,7 +233,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
                   ? 'bg-dark-100 text-gray-400 hover:bg-dark-200'
                   : 'bg-light-300 text-gray-600 hover:bg-light-400'
             }`}
-            title="Chat Settings"
+            title={`Chat Settings - ${showSettings ? 'Click to close' : 'Configure role, instructions, and examples'}`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />

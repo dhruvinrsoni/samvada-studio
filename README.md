@@ -164,6 +164,52 @@ Connect to **6 LLM providers** with unified interface:
 
 </details>
 
+<details>
+<summary><h3>📋 Context Panel - Dynamic Context Injection</h3></summary>
+
+The **Context Panel** is a powerful feature that lets you create reusable context snippets that can be included on-demand in your prompts.
+
+**What is it?**
+- A side panel for managing custom context pieces
+- Store code snippets, documentation, examples, or any reference text
+- Toggle individual contexts on/off per prompt
+- Include only relevant context instead of repeating yourself
+
+**Use Cases:**
+1. **Code Development**: Store API documentation, code style guides, or example implementations
+2. **Content Writing**: Save brand voice guidelines, tone examples, or reference materials
+3. **Research**: Keep key facts, quotes, or data points readily available
+4. **Documentation**: Store technical specs, requirements, or design patterns
+
+**How to Use:**
+1. Click the Context Panel button (📋 icon) in the top-right toolbar
+2. Click "+ New Panel" and give it a descriptive name
+3. Add your context text in the editor
+4. Toggle the checkbox to activate/deactivate the context
+5. Active contexts are automatically included with your prompts
+
+**Example:**
+```
+Panel: "Python Best Practices"
+✅ Active
+
+Content:
+- Use type hints for all function parameters
+- Follow PEP 8 style guide
+- Prefer list comprehensions over map/filter
+- Use context managers (with) for resources
+```
+
+When this panel is active, all your prompts will include these guidelines, ensuring consistent responses without retyping them each time!
+
+**Tips:**
+- Create panels for different programming languages, frameworks, or domains
+- Use descriptive names to easily find the right context
+- Keep panels focused - one topic per panel works best
+- Toggle panels off when they're not relevant to save tokens
+
+</details>
+
 ---
 
 ## 📚 Documentation
