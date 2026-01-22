@@ -30,6 +30,8 @@ Samvada Studio is a feature-rich LLM Chat UI that combines the **best UX feature
 
 Perfect for **developers**, **prompt engineers**, **researchers**, and **content professionals** who need a powerful, keyboard-first interface for working with AI.
 
+> 💙 **The Origin Story**: Want to know how this started? Read [THE_BEGINNING.md](docs/THE_BEGINNING.md) — the original scribbled feature list that sparked this entire project. It's a story of frustration turned into creation.
+
 ---
 
 ## 🚀 Quick Start
@@ -216,15 +218,40 @@ When this panel is active, all your prompts will include these guidelines, ensur
 
 ## 📚 Documentation
 
+### 🚀 Getting Started
+| Document | Description |
+|----------|-------------|
+| [🚀 GETTING_STARTED.md](docs/GETTING_STARTED.md) | Step-by-step onboarding guide |
+| [💙 THE_BEGINNING.md](docs/THE_BEGINNING.md) | **The origin story** — How frustration became creation |
+| [📊 FEATURE_COMPLETION.md](docs/FEATURE_COMPLETION.md) | **Vision vs Reality** — 20/20 features shipped!
+
+### 📖 Features & Guides
 | Document | Description |
 |----------|-------------|
 | [📋 FEATURES.md](docs/FEATURES.md) | Complete feature documentation with examples |
-| [🚀 GETTING_STARTED.md](docs/GETTING_STARTED.md) | Step-by-step onboarding guide |
-| [🎨 BRAND.md](docs/BRAND.md) | Naming, etymology, and brand guidelines |
 | [💾 PERSISTENCE.md](docs/PERSISTENCE.md) | How data is saved and restored |
 | [🔒 CONTENT_SANITIZATION.md](docs/CONTENT_SANITIZATION.md) | Content security and validation |
 | [🐛 TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions |
+
+### 🏗️ Technical Documentation
+| Document | Description |
+|----------|-------------|
+| [🔌 LLM_PROVIDERS.md](docs/LLM_PROVIDERS.md) | How to add new LLM providers (with checklist) |
+| [🔮 FUTURE_PROOF_DESIGN.md](docs/FUTURE_PROOF_DESIGN.md) | Architecture philosophy and maintainable patterns |
+| [🔐 SECURITY_AND_PRIVACY.md](docs/SECURITY_AND_PRIVACY.md) | Security-first approach, Privacy by Design |
+
+### 🤝 Contributing
+| Document | Description |
+|----------|-------------|
 | [🤝 CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute to the project |
+| [🤖 copilot-security-enforcement.md](.github/copilot-security-enforcement.md) | Proactive security enforcement rules |
+| [🎯 copilot-design-philosophy.md](.github/copilot-design-philosophy.md) | Pattern enforcement and best practices |
+
+### 🎨 Branding & Story
+| Document | Description |
+|----------|-------------|
+| [🎨 BRAND.md](docs/BRAND.md) | Naming, etymology, and brand guidelines |
+| [📱 LINKEDIN_POST.md](docs/LINKEDIN_POST.md) | Ready-to-use social media content & Notion outline |
 
 ---
 
