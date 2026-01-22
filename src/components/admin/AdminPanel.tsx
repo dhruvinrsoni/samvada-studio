@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { generateId } from '../../utils/helpers';
+import { testProviderConnection } from '../../utils/llmService';
 import type { LLMProviderConfig } from '../../types';
 import ProviderCard from './ProviderCard';
 import ProviderForm from './ProviderForm';
@@ -43,19 +44,22 @@ export default function AdminPanel() {
     dispatch({ type: 'TEST_PROVIDER', payload: { id: provider.id, status: 'pending' } });
     
     try {
-      // Simulate test - in real implementation, make actual API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const result = await testProviderConnection(provider);
       
-      // For demo, randomly succeed or fail
-      const success = Math.random() > 0.3;
-      
-      if (success) {
+      if (result.success) {
         dispatch({ 
           type: 'TEST_PROVIDER', 
-          payload: { id: provider.id, status: 'success', message: 'Connection successful!' } 
+          payload: { id: provider.id, status: 'success', message: result.message } 
         });
       } else {
-        throw new Error('API key invalid or endpoint unreachable');
+        dispatch({ 
+          type: 'TEST_PROVIDER', 
+          payload: { 
+            id: provider.id, 
+            status: 'failed', 
+            message: result.message 
+          } 
+        });
       }
     } catch (error) {
       dispatch({ 

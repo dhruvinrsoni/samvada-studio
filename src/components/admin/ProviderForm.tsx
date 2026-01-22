@@ -21,7 +21,7 @@ const PROVIDER_TYPES: { type: LLMProviderType; label: string; icon: string }[] =
 const DEFAULT_ENDPOINTS: Record<LLMProviderType, string> = {
   openai: 'https://api.openai.com/v1/chat/completions',
   anthropic: 'https://api.anthropic.com/v1/messages',
-  google: 'https://generativelanguage.googleapis.com/v1beta/models',
+  google: 'https://generativelanguage.googleapis.com/v1beta',
   ollama: 'http://localhost:11434/api/generate',
   azure: '',
   custom: '',

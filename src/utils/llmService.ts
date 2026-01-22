@@ -118,7 +118,7 @@ export const callLLMProvider = async (
         break;
 
       case 'google':
-        const geminiEndpoint = `${endpoint}/${provider.model}:generateContent?key=${provider.apiKey}`;
+        const geminiEndpoint = `${endpoint}/models/${provider.model}:generateContent?key=${provider.apiKey}`;
         response = await fetch(geminiEndpoint, {
           method: 'POST',
           headers: {
@@ -361,16 +361,138 @@ export const regenerateResponse = async (
 export const testProviderConnection = async (
   provider: LLMProviderConfig
 ): Promise<{ success: boolean; message: string }> => {
-  try {
-    const response = await callLLMProvider(provider, 'Hello, please respond with "Connection successful!"');
-    if (response.message.content) {
-      return { success: true, message: 'Connection successful!' };
-    }
-    return { success: false, message: 'No response received' };
-  } catch (error) {
+  const startTime = Date.now();
+  
+  // Pre-flight checks
+  if (!provider.apiEndpoint) {
     return { 
       success: false, 
-      message: error instanceof Error ? error.message : 'Connection failed' 
+      message: `API endpoint not configured for ${provider.name}` 
+    };
+  }
+
+  // For Ollama, first check if the service is running
+  if (provider.type === 'ollama') {
+    try {
+      const baseUrl = provider.apiEndpoint.replace('/api/generate', '').replace('/api/chat', '');
+      const tagsUrl = `${baseUrl}/api/tags`;
+      
+      const tagsResponse = await fetch(tagsUrl, {
+        method: 'GET',
+        signal: AbortSignal.timeout(3000), // 3 second timeout
+      });
+
+      if (!tagsResponse.ok) {
+        return {
+          success: false,
+          message: `Ollama service responded with error: ${tagsResponse.status}. Is Ollama running?`
+        };
+      }
+
+      const data = await tagsResponse.json();
+      const models = data.models || [];
+      
+      // Check if the configured model exists
+      const modelExists = models.some((m: { name: string }) => m.name === provider.model);
+      
+      if (!modelExists) {
+        const availableModels = models.map((m: { name: string }) => m.name).join(', ') || 'none';
+        return {
+          success: false,
+          message: `Model "${provider.model}" not found. Available models: ${availableModels}. Run: ollama pull ${provider.model}`
+        };
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.name === 'TimeoutError') {
+          return {
+            success: false,
+            message: 'Ollama service is not responding. Is Ollama running? Try: ollama serve'
+          };
+        }
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          return {
+            success: false,
+            message: 'Cannot connect to Ollama. Is it running on http://localhost:11434? Try: ollama serve'
+          };
+        }
+      }
+      return {
+        success: false,
+        message: `Ollama connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  // For cloud providers, check API key format
+  if (provider.type !== 'ollama' && provider.type !== 'custom') {
+    if (!provider.apiKey || provider.apiKey.trim().length < 10) {
+      return {
+        success: false,
+        message: 'API key is missing or too short. Please provide a valid API key.'
+      };
+    }
+  }
+
+  // Perform actual API test with a simple prompt
+  try {
+    const response = await callLLMProvider(provider, 'Say "OK" if you can read this.');
+    const duration = Date.now() - startTime;
+    
+    if (response.message.content && response.message.content.length > 0) {
+      return { 
+        success: true, 
+        message: `✓ Connected successfully! (${duration}ms)` 
+      };
+    }
+    return { 
+      success: false, 
+      message: 'No response received from the model' 
+    };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    
+    // Parse error messages for better user feedback
+    if (error instanceof Error) {
+      const msg = error.message;
+      
+      // OpenAI/Azure errors
+      if (msg.includes('401') || msg.includes('Unauthorized')) {
+        return { success: false, message: 'Invalid API key. Please check your credentials.' };
+      }
+      if (msg.includes('429') || msg.includes('rate limit')) {
+        return { success: false, message: 'Rate limit exceeded. Please try again later.' };
+      }
+      if (msg.includes('404')) {
+        return { success: false, message: `Model "${provider.model}" not found or endpoint incorrect.` };
+      }
+      if (msg.includes('403') || msg.includes('Forbidden')) {
+        return { success: false, message: 'API key does not have permission for this model.' };
+      }
+      if (msg.includes('500') || msg.includes('502') || msg.includes('503')) {
+        return { success: false, message: 'Provider service is unavailable. Try again later.' };
+      }
+      
+      // Network errors
+      if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+        return { 
+          success: false, 
+          message: 'Network error. Check your internet connection or endpoint URL.' 
+        };
+      }
+      if (msg.includes('timeout')) {
+        return { success: false, message: `Request timed out after ${duration}ms. Service may be slow or down.` };
+      }
+      
+      return { 
+        success: false, 
+        message: msg 
+      };
+    }
+    
+    return { 
+      success: false, 
+      message: 'Connection test failed. Please check your configuration.' 
     };
   }
 };
