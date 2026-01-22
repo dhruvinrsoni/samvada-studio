@@ -76,7 +76,7 @@ export default function FoldersSection({ renderChatItem }: FoldersSectionProps) 
               if (chatId) handleDropChat(folder.id, chatId);
             }}
           >
-            <span className="text-lg">{folder.icon}</span>
+            <span className="text-lg">{folder.icon === '📁' ? (folder.isExpanded ? '📂' : '📁') : folder.icon}</span>
             <span 
               className={`flex-1 font-medium truncate ${isDark ? 'text-white' : 'text-gray-900'}`}
               style={{ color: folder.color }}

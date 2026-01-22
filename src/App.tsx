@@ -159,15 +159,7 @@ function AppContent() {
             }`}
             title={`Context Panel - ${state.isContextPanelMode ? 'Click to close' : 'Add custom context snippets for on-demand inclusion'}`}
           >
-            <svg 
-              className="w-5 h-5" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-              style={{ minWidth: '20px', minHeight: '20px' }}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
+            <span className="text-lg">{state.isContextPanelMode ? '📋' : '📄'}</span>
           </button>
 
           {/* Divider */}
@@ -183,19 +175,20 @@ function AppContent() {
             }`}
             title="Theme Settings"
           >
-            <span className="text-lg">🎨</span>
+            <span className="text-lg">{state.theme === 'dark' ? '🌙' : '☀️'}</span>
           </button>
 
           {/* Admin Settings */}
           <button
             onClick={() => dispatch({ type: 'TOGGLE_ADMIN_PANEL' })}
-            className={`p-2 rounded-lg transition-colors hover:scale-105 ${
+            className={`p-2 rounded-lg transition-all duration-300 hover:scale-105 ${
               state.isAdminPanelOpen
                 ? 'bg-theme-primary text-white'
                 : state.theme === 'dark' 
                   ? 'text-gray-400 hover:bg-dark-100' 
                   : 'text-gray-600 hover:bg-light-300'
             }`}
+            style={{ transform: state.isAdminPanelOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
             title="Admin Settings - Configure LLM Providers"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

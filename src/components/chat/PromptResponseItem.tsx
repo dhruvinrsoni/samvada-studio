@@ -200,15 +200,16 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                 : 'text-gray-400 hover:text-yellow-400 hover:scale-105'
             }`}
             title={promptResponse.isStarred ? 'Unstar conversation' : 'Star entire conversation'}
+            style={{ fontSize: promptResponse.isStarred ? '1rem' : '1.1rem' }}
           >
-            {promptResponse.isStarred ? '⭐' : '✨'}
+            {promptResponse.isStarred ? '⭐' : '☆'}
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleTogglePin(); }}
             className={`p-1 rounded ${promptResponse.isPinned ? 'text-yellow-500' : isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
             title={promptResponse.isPinned ? 'Unpin' : 'Pin'}
           >
-            📌
+            {promptResponse.isPinned ? '🔒' : '🔓'}
           </button>
         </div>
       </div>
@@ -232,8 +233,9 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                     onClick={handleStarPrompt}
                     className={`text-base transition-all duration-200 ${promptResponse.prompt.isStarred ? 'text-yellow-500 scale-110' : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:text-yellow-400 hover:scale-105'}`}
                     title={promptResponse.prompt.isStarred ? 'Unstar message' : 'Star message'}
+                    style={{ fontSize: promptResponse.prompt.isStarred ? '1rem' : '1.1rem' }}
                   >
-                    {promptResponse.prompt.isStarred ? '⭐' : '✨'}
+                    {promptResponse.prompt.isStarred ? '⭐' : '☆'}
                   </button>
                 </div>
                 {isEditingPrompt ? (
@@ -298,8 +300,9 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                       onClick={handleStarResponse}
                       className={`text-base transition-all duration-200 ${activeResponse.isStarred ? 'text-yellow-500 scale-110' : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:text-yellow-400 hover:scale-105'}`}
                       title={activeResponse.isStarred ? 'Unstar response' : 'Star response'}
+                      style={{ fontSize: activeResponse.isStarred ? '1rem' : '1.1rem' }}
                     >
-                      {activeResponse.isStarred ? '⭐' : '✨'}
+                      {activeResponse.isStarred ? '⭐' : '☆'}
                     </button>
                   </div>
 

@@ -69,6 +69,8 @@ npm run dev
 
 ## ✨ Features
 
+> 💡 **What's a PnR?** Throughout this documentation, **PnR** stands for **Prompt and Response** — the fundamental unit of conversation in Samvada Studio. Each PnR represents a complete exchange: your prompt (question/input) and the AI's response(s), along with metadata like stars, pins, timestamps, and drafts.
+
 <details open>
 <summary><h3>🎯 Core Features (20+ Production-Ready)</h3></summary>
 

@@ -14,6 +14,7 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
   const isDark = state.theme === 'dark';
   const [isRenaming, setIsRenaming] = useState(false);
   const [newTitle, setNewTitle] = useState(chat.title);
+  const [isDeleteHover, setIsDeleteHover] = useState(false);
 
   const lastMessage = chat.promptResponses.length > 0
     ? chat.promptResponses[chat.promptResponses.length - 1].prompt.content
@@ -113,9 +114,9 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
             setNewTitle(chat.title);
           }}
           className={`p-1 rounded text-gray-500 ${isDark ? 'hover:bg-dark-300' : 'hover:bg-light-400'}`}
-          title="Rename chat"
+          title={isRenaming ? 'Save' : 'Rename chat'}
         >
-          ✏️
+          {isRenaming ? '💾' : '✏️'}
         </button>
         <button
           onClick={(e) => {
@@ -125,7 +126,7 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
           className={`p-1 rounded ${isDark ? 'hover:bg-dark-300' : 'hover:bg-light-400'} ${chat.isPinned ? 'text-yellow-500' : 'text-gray-500'}`}
           title={chat.isPinned ? 'Unpin chat' : 'Pin chat'}
         >
-          📌
+          {chat.isPinned ? '📌' : '📍'}
         </button>
         <button
           onClick={(e) => {
@@ -139,7 +140,7 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
           className={`p-1 rounded text-gray-500 ${isDark ? 'hover:bg-dark-300' : 'hover:bg-light-400'}`}
           title={chat.isArchived ? 'Unarchive chat' : 'Archive chat'}
         >
-          📦
+          {chat.isArchived ? '📦' : '📂'}
         </button>
         <button
           onClick={(e) => {
@@ -148,10 +149,12 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
               dispatch({ type: 'DELETE_CHAT', payload: chat.id });
             }
           }}
+          onMouseEnter={() => setIsDeleteHover(true)}
+          onMouseLeave={() => setIsDeleteHover(false)}
           className={`p-1 rounded text-red-500 ${isDark ? 'hover:bg-dark-300' : 'hover:bg-light-400'}`}
           title="Delete"
         >
-          🗑️
+          {isDeleteHover ? '❌' : '🗑️'}
         </button>
       </div>
     </div>
