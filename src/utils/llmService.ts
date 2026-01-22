@@ -118,7 +118,16 @@ export const callLLMProvider = async (
         break;
 
       case 'google':
-        const geminiEndpoint = `${endpoint}/models/${provider.model}:generateContent?key=${provider.apiKey}`;
+        // Auto-correct old endpoint format (backward compatibility)
+        const baseEndpoint = endpoint.replace(/\/models$/, '');
+        const geminiEndpoint = `${baseEndpoint}/models/${provider.model}:generateContent?key=${provider.apiKey}`;
+        
+        logDebug('Google API Request', {
+          requestId,
+          endpoint: geminiEndpoint,
+          model: provider.model,
+        });
+        
         response = await fetch(geminiEndpoint, {
           method: 'POST',
           headers: {
@@ -134,7 +143,24 @@ export const callLLMProvider = async (
         });
 
         if (!response.ok) {
-          throw new Error(`Google API error: ${response.status}`);
+          const errorText = await response.text();
+          logError('Google API Error', new Error(`HTTP ${response.status}`), {
+            requestId,
+            status: response.status,
+            errorBody: errorText,
+            model: provider.model,
+            endpoint: geminiEndpoint,
+          });
+          
+          if (response.status === 400) {
+            throw new Error(`Invalid request to Google API. Check model name and API key.`);
+          } else if (response.status === 403) {
+            throw new Error(`Google API access denied. Check your API key permissions.`);
+          } else if (response.status === 404) {
+            throw new Error(`Model "${provider.model}" not found. Please check the model name.`);
+          } else {
+            throw new Error(`Google API error: ${response.status} - ${errorText}`);
+          }
         }
 
         const googleData = await response.json();
@@ -431,6 +457,28 @@ export const testProviderConnection = async (
         success: false,
         message: 'API key is missing or too short. Please provide a valid API key.'
       };
+    }
+  }
+
+  // Google-specific validation
+  if (provider.type === 'google') {
+    // Validate model name format
+    const validModelPrefixes = ['gemini-', 'models/gemini-'];
+    const hasValidPrefix = validModelPrefixes.some(prefix => provider.model.startsWith(prefix));
+    
+    if (!hasValidPrefix) {
+      return {
+        success: false,
+        message: `Invalid model name "${provider.model}". Google models should start with "gemini-" (e.g., gemini-1.5-pro, gemini-pro)`
+      };
+    }
+    
+    // Auto-correct endpoint if it has /models at the end (backward compatibility)
+    if (provider.apiEndpoint.endsWith('/models')) {
+      logWarning('Google Endpoint', { 
+        message: 'Old endpoint format detected, will auto-correct',
+        oldEndpoint: provider.apiEndpoint 
+      });
     }
   }
 
