@@ -84,6 +84,18 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
   const handleSendPrompt = useCallback(async (content: string) => {
     if (!activeChat || !content.trim() || isLoading) return;
 
+    // Build the full prompt with active context panels
+    const activeContextPanels = state.contextPanels.filter(panel => panel.isActive);
+    let fullPrompt = content;
+    
+    // Prepend active context panels to the prompt
+    if (activeContextPanels.length > 0) {
+      const contextText = activeContextPanels
+        .map(panel => `[Context: ${panel.title}]\n${panel.content}`)
+        .join('\n\n');
+      fullPrompt = `${contextText}\n\n---\n\nUser Prompt:\n${content}`;
+    }
+
     const prompt = createMessage('user', content);
     const pnr = createPromptResponse(prompt);
 
@@ -99,7 +111,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
       // Get the current provider from state to ensure it's fresh
       const currentProvider = selectedProvider?.id ? state.providers.find(p => p.id === selectedProvider.id && p.isEnabled) : null;
       const { message, processingTime } = await getLLMResponse(
-        content,
+        fullPrompt, // Use the full prompt with context
         activeChat.settings.role,
         currentProvider || selectedProvider
       );
@@ -124,7 +136,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
     } finally {
       setIsLoading(false);
     }
-  }, [activeChat, dispatch, isLoading]);
+  }, [activeChat, dispatch, isLoading, state.contextPanels, selectedProvider, state.providers, addToast]);
 
   const handleKeyDown = useCallback((_e: KeyboardEvent<HTMLTextAreaElement>, _content: string) => {
     // Key handling is now done in PromptInput for smart Enter behavior
