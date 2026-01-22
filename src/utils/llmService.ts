@@ -67,7 +67,6 @@ export const callLLMProvider = async (
 
     switch (provider.type) {
       case 'openai':
-      case 'azure':
         response = await fetch(endpoint, {
           method: 'POST',
           headers: {
@@ -91,6 +90,49 @@ export const callLLMProvider = async (
 
         const openaiData = await response.json();
         content = sanitizeLLMResponse(openaiData.choices[0].message.content);
+        break;
+
+      case 'azure':
+        // Azure uses api-key header (not Bearer) and deployment-based endpoints
+        if (!endpoint.includes('api-version')) {
+          throw new Error('Azure endpoint must include api-version parameter (e.g., ?api-version=2024-02-01)');
+        }
+        
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'api-key': provider.apiKey || '', // Azure uses api-key header
+          },
+          body: JSON.stringify({
+            messages: [
+              ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+              { role: 'user', content: prompt },
+            ],
+            temperature: provider.settings.temperature,
+            max_tokens: provider.settings.maxTokens,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          logError('Azure API Error', new Error(`HTTP ${response.status}`), {
+            requestId,
+            status: response.status,
+            errorBody: errorText,
+          });
+          
+          if (response.status === 401) {
+            throw new Error('Invalid Azure API key. Check your credentials.');
+          } else if (response.status === 404) {
+            throw new Error('Azure deployment not found. Check your endpoint URL and deployment name.');
+          } else {
+            throw new Error(`Azure API error: ${response.status} - ${errorText}`);
+          }
+        }
+
+        const azureData = await response.json();
+        content = sanitizeLLMResponse(azureData.choices[0].message.content);
         break;
 
       case 'anthropic':
@@ -646,15 +688,40 @@ export const fetchOpenAIModels = async (
 export const fetchAnthropicModels = async (
   apiKey: string
 ): Promise<{ success: boolean; models: string[]; error?: string }> => {
-  // Anthropic doesn't have a models endpoint, but we can validate the key
-  // and return known models
+  // Anthropic doesn't have a models endpoint, but we validate the key with a test call
   try {
-    // Simple key validation by checking format
+    // First, validate key format
     if (!apiKey.startsWith('sk-ant-')) {
       throw new Error('Invalid API key format. Anthropic keys start with "sk-ant-"');
     }
     
-    // Return known Claude models (hardcoded as Anthropic doesn't have a models API)
+    // Validate key by making a minimal API call
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-3-haiku-20240307', // Use cheapest model for validation
+        max_tokens: 10,
+        messages: [{ role: 'user', content: 'test' }],
+      }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Invalid API key');
+      }
+      if (response.status === 403) {
+        throw new Error('API key does not have permission');
+      }
+      throw new Error(`API validation failed: ${response.status}`);
+    }
+    
+    // Return known Claude models (Anthropic doesn't have a models listing API)
+    // These are curated and verified models as of the API version
     const models = [
       'claude-sonnet-4-20250514',
       'claude-3-7-sonnet-20250219',

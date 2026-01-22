@@ -23,16 +23,16 @@ const DEFAULT_ENDPOINTS: Record<LLMProviderType, string> = {
   anthropic: 'https://api.anthropic.com/v1/messages',
   google: 'https://generativelanguage.googleapis.com/v1beta',
   ollama: 'http://localhost:11434/api/generate',
-  azure: '',
-  custom: '',
+  azure: 'https://YOUR-RESOURCE.openai.azure.com/openai/deployments/YOUR-DEPLOYMENT/chat/completions?api-version=2024-02-01',
+  custom: 'https://api.example.com/v1/chat/completions',
 };
 
 const DEFAULT_MODELS: Record<LLMProviderType, string[]> = {
   openai: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o', 'gpt-4o-mini'],
-  anthropic: ['claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307', 'claude-3-5-sonnet-20241022'],
+  anthropic: ['claude-sonnet-4-20250514', 'claude-3-7-sonnet-20250219', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'],
   google: ['gemini-pro', 'gemini-pro-vision', 'gemini-1.5-pro', 'gemini-1.5-flash'],
   ollama: ['llama2', 'llama3', 'mistral', 'codellama', 'phi', 'neural-chat'],
-  azure: ['gpt-4', 'gpt-4-turbo', 'gpt-35-turbo'],
+  azure: ['your-gpt-4-deployment', 'your-gpt-35-turbo-deployment'], // Azure uses deployment names, not model names
   custom: [],
 };
 
