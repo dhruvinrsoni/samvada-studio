@@ -1,6 +1,6 @@
 // LLM Service - Supports multiple providers
 import { generateId } from './helpers';
-import type { Message, Draft, LLMProviderConfig, FormattingProfile, ChatSettings } from '../types';
+import type { Message, Draft, LLMProviderConfig, ChatSettings } from '../types';
 import { logDebug, logError, logWarning } from './debug';
 
 export interface LLMResponse {

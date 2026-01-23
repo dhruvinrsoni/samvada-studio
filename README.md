@@ -148,7 +148,8 @@ npm run dev
 |---------|-------------|
 | **Chat-Wise Settings** | Role, instructions, examples per chat |
 | **Few-Shot Examples** | Input/output example pairs for context |
-| **Always Include/Exclude** | Formatting rules per chat |
+| **Formatting Profiles** | 5 presets + custom profiles (Technical, Concise, Academic, Creative, Code-only) |
+| **Always Include/Exclude** | Per-chat formatting rules and content filters |
 | **Sandbox Parameters** | Temperature, tokens, top-p, penalties |
 | **Per-Chat Providers** | Switch LLMs mid-conversation |
 
@@ -247,7 +248,8 @@ Connect to **6 providers** with unified interface:
 | Document | Description |
 |----------|-------------|
 | [📋 FEATURES.md](docs/FEATURES.md) | Complete feature documentation with examples |
-| [💾 PERSISTENCE.md](docs/PERSISTENCE.md) | How data is saved and restored |
+| [� FORMATTING_PROFILES_GUIDE.md](docs/FORMATTING_PROFILES_GUIDE.md) | **NEW:** Complete guide to formatting profiles |
+| [�💾 PERSISTENCE.md](docs/PERSISTENCE.md) | How data is saved and restored |
 | [🔒 CONTENT_SANITIZATION.md](docs/CONTENT_SANITIZATION.md) | Content security and validation |
 | [🐛 TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions |
 
@@ -396,6 +398,7 @@ src/
 - [x] Message reactions
 - [x] Archive & pin chats
 - [x] Bulk operations
+- [x] Per-chat formatting profiles (5 presets + custom)
 - [x] Theme customization (8 colors)
 - [x] Token counter & cost estimation
 
