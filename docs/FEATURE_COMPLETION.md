@@ -275,9 +275,9 @@ Per-chat formatting rules
 
 **What we shipped**:
 - ✅ Global context panels (can be toggled per use)
-- ✅ Chat settings with custom instructions
-- ✅ Always include/exclude in chat settings
-- ⚠️ Not specifically per-chat formatting rules
+- ✅ Per-chat settings with custom instructions
+- ✅ Per-chat "always include" / "always exclude" instruction toggles
+- ⚠️ No dedicated per-chat "formatting profile" system yet (formatting must be written manually in instructions)
 
 **Potential Enhancement**:
 Add per-chat "formatting profiles" that automatically format responses
