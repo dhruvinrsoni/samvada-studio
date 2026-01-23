@@ -3,9 +3,11 @@ import { useChat } from '../../context/ChatContext';
 import type { ThemeMode, ThemePreset, CustomTheme } from '../../types';
 import { getAllThemePresets, getThemePreset } from '../../utils/theme';
 import ColorPicker from './ColorPicker';
+import type { PWAStatus } from '../../hooks/usePWA';
 
 interface ThemeSettingsModalProps {
   onClose: () => void;
+  pwaStatus?: PWAStatus;
 }
 
 interface ThemeCardProps {
@@ -69,9 +71,11 @@ const ThemeCard = ({ preset, isSelected, onClick }: ThemeCardProps) => (
   </button>
 );
 
-export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps) {
+export default function ThemeSettingsModal({ onClose, pwaStatus }: ThemeSettingsModalProps) {
   const { state, dispatch } = useChat();
   const [activeTab, setActiveTab] = useState<'presets' | 'custom'>('presets');
+  const [isInstalling, setIsInstalling] = useState(false);
+  const [installMessage, setInstallMessage] = useState<{ type: 'success' | 'info'; text: string } | null>(null);
   const [customColors, setCustomColors] = useState<CustomTheme>(
     state.themeSettings.customColors || {
       primary: '#3b82f6',
@@ -328,6 +332,118 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
               </div>
             </div>
           </div>
+
+          {/* PWA Install Section */}
+          {pwaStatus && (
+            <div className="mb-8 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                <span className="text-xl">📱</span>
+                Install App
+              </h3>
+              
+              {pwaStatus.isInstalled || pwaStatus.isStandalone ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="font-medium">App is installed!</span>
+                  </div>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    You're using the installed version
+                  </span>
+                </div>
+              ) : pwaStatus.isInstallable ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Install Samvada Studio for a faster, app-like experience with offline support.
+                  </p>
+                  
+                  {/* Benefits */}
+                  <div className="flex flex-wrap gap-3 text-xs">
+                    <span className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-dark-200 rounded-full border border-gray-200 dark:border-gray-700">
+                      <span className="text-green-500">✓</span> Works offline
+                    </span>
+                    <span className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-dark-200 rounded-full border border-gray-200 dark:border-gray-700">
+                      <span className="text-green-500">✓</span> Faster loading
+                    </span>
+                    <span className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-dark-200 rounded-full border border-gray-200 dark:border-gray-700">
+                      <span className="text-green-500">✓</span> Desktop icon
+                    </span>
+                    <span className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-dark-200 rounded-full border border-gray-200 dark:border-gray-700">
+                      <span className="text-green-500">✓</span> Full-screen
+                    </span>
+                  </div>
+
+                  {installMessage && (
+                    <div className={`text-sm px-3 py-2 rounded-lg ${
+                      installMessage.type === 'success' 
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                        : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                    }`}>
+                      {installMessage.text}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={async () => {
+                      setIsInstalling(true);
+                      setInstallMessage(null);
+                      const success = await pwaStatus.installApp();
+                      setIsInstalling(false);
+                      if (success) {
+                        setInstallMessage({ type: 'success', text: 'App installed successfully! 🎉' });
+                      } else {
+                        setInstallMessage({ type: 'info', text: 'Installation was cancelled or not supported.' });
+                      }
+                    }}
+                    disabled={isInstalling}
+                    className={`flex items-center justify-center gap-2 px-4 py-2.5 
+                      bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700
+                      text-white font-medium rounded-lg transition-all duration-200 
+                      ${isInstalling ? 'opacity-50 cursor-not-allowed' : 'transform hover:scale-[1.02] active:scale-[0.98]'}`}
+                  >
+                    {isInstalling ? (
+                      <>
+                        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Installing...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Install App
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    App installation is not available in this browser or context.
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    Try opening in Chrome, Edge, or Safari on a supported device.
+                  </p>
+                </div>
+              )}
+
+              {/* Service Worker Status */}
+              <div className="mt-4 pt-3 border-t border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>Service Worker: {pwaStatus.swStatus}</span>
+                  <span className={`flex items-center gap-1 ${pwaStatus.isOnline ? 'text-green-500' : 'text-yellow-500'}`}>
+                    <span className={`w-2 h-2 rounded-full ${pwaStatus.isOnline ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
+                    {pwaStatus.isOnline ? 'Online' : 'Offline'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}

@@ -2,14 +2,62 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Primary Meta Tags -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <meta name="description" content="Samvada Studio — a power-user workspace for designing, testing, and managing conversational AI. Works offline as a Progressive Web App." />
+    <meta name="keywords" content="AI, LLM, chat, GPT, Claude, Gemini, Ollama, conversation, productivity" />
+    <meta name="author" content="Dhruvin Soni" />
+    
+    <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#1a1a2e" />
-    <meta name="description" content="Samvada Studio — a power-user workspace for designing, testing, and managing conversational AI." />
+    <meta name="background-color" content="#1a1a2e" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Samvada Studio" />
+    
+    <!-- Apple iOS PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Samvada" />
+    
+    <!-- Windows PWA Meta Tags -->
+    <meta name="msapplication-TileColor" content="#1a1a2e" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/masked-icon.svg" color="#1a1a2e" />
+    
+    <!-- Manifest -->
     <link rel="manifest" href="/manifest.webmanifest" />
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Samvada Studio" />
+    <meta property="og:description" content="A power-user workspace for conversational AI — works offline!" />
+    <meta property="og:image" content="/og-image.png" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Samvada Studio" />
+    <meta name="twitter:description" content="A power-user workspace for conversational AI — works offline!" />
+    
     <title>Samvada Studio</title>
   </head>
   <body>
+    <noscript>
+      <div style="padding: 20px; text-align: center; font-family: system-ui, sans-serif;">
+        <h1>JavaScript Required</h1>
+        <p>Samvada Studio requires JavaScript to run. Please enable JavaScript in your browser settings.</p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

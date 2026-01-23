@@ -13,12 +13,15 @@ import StarredModal from './components/starred/StarredModal';
 import ThemeSettingsModal from './components/common/ThemeSettingsModal';
 import ConnectionStatus from './components/common/ConnectionStatus';
 import ToastContainer from './components/toast/ToastContainer';
+import { PWAInstallPrompt, PWAUpdateNotification, PWAOfflineIndicator } from './components/pwa';
+import { usePWA } from './hooks/usePWA';
 import { useState, useEffect } from 'react';
 import BRAND from './constants/brand';
 
 function AppContent() {
   const { state, dispatch } = useChat();
   const { toasts, removeToast } = useToast();
+  const pwaStatus = usePWA();
   const [quotedText, setQuotedText] = useState<string>('');
   const [templateContent, setTemplateContent] = useState<string>('');
   const [isThemeSettingsOpen, setIsThemeSettingsOpen] = useState(false);
@@ -221,13 +224,18 @@ function AppContent() {
       <TemplatesLibrary onSelectTemplate={handleSelectTemplate} />
       <ExportModal />
       {state.isStarredModalOpen && <StarredModal onClose={() => dispatch({ type: 'TOGGLE_STARRED_MODAL' })} />}
-      {isThemeSettingsOpen && <ThemeSettingsModal onClose={() => setIsThemeSettingsOpen(false)} />}
+      {isThemeSettingsOpen && <ThemeSettingsModal onClose={() => setIsThemeSettingsOpen(false)} pwaStatus={pwaStatus} />}
 
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onRemove={removeToast} position="top-right" />
 
       {/* Connection Status Indicator */}
       <ConnectionStatus />
+
+      {/* PWA Components */}
+      <PWAInstallPrompt pwaStatus={pwaStatus} />
+      <PWAUpdateNotification pwaStatus={pwaStatus} />
+      <PWAOfflineIndicator pwaStatus={pwaStatus} />
     </div>
     </>
   );

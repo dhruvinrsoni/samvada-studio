@@ -33,6 +33,8 @@
 </tr>
 </table>
 
+> 📱 **Install as App**: Samvada Studio is a **Progressive Web App (PWA)** — [install it](docs/PWA_GUIDE.md) for a faster, app-like experience with offline support!
+
 **Perfect for:**
 - 👨‍💻 **Developers** who need keyboard-first interfaces
 - 🎯 **Prompt engineers** testing multiple providers
@@ -248,8 +250,9 @@ Connect to **6 providers** with unified interface:
 | Document | Description |
 |----------|-------------|
 | [📋 FEATURES.md](docs/FEATURES.md) | Complete feature documentation with examples |
-| [� FORMATTING_PROFILES_GUIDE.md](docs/FORMATTING_PROFILES_GUIDE.md) | **NEW:** Complete guide to formatting profiles |
-| [�💾 PERSISTENCE.md](docs/PERSISTENCE.md) | How data is saved and restored |
+| [💎 FORMATTING_PROFILES_GUIDE.md](docs/FORMATTING_PROFILES_GUIDE.md) | Complete guide to formatting profiles |
+| [📱 PWA_GUIDE.md](docs/PWA_GUIDE.md) | **NEW:** Progressive Web App installation & offline guide |
+| [💾 PERSISTENCE.md](docs/PERSISTENCE.md) | How data is saved and restored |
 | [🔒 CONTENT_SANITIZATION.md](docs/CONTENT_SANITIZATION.md) | Content security and validation |
 | [🐛 TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions |
 
@@ -401,6 +404,7 @@ src/
 - [x] Per-chat formatting profiles (5 presets + custom)
 - [x] Theme customization (8 colors)
 - [x] Token counter & cost estimation
+- [x] **PWA Support** — Install as app, offline support, auto-updates
 
 </details>
 
