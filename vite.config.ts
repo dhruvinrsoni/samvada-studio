@@ -13,15 +13,14 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt', // Changed to 'prompt' for controlled updates
+      registerType: 'autoUpdate', // Changed back to autoUpdate for better UX
       injectRegister: 'auto',
       includeAssets: [
-        'favicon.ico',
-        'robots.txt',
-        'pwa-192x192.png',
-        'pwa-512x512.png',
-        'apple-touch-icon.png',
-        'masked-icon.svg'
+        'favicon.svg',
+        'icon.svg',
+        'icon-512.svg',
+        'apple-touch-icon.svg',
+        'maskable-icon.svg'
       ],
       manifest: {
         name: 'Samvada Studio',
@@ -30,7 +29,7 @@ export default defineConfig({
         theme_color: '#1a1a2e',
         background_color: '#1a1a2e',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'any',
         scope: base,
         start_url: base,
         lang: 'en',
@@ -39,44 +38,27 @@ export default defineConfig({
         prefer_related_applications: false,
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'icon.svg',
             sizes: '192x192',
-            type: 'image/png',
+            type: 'image/svg+xml',
             purpose: 'any'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'icon-512.svg',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/svg+xml',
             purpose: 'any'
           },
           {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
+            src: 'maskable-icon.svg',
+            sizes: '192x192',
+            type: 'image/svg+xml',
             purpose: 'maskable'
           },
           {
-            src: 'apple-touch-icon.png',
+            src: 'apple-touch-icon.svg',
             sizes: '180x180',
-            type: 'image/png',
-            purpose: 'apple touch icon'
-          }
-        ],
-        screenshots: [
-          {
-            src: 'screenshot-wide.png',
-            sizes: '1280x720',
-            type: 'image/png',
-            form_factor: 'wide',
-            label: 'Samvada Studio Desktop View'
-          },
-          {
-            src: 'screenshot-narrow.png',
-            sizes: '720x1280',
-            type: 'image/png',
-            form_factor: 'narrow',
-            label: 'Samvada Studio Mobile View'
+            type: 'image/svg+xml'
           }
         ],
         shortcuts: [
@@ -84,15 +66,15 @@ export default defineConfig({
             name: 'New Chat',
             short_name: 'New',
             description: 'Start a new chat conversation',
-            url: '/?action=new-chat',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+            url: base + '?action=new-chat',
+            icons: [{ src: 'icon.svg', sizes: '192x192', type: 'image/svg+xml' }]
           },
           {
             name: 'Command Palette',
             short_name: 'Commands',
             description: 'Open command palette',
-            url: '/?action=command-palette',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+            url: base + '?action=command-palette',
+            icons: [{ src: 'icon.svg', sizes: '192x192', type: 'image/svg+xml' }]
           }
         ],
         related_applications: [],

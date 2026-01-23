@@ -35,8 +35,9 @@ export default function PWAInstallPrompt({ pwaStatus }: PWAInstallPromptProps) {
 
   return (
     <div 
-      className={`fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 
+      className={`fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:max-w-md z-[60]
         animate-slide-up transform transition-all duration-300 ease-out`}
+      style={{ bottom: '5rem' }} // Ensure it doesn't overlap with other UI
     >
       <div className={`rounded-xl shadow-2xl border overflow-hidden ${
         state.theme === 'dark'
