@@ -12,9 +12,19 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-**[✨ Features](#-features) • [🚀 Quick Start](#-quick-start) • [📚 Docs](#-documentation) • [🤝 Contributing](#-contributing)**
+**[🌐 Try Online](https://dhruvinrsoni.github.io/samvada-studio/) • [✨ Features](#-features) • [🚀 Quick Start](#-quick-start) • [📚 Docs](#-documentation) • [🤝 Contributing](#-contributing)**
 
 </div>
+
+---
+
+## 🌐 Try it Online
+
+**🚀 Live Demo**: [https://dhruvinrsoni.github.io/samvada-studio/](https://dhruvinrsoni.github.io/samvada-studio/)
+
+No installation needed! Try Samvada Studio directly in your browser. All data stays local on your device.
+
+> 📱 **Install as App**: Click the install prompt or visit Settings to install as a Progressive Web App for offline access!
 
 ---
 
@@ -46,6 +56,12 @@
 ---
 
 ## 🚀 Quick Start
+
+### **Option 1: Use Online (Recommended)**
+
+🌐 **[Launch Samvada Studio](https://dhruvinrsoni.github.io/samvada-studio/)** — No installation required!
+
+### **Option 2: Run Locally**
 
 ```bash
 # Clone the repository

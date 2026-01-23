@@ -1,5 +1,7 @@
 # 📱 Progressive Web App (PWA) Guide
 
+> 🌐 **Live App**: [https://dhruvinrsoni.github.io/samvada-studio/](https://dhruvinrsoni.github.io/samvada-studio/)
+
 Samvada Studio is a **Progressive Web App (PWA)** — you can install it as a standalone application on your device for a faster, app-like experience with offline support.
 
 ## ✨ PWA Features
@@ -34,7 +36,7 @@ Samvada Studio is a **Progressive Web App (PWA)** — you can install it as a st
 
 ### **Chrome / Edge (Desktop)**
 
-1. Visit [Samvada Studio](https://dhruvinrsoni.github.io/samvada-studio/)
+1. Visit **[Samvada Studio](https://dhruvinrsoni.github.io/samvada-studio/)**
 2. Look for the **Install** prompt that appears at the bottom of the screen
 3. Click **"Install App"**
 4. Or click the install icon (⊕) in the browser's address bar

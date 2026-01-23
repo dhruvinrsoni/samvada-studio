@@ -199,7 +199,9 @@ const notifyDataBreach = async (affectedUsers: string[], breachDetails: any) => 
 
 ### Client-Side Security for Hosted Demo
 
-When using the GitHub Pages hosted version at `https://dhruvinrsoni.github.io/samvada-studio/`, the following security measures are in place:
+### Hosted Version
+
+When using the live hosted version at **[https://dhruvinrsoni.github.io/samvada-studio/](https://dhruvinrsoni.github.io/samvada-studio/)**, the following security measures are in place:
 
 #### 🔑 API Key Handling
 - **Local Storage Only**: API keys are stored ONLY in your browser's localStorage

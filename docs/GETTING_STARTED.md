@@ -2,6 +2,8 @@
 
 Welcome to **Samvada Studio**! This guide will help you get up and running in minutes.
 
+> 🌐 **Try Online First**: [https://dhruvinrsoni.github.io/samvada-studio/](https://dhruvinrsoni.github.io/samvada-studio/) — No installation needed!
+
 ---
 
 ## 📋 Table of Contents
@@ -18,13 +20,26 @@ Welcome to **Samvada Studio**! This guide will help you get up and running in mi
 
 ## 🔧 Installation
 
-### Prerequisites
+### ⚡ Quick Start: Use Online
+
+**No installation needed!** Visit [https://dhruvinrsoni.github.io/samvada-studio/](https://dhruvinrsoni.github.io/samvada-studio/) and start using Samvada Studio immediately.
+
+- ✅ Works in any modern browser
+- ✅ Install as PWA for offline use
+- ✅ All data stays on your device
+- ✅ Automatic updates
+
+### 🛠️ Local Development
+
+Want to run locally or contribute?
+
+#### Prerequisites
 
 - **Node.js** 18 or higher
 - **npm**, **yarn**, or **pnpm**
 - Modern browser (Chrome, Edge, Firefox, Safari)
 
-### Step 1: Clone the Repository
+#### Step 1: Clone the Repository
 
 ```bash
 git clone https://github.com/dhruvinrsoni/samvada-studio.git
@@ -44,6 +59,8 @@ npm run dev
 ```
 
 The app will open at **http://localhost:5173** 🎉
+
+> 💡 **Prefer the hosted version?** Use [https://dhruvinrsoni.github.io/samvada-studio/](https://dhruvinrsoni.github.io/samvada-studio/) for automatic updates and zero maintenance.
 
 ---
 
