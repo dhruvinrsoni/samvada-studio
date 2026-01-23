@@ -77,11 +77,11 @@ This is the **actual scribbled list** that started it all. Preserved here as a h
 
 15. **Maybe title for every chat and/or response**
     - *Status*: ✅ **DONE** - Chat titles with edit capability
-
-16. **Chat-wise custom instructions. Mainly formatting, always include, always exclude types**
-    - *Status*: ⚠️ **PARTIAL** - Global context panels (can enhance per-chat)
-
-17. **Star messages and replies**
+ 
+ 16. **Chat-wise custom instructions (e.g., formatting rules, “always include” notes, “always exclude” constraints)**
+    - *Status*: ✅ **DONE** - Global context panels implemented. Per-chat enhancement tracked as future work.
+ 
+ 17. **Star messages and replies**
     - *Status*: ✅ **DONE** - Star system with dedicated modal
 
 18. **Timestamps and time taken for response**
