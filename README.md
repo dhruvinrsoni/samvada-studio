@@ -462,7 +462,7 @@ We welcome contributions of all kinds!
 
 ```bash
 # Fork the repo, then:
-git clone https://github.com/YOUR_USERNAME/samvada-studio.git
+git clone https://github.com/dhruvinrsoni/samvada-studio.git
 cd samvada-studio
 npm install
 npm run dev

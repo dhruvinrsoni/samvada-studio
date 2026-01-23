@@ -122,7 +122,7 @@ See sections below for technical contributions.
 
 ```bash
 # Fork the repo on GitHub, then:
-git clone https://github.com/YOUR_USERNAME/samvada-studio.git
+git clone https://github.com/dhruvinrsoni/samvada-studio.git
 cd samvada-studio
 ```
 
