@@ -112,8 +112,9 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
       const currentProvider = selectedProvider?.id ? state.providers.find(p => p.id === selectedProvider.id && p.isEnabled) : null;
       const { message, processingTime } = await getLLMResponse(
         fullPrompt, // Use the full prompt with context
-        activeChat.settings.role,
-        currentProvider || selectedProvider
+        undefined, // System prompt will be built from chat settings
+        currentProvider || selectedProvider,
+        activeChat.settings // Pass chat settings for formatting profile
       );
 
       const updatedPnR = {

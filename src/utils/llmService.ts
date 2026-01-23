@@ -1,12 +1,79 @@
 // LLM Service - Supports multiple providers
 import { generateId } from './helpers';
-import type { Message, Draft, LLMProviderConfig } from '../types';
+import type { Message, Draft, LLMProviderConfig, FormattingProfile, ChatSettings } from '../types';
 import { logDebug, logError, logWarning } from './debug';
 
 export interface LLMResponse {
   message: Message;
   processingTime: number;
 }
+
+/**
+ * Build system prompt with formatting profile instructions
+ */
+export const buildSystemPromptWithFormatting = (
+  baseSystemPrompt: string | undefined,
+  chatSettings: ChatSettings
+): string => {
+  let systemPrompt = baseSystemPrompt || '';
+  
+  // Add role if specified
+  if (chatSettings.role) {
+    systemPrompt += `\n\nYou are a ${chatSettings.role}.`;
+  }
+  
+  // Add custom instructions
+  if (chatSettings.customInstructions) {
+    systemPrompt += `\n\n${chatSettings.customInstructions}`;
+  }
+  
+  // Add formatting profile instructions
+  if (chatSettings.formattingProfile) {
+    const profile = chatSettings.formattingProfile;
+    
+    systemPrompt += `\n\n## FORMATTING REQUIREMENTS`;
+    systemPrompt += `\nProfile: ${profile.name}`;
+    
+    if (profile.responseFormat) {
+      systemPrompt += `\nResponse Format: ${profile.responseFormat}`;
+    }
+    
+    if (profile.stylePreferences) {
+      systemPrompt += `\n\nStyle: ${profile.stylePreferences}`;
+    }
+    
+    // Add enabled rules
+    const enabledRules = profile.rules.filter(r => r.isEnabled);
+    if (enabledRules.length > 0) {
+      systemPrompt += `\n\nFormatting Rules:`;
+      enabledRules.forEach((rule, index) => {
+        systemPrompt += `\n${index + 1}. [${rule.type.toUpperCase()}] ${rule.name}: ${rule.value}`;
+      });
+    }
+  }
+  
+  // Add always include items
+  if (chatSettings.alwaysInclude.length > 0) {
+    systemPrompt += `\n\nAlways Include: ${chatSettings.alwaysInclude.join(', ')}`;
+  }
+  
+  // Add always exclude items
+  if (chatSettings.alwaysExclude.length > 0) {
+    systemPrompt += `\n\nAlways Exclude: ${chatSettings.alwaysExclude.join(', ')}`;
+  }
+  
+  // Add examples if provided
+  if (chatSettings.examples.length > 0) {
+    systemPrompt += `\n\n## EXAMPLES`;
+    chatSettings.examples.forEach((example, index) => {
+      systemPrompt += `\n\nExample ${index + 1}:`;
+      systemPrompt += `\nInput: ${example.input}`;
+      systemPrompt += `\nOutput: ${example.output}`;
+    });
+  }
+  
+  return systemPrompt.trim();
+};
 
 /**
  * Sanitize LLM response content
@@ -360,7 +427,8 @@ const isProviderConfigured = (provider: LLMProviderConfig): boolean => {
 export const getLLMResponse = async (
   prompt: string,
   systemPrompt?: string,
-  provider?: LLMProviderConfig | null
+  provider?: LLMProviderConfig | null,
+  chatSettings?: ChatSettings
 ): Promise<LLMResponse> => {
   if (!provider) {
     const error = new Error('No LLM provider selected. Please configure a provider in Admin Settings.');
@@ -390,8 +458,13 @@ export const getLLMResponse = async (
     throw error;
   }
 
+  // Build enhanced system prompt with formatting profile if chatSettings provided
+  const enhancedSystemPrompt = chatSettings 
+    ? buildSystemPromptWithFormatting(systemPrompt, chatSettings)
+    : systemPrompt;
+
   try {
-    return await callLLMProvider(provider, prompt, systemPrompt);
+    return await callLLMProvider(provider, prompt, enhancedSystemPrompt);
   } catch (error) {
     console.error('LLM API call failed:', error);
     throw new Error(`Failed to get response from ${provider.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -420,9 +493,10 @@ export const generateDrafts = async (
 // Regenerate a response
 export const regenerateResponse = async (
   prompt: string,
-  provider?: LLMProviderConfig | null
+  provider?: LLMProviderConfig | null,
+  chatSettings?: ChatSettings
 ): Promise<LLMResponse> => {
-  return getLLMResponse(prompt, undefined, provider);
+  return getLLMResponse(prompt, undefined, provider, chatSettings);
 };
 
 // Test provider connection

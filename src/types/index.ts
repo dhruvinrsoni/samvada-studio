@@ -84,6 +84,140 @@ export const DEFAULT_PROVIDER_CONFIGS: Record<LLMProviderType, Partial<LLMProvid
   },
 };
 
+// Default Formatting Profiles
+export const DEFAULT_FORMATTING_PROFILES: FormattingProfile[] = [
+  {
+    id: 'technical-detailed',
+    name: 'Technical & Detailed',
+    description: 'Code-heavy responses with detailed explanations',
+    isCustom: false,
+    rules: [
+      {
+        id: 'tech-1',
+        type: 'response-format',
+        name: 'Response Format',
+        description: 'Always use code blocks',
+        value: 'Use markdown code blocks with language specification. Include inline comments.',
+        isEnabled: true,
+      },
+      {
+        id: 'tech-2',
+        type: 'always-include',
+        name: 'Always Include',
+        description: 'Technical elements',
+        value: 'Type signatures, error handling examples, edge cases',
+        isEnabled: true,
+      },
+    ],
+    responseFormat: 'markdown',
+    stylePreferences: 'Technical documentation style with code examples, type signatures, and detailed explanations.',
+  },
+  {
+    id: 'concise-bullet',
+    name: 'Concise Bullets',
+    description: 'Brief, scannable bullet-point responses',
+    isCustom: false,
+    rules: [
+      {
+        id: 'concise-1',
+        type: 'response-format',
+        name: 'Response Format',
+        description: 'Use bullet points',
+        value: 'Format all responses as bullet points. Maximum 3 sub-bullets per point.',
+        isEnabled: true,
+      },
+      {
+        id: 'concise-2',
+        type: 'always-exclude',
+        name: 'Always Exclude',
+        description: 'Verbose elements',
+        value: 'Long paragraphs, unnecessary context, philosophical discussions',
+        isEnabled: true,
+      },
+    ],
+    responseFormat: 'bullet-points',
+    stylePreferences: 'Keep responses brief and scannable. Use emojis for visual hierarchy.',
+  },
+  {
+    id: 'academic-formal',
+    name: 'Academic & Formal',
+    description: 'Scholarly tone with citations and references',
+    isCustom: false,
+    rules: [
+      {
+        id: 'academic-1',
+        type: 'response-format',
+        name: 'Response Format',
+        description: 'Formal structure',
+        value: 'Use formal academic structure: Introduction, Body, Conclusion. Include references.',
+        isEnabled: true,
+      },
+      {
+        id: 'academic-2',
+        type: 'style-guide',
+        name: 'Style Guide',
+        description: 'Academic conventions',
+        value: 'Use third person, avoid contractions, cite sources, use formal vocabulary.',
+        isEnabled: true,
+      },
+    ],
+    responseFormat: 'markdown',
+    stylePreferences: 'Academic writing style with proper citations and formal language.',
+  },
+  {
+    id: 'creative-conversational',
+    name: 'Creative & Conversational',
+    description: 'Friendly, engaging responses with personality',
+    isCustom: false,
+    rules: [
+      {
+        id: 'creative-1',
+        type: 'style-guide',
+        name: 'Style Guide',
+        description: 'Conversational tone',
+        value: 'Use contractions, idioms, metaphors. Be engaging and personable.',
+        isEnabled: true,
+      },
+      {
+        id: 'creative-2',
+        type: 'always-include',
+        name: 'Always Include',
+        description: 'Creative elements',
+        value: 'Examples, analogies, real-world applications, emojis when appropriate',
+        isEnabled: true,
+      },
+    ],
+    responseFormat: 'markdown',
+    stylePreferences: 'Warm, conversational tone with creative examples and analogies.',
+  },
+  {
+    id: 'code-only',
+    name: 'Code Only',
+    description: 'Minimal explanation, maximum code',
+    isCustom: false,
+    rules: [
+      {
+        id: 'code-1',
+        type: 'response-format',
+        name: 'Response Format',
+        description: 'Code-focused',
+        value: 'Provide complete, runnable code. Minimal text explanation.',
+        isEnabled: true,
+      },
+      {
+        id: 'code-2',
+        type: 'always-exclude',
+        name: 'Always Exclude',
+        description: 'Non-code content',
+        value: 'Long explanations, theoretical discussions, background context',
+        isEnabled: true,
+      },
+    ],
+    responseFormat: 'code-only',
+    stylePreferences: 'Code first, comments second. Minimal prose.',
+  },
+];
+
 // Search Types
 export interface SearchResult {
   chatId: string;
@@ -138,6 +272,28 @@ export interface PromptResponse {
   providerId?: string; // Which LLM provider was used
 }
 
+// Formatting Rules
+export type FormattingRuleType = 'response-format' | 'always-include' | 'always-exclude' | 'style-guide';
+
+export interface FormattingRule {
+  id: string;
+  type: FormattingRuleType;
+  name: string;
+  description: string;
+  value: string;
+  isEnabled: boolean;
+}
+
+export interface FormattingProfile {
+  id: string;
+  name: string;
+  description: string;
+  isCustom: boolean;
+  rules: FormattingRule[];
+  responseFormat?: string; // e.g., "markdown", "code-only", "bullet-points", "numbered-list"
+  stylePreferences?: string; // Free-form style instructions
+}
+
 export interface ChatSettings {
   role: string;
   customInstructions: string;
@@ -147,6 +303,7 @@ export interface ChatSettings {
   temperature?: number;
   maxTokens?: number;
   providerId?: string; // Override provider for this chat
+  formattingProfile?: FormattingProfile; // NEW: Per-chat formatting profile
 }
 
 export interface Example {

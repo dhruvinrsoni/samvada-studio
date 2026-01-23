@@ -71,7 +71,8 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
     try {
       const { message, processingTime } = await regenerateResponse(
         promptResponse.prompt.content,
-        chat.providerId ? state.providers.find(p => p.id === chat.providerId) : undefined
+        chat.providerId ? state.providers.find(p => p.id === chat.providerId) : undefined,
+        chat.settings // Pass chat settings for formatting profile
       );
 
       const updatedPnR = {

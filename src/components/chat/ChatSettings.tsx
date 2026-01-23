@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { createExample } from '../../utils/helpers';
-import type { Chat, Example } from '../../types';
+import type { Chat, Example, FormattingProfile, FormattingRule } from '../../types';
+import { DEFAULT_FORMATTING_PROFILES } from '../../types';
+import { v4 as uuidv4 } from 'uuid';
 
 interface ChatSettingsProps {
   chat: Chat;
@@ -12,6 +14,10 @@ export default function ChatSettings({ chat, onClose }: ChatSettingsProps) {
   const { state, dispatch } = useChat();
   const [settings, setSettings] = useState(chat.settings);
   const [title, setTitle] = useState(chat.title);
+  const [showFormattingSection, setShowFormattingSection] = useState(false);
+  const [selectedPresetId, setSelectedPresetId] = useState<string>(
+    settings.formattingProfile?.id || 'none'
+  );
   const isDark = state.theme === 'dark';
 
   const handleSave = () => {
@@ -58,6 +64,78 @@ export default function ChatSettings({ chat, onClose }: ChatSettingsProps) {
     setSettings({
       ...settings,
       [field]: settings[field].filter((_, i) => i !== index),
+    });
+  };
+
+  const applyFormattingPreset = (presetId: string) => {
+    setSelectedPresetId(presetId);
+    
+    if (presetId === 'none') {
+      setSettings({ ...settings, formattingProfile: undefined });
+      return;
+    }
+
+    const preset = DEFAULT_FORMATTING_PROFILES.find(p => p.id === presetId);
+    if (preset) {
+      setSettings({ ...settings, formattingProfile: { ...preset } });
+    }
+  };
+
+  const createCustomProfile = () => {
+    const customProfile: FormattingProfile = {
+      id: `custom-${uuidv4()}`,
+      name: 'Custom Profile',
+      description: 'Your custom formatting rules',
+      isCustom: true,
+      rules: [],
+      responseFormat: 'markdown',
+      stylePreferences: '',
+    };
+    setSettings({ ...settings, formattingProfile: customProfile });
+    setSelectedPresetId(customProfile.id);
+  };
+
+  const updateFormattingProfile = (updates: Partial<FormattingProfile>) => {
+    if (settings.formattingProfile) {
+      setSettings({
+        ...settings,
+        formattingProfile: { ...settings.formattingProfile, ...updates },
+      });
+    }
+  };
+
+  const addFormattingRule = () => {
+    if (!settings.formattingProfile) return;
+    
+    const newRule: FormattingRule = {
+      id: uuidv4(),
+      type: 'response-format',
+      name: 'New Rule',
+      description: '',
+      value: '',
+      isEnabled: true,
+    };
+
+    updateFormattingProfile({
+      rules: [...settings.formattingProfile.rules, newRule],
+    });
+  };
+
+  const updateFormattingRule = (ruleId: string, updates: Partial<FormattingRule>) => {
+    if (!settings.formattingProfile) return;
+
+    updateFormattingProfile({
+      rules: settings.formattingProfile.rules.map(rule =>
+        rule.id === ruleId ? { ...rule, ...updates } : rule
+      ),
+    });
+  };
+
+  const removeFormattingRule = (ruleId: string) => {
+    if (!settings.formattingProfile) return;
+
+    updateFormattingProfile({
+      rules: settings.formattingProfile.rules.filter(rule => rule.id !== ruleId),
     });
   };
 
@@ -230,6 +308,206 @@ export default function ChatSettings({ chat, onClose }: ChatSettingsProps) {
               <p className="text-sm text-gray-500">No examples added. Add examples for few-shot learning.</p>
             )}
           </div>
+        </div>
+
+        {/* Formatting Profile - NEW SECTION */}
+        <div className={`border-t pt-4 ${isDark ? 'border-dark-300' : 'border-light-400'}`}>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                💎 Formatting Profile
+              </label>
+              <p className="text-xs text-gray-500 mt-1">
+                Control how responses are formatted for this chat
+              </p>
+            </div>
+            <button
+              onClick={() => setShowFormattingSection(!showFormattingSection)}
+              className="text-primary-400 hover:text-primary-300 text-sm"
+            >
+              {showFormattingSection ? '▼' : '▶'}
+            </button>
+          </div>
+
+          {showFormattingSection && (
+            <div className="space-y-4 mt-3">
+              {/* Preset Selection */}
+              <div>
+                <label className={labelClass}>Choose Preset</label>
+                <select
+                  value={selectedPresetId}
+                  onChange={(e) => applyFormattingPreset(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="none">None (Default)</option>
+                  {DEFAULT_FORMATTING_PROFILES.map(profile => (
+                    <option key={profile.id} value={profile.id}>
+                      {profile.name} — {profile.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Custom Profile Button */}
+              <button
+                onClick={createCustomProfile}
+                className={`w-full p-2 border-2 border-dashed rounded text-sm ${
+                  isDark
+                    ? 'border-dark-100 text-gray-400 hover:border-primary-500 hover:text-primary-400'
+                    : 'border-light-400 text-gray-600 hover:border-primary-500 hover:text-primary-600'
+                }`}
+              >
+                + Create Custom Profile
+              </button>
+
+              {/* Active Profile Details */}
+              {settings.formattingProfile && (
+                <div className={`p-4 rounded border ${isDark ? 'bg-dark-300 border-dark-100' : 'bg-light-200 border-light-300'}`}>
+                  <div className="space-y-3">
+                    {/* Profile Name & Description (editable for custom) */}
+                    {settings.formattingProfile.isCustom && (
+                      <>
+                        <div>
+                          <label className="text-xs text-gray-500">Profile Name</label>
+                          <input
+                            type="text"
+                            value={settings.formattingProfile.name}
+                            onChange={(e) => updateFormattingProfile({ name: e.target.value })}
+                            className={`w-full p-2 text-sm border rounded mt-1 ${isDark ? 'bg-dark-200 border-dark-100 text-gray-200' : 'bg-white border-light-400'}`}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500">Description</label>
+                          <input
+                            type="text"
+                            value={settings.formattingProfile.description}
+                            onChange={(e) => updateFormattingProfile({ description: e.target.value })}
+                            className={`w-full p-2 text-sm border rounded mt-1 ${isDark ? 'bg-dark-200 border-dark-100 text-gray-200' : 'bg-white border-light-400'}`}
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* Response Format */}
+                    <div>
+                      <label className="text-xs text-gray-500">Response Format</label>
+                      <select
+                        value={settings.formattingProfile.responseFormat || 'markdown'}
+                        onChange={(e) => updateFormattingProfile({ responseFormat: e.target.value })}
+                        className={`w-full p-2 text-sm border rounded mt-1 ${isDark ? 'bg-dark-200 border-dark-100 text-gray-200' : 'bg-white border-light-400'}`}
+                        disabled={!settings.formattingProfile.isCustom}
+                      >
+                        <option value="markdown">Markdown</option>
+                        <option value="code-only">Code Only</option>
+                        <option value="bullet-points">Bullet Points</option>
+                        <option value="numbered-list">Numbered List</option>
+                        <option value="table">Table Format</option>
+                      </select>
+                    </div>
+
+                    {/* Style Preferences */}
+                    <div>
+                      <label className="text-xs text-gray-500">Style Preferences</label>
+                      <textarea
+                        value={settings.formattingProfile.stylePreferences || ''}
+                        onChange={(e) => updateFormattingProfile({ stylePreferences: e.target.value })}
+                        placeholder="Describe how you want responses formatted..."
+                        className={`w-full p-2 text-sm border rounded mt-1 h-20 ${isDark ? 'bg-dark-200 border-dark-100 text-gray-200' : 'bg-white border-light-400'}`}
+                        disabled={!settings.formattingProfile.isCustom}
+                      />
+                    </div>
+
+                    {/* Formatting Rules */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-xs text-gray-500">Formatting Rules</label>
+                        {settings.formattingProfile.isCustom && (
+                          <button
+                            onClick={addFormattingRule}
+                            className="text-xs text-primary-400 hover:text-primary-300"
+                          >
+                            + Add Rule
+                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        {settings.formattingProfile.rules.map((rule) => (
+                          <div
+                            key={rule.id}
+                            className={`p-2 rounded border text-xs ${isDark ? 'bg-dark-200 border-dark-100' : 'bg-white border-light-400'}`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 space-y-1">
+                                {settings.formattingProfile?.isCustom ? (
+                                  <>
+                                    <input
+                                      type="text"
+                                      value={rule.name}
+                                      onChange={(e) => updateFormattingRule(rule.id, { name: e.target.value })}
+                                      className={`w-full p-1 text-xs border rounded ${isDark ? 'bg-dark-300 border-dark-100' : 'bg-light-200 border-light-300'}`}
+                                      placeholder="Rule name"
+                                    />
+                                    <select
+                                      value={rule.type}
+                                      onChange={(e) => updateFormattingRule(rule.id, { type: e.target.value as FormattingRule['type'] })}
+                                      className={`w-full p-1 text-xs border rounded ${isDark ? 'bg-dark-300 border-dark-100' : 'bg-light-200 border-light-300'}`}
+                                    >
+                                      <option value="response-format">Response Format</option>
+                                      <option value="always-include">Always Include</option>
+                                      <option value="always-exclude">Always Exclude</option>
+                                      <option value="style-guide">Style Guide</option>
+                                    </select>
+                                    <textarea
+                                      value={rule.value}
+                                      onChange={(e) => updateFormattingRule(rule.id, { value: e.target.value })}
+                                      className={`w-full p-1 text-xs border rounded h-16 ${isDark ? 'bg-dark-300 border-dark-100' : 'bg-light-200 border-light-300'}`}
+                                      placeholder="Rule description..."
+                                    />
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                      {rule.name}
+                                    </div>
+                                    <div className="text-gray-500">{rule.description}</div>
+                                    <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                      {rule.value}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  checked={rule.isEnabled}
+                                  onChange={(e) => updateFormattingRule(rule.id, { isEnabled: e.target.checked })}
+                                  className="rounded"
+                                  disabled={!settings.formattingProfile?.isCustom}
+                                />
+                                {settings.formattingProfile?.isCustom && (
+                                  <button
+                                    onClick={() => removeFormattingRule(rule.id)}
+                                    className="text-red-500 hover:text-red-400"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {settings.formattingProfile.rules.length === 0 && (
+                          <p className="text-xs text-gray-500 text-center py-2">
+                            No rules defined. Add rules to customize formatting.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Model Parameters */}
