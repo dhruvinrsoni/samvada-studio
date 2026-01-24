@@ -2,6 +2,8 @@
 
 > **"The best products are born from personal frustration with existing solutions."**
 
+> **🤖 Note**: This feature list was created by hand, but the implementation was accelerated using AI-assisted development (vibe coding). The first comprehensive draft was generated from a single detailed prompt based on this vision, then iteratively refined. Every architectural decision, UX choice, and feature priority was human-driven. See [README.md](../README.md#-development-approach) for full transparency about our development process.
+
 ---
 
 ## 🌅 The Origin Story

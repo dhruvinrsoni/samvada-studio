@@ -2,6 +2,8 @@
 
 Thank you for considering contributing to Samvada Studio! This document provides guidelines and information for contributors.
 
+> **🤖 Development Context**: This codebase was initially developed using AI-assisted development (vibe coding). The architecture, patterns, and code quality are human-validated, but you may encounter AI-generated patterns. All contributions are reviewed by humans for quality, security, and maintainability. See [README.md](README.md#-development-approach) for full transparency.
+
 ---
 
 ## 📋 Table of Contents

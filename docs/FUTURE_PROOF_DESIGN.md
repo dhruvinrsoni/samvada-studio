@@ -2,6 +2,8 @@
 
 > **Our Vision**: Building software that anticipates change, embraces evolution, and remains maintainable for years to come.
 
+> **🤖 Development Note**: This architecture was designed by humans and implemented with AI-assisted development. The patterns, principles, and code quality standards were human-defined, then accelerated through AI code generation. Every architectural decision prioritized long-term maintainability. See [README.md](../README.md#-development-approach) for transparency about our development process.
+
 ---
 
 ## 🎯 Core Philosophy

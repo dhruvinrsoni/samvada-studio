@@ -2,6 +2,8 @@
 
 > **MISSION**: Guide developers to write code that lasts, adapts, and maintains clarity for years.
 
+> **🤖 Meta Note**: These guidelines were created for AI-assisted development. This project was built using "vibe coding" - where AI accelerates implementation while humans ensure architectural integrity. These patterns ensure code quality remains high regardless of generation method.
+
 ---
 
 ## 🎯 Core Mandates

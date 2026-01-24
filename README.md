@@ -57,6 +57,40 @@ Fully Vibe Coded
 
 ---
 
+## 🤖 Development Approach
+
+**Built with AI Assistance (Vibe Coding)**
+
+This project was developed using **AI-assisted development** (what we call "vibe coding"):
+
+- ✨ **First Draft**: The initial implementation was generated from a single comprehensive prompt
+- 🔄 **Iterative Refinement**: Each feature was then manually refined, tested, and enhanced
+- 🎯 **Human-Led**: All architectural decisions, UX choices, and feature priorities were human-driven
+- 🧠 **AI as Tool**: AI accelerated coding, but every line was reviewed and approved
+
+**Why we're transparent about this:**
+- 🔓 **Honesty First**: We believe in being truthful about our development process
+- 🚀 **Celebrate Innovation**: AI-assisted development is a skill, not a shortcut
+- 📚 **Share Knowledge**: Others can learn from our approach
+- 💪 **Quality Matters**: The tool doesn't matter — the result does
+
+**What AI helped with:**
+- 🏗️ Initial component scaffolding
+- 🔧 Boilerplate code generation
+- 🐛 Bug identification and fixes
+- 📝 Documentation drafts
+
+**What humans did:**
+- 🎨 All UX/UI design decisions
+- 🔐 Security architecture and review
+- ✅ Testing and quality assurance
+- 📋 Feature prioritization
+- 🎯 Product vision and direction
+
+> **The Result**: A production-ready, fully-functional LLM chat interface with 37+ features, built in record time without compromising on quality. This is what modern development looks like.
+
+---
+
 ## 🚀 Quick Start
 
 ### **Option 1: Use Online (Recommended)**

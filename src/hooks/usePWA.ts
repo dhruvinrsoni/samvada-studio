@@ -97,15 +97,22 @@ export function usePWA(): PWAStatus {
     (window.navigator as Navigator & { standalone?: boolean }).standalone === true ||
     document.referrer.includes('android-app://');
 
+  // Track last prompt time (show every 3 days if not dismissed)
+  const [lastPromptTime, setLastPromptTime] = useState<number>(() => {
+    const stored = localStorage.getItem('pwa-last-prompt');
+    return stored ? parseInt(stored, 10) : 0;
+  });
+
   // Detect install state
   useEffect(() => {
     // Check localStorage for previous install dismissal
     const dismissed = localStorage.getItem('pwa-install-dismissed');
     if (dismissed) {
       const dismissedTime = parseInt(dismissed, 10);
-      // Reset dismissal after 7 days
-      if (Date.now() - dismissedTime > 7 * 24 * 60 * 60 * 1000) {
+      // Reset dismissal after 3 days (not 7, to be more encouraging)
+      if (Date.now() - dismissedTime > 3 * 24 * 60 * 60 * 1000) {
         localStorage.removeItem('pwa-install-dismissed');
+        setInstallDismissed(false);
       } else {
         setInstallDismissed(true);
       }
@@ -116,7 +123,17 @@ export function usePWA(): PWAStatus {
       console.log('[PWA] beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e);
-      setIsInstallable(true);
+      
+      // Show prompt more frequently if not dismissed
+      const now = Date.now();
+      const daysSinceLastPrompt = (now - lastPromptTime) / (1000 * 60 * 60 * 24);
+      
+      // Show immediately if never shown, or after 3 days
+      if (lastPromptTime === 0 || daysSinceLastPrompt >= 3) {
+        setIsInstallable(true);
+        setLastPromptTime(now);
+        localStorage.setItem('pwa-last-prompt', now.toString());
+      }
     };
 
     // Handle appinstalled event
@@ -128,11 +145,14 @@ export function usePWA(): PWAStatus {
       
       // Store installation state
       localStorage.setItem('pwa-installed', 'true');
+      localStorage.removeItem('pwa-install-dismissed');
+      localStorage.removeItem('pwa-last-prompt');
     };
 
     // Check if already installed
     if (localStorage.getItem('pwa-installed') === 'true' || isStandalone) {
       setIsInstalled(true);
+      setIsInstallable(false);
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -142,7 +162,7 @@ export function usePWA(): PWAStatus {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, [isStandalone]);
+  }, [isStandalone, lastPromptTime]);
 
   // Online/offline detection
   useEffect(() => {

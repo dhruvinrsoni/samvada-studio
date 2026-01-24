@@ -38,25 +38,25 @@ export default defineConfig({
         prefer_related_applications: false,
         icons: [
           {
-            src: 'icon.svg',
+            src: base + 'icon.svg',
             sizes: '192x192',
             type: 'image/svg+xml',
             purpose: 'any'
           },
           {
-            src: 'icon-512.svg',
+            src: base + 'icon-512.svg',
             sizes: '512x512',
             type: 'image/svg+xml',
             purpose: 'any'
           },
           {
-            src: 'maskable-icon.svg',
+            src: base + 'maskable-icon.svg',
             sizes: '192x192',
             type: 'image/svg+xml',
             purpose: 'maskable'
           },
           {
-            src: 'apple-touch-icon.svg',
+            src: base + 'apple-touch-icon.svg',
             sizes: '180x180',
             type: 'image/svg+xml'
           }
@@ -67,14 +67,14 @@ export default defineConfig({
             short_name: 'New',
             description: 'Start a new chat conversation',
             url: base + '?action=new-chat',
-            icons: [{ src: 'icon.svg', sizes: '192x192', type: 'image/svg+xml' }]
+            icons: [{ src: base + 'icon.svg', sizes: '192x192', type: 'image/svg+xml' }]
           },
           {
             name: 'Command Palette',
             short_name: 'Commands',
             description: 'Open command palette',
             url: base + '?action=command-palette',
-            icons: [{ src: 'icon.svg', sizes: '192x192', type: 'image/svg+xml' }]
+            icons: [{ src: base + 'icon.svg', sizes: '192x192', type: 'image/svg+xml' }]
           }
         ],
         related_applications: [],
