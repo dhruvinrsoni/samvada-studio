@@ -34,6 +34,8 @@ No installation needed! Try Samvada Studio directly in your browser. All data st
 
 **Samvada Studio** is a power-user workspace for conversational AI that brings together the **best UX features** from leading platforms:
 
+Fully Vibe Coded
+
 <table>
 <tr>
 <td align="center">💎<br><b>Gemini</b><br><sub>Inline editing, drafts</sub></td>
