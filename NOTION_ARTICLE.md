@@ -12,16 +12,18 @@ When ChatGPT launched in late 2022, I tried every LLM chat UI I could find.
 
 Each had brilliant features—but they were scattered:
 - **Gemini** had beautiful inline editing
-- **ChatGPT** had useful archiving  
+- **ChatGPT** had useful archiving
 - **Copilot** had smooth keyboard shortcuts
 
 I wanted them **all**. In **one** place.
 
-So one evening, I scribbled 20 features on a list and thought:
+Over the next few months, I collected features I wanted in my ideal LLM chat UI. I scribbled notes, saved screenshots, and built a comprehensive list of 20+ features.
 
-> *"This will take half an hour."*
+Then, with modern AI-assisted development tools, I turned that vision into reality in **just one week**.
 
-Six months later, I shipped **Samvada Studio** with:
+> *"I had collected features over months. With AI assistance, implementation took 1 week."*
+
+Today, **Samvada Studio** has:
 - ✅ **37+ features** (20 original + 17 bonus)
 - ✅ **6 LLM providers** (OpenAI, Anthropic, Google, Ollama, Azure, Custom)
 - ✅ **15,000+ lines of documentation**
@@ -29,7 +31,7 @@ Six months later, I shipped **Samvada Studio** with:
 - ✅ **Security-first architecture** (API keys in memory only)
 - ✅ **Live demo** at [dhruvinrsoni.github.io/samvada-studio](https://dhruvinrsoni.github.io/samvada-studio/)
 
-This is the story of how a frustrated backend engineer built a production-ready React app—and what I learned along the way.
+This is the story of how a frustrated backend engineer used AI-assisted development to build a production-ready React app—and what I learned about modern development practices.
 
 ---
 
@@ -671,9 +673,9 @@ The best products solve problems you personally experience. I built Samvada Stud
 
 I didn't invent new UI patterns. I studied the best (Gemini, ChatGPT, Copilot) and combined their strengths.
 
-**3. Quality > Speed**
+**3. Modern Development with AI Assistance**
 
-My "half an hour" estimate turned into 6 months. But I shipped something I'm proud of.
+I collected features over months, but implementation took just 1 week with AI-assisted development (vibe coding). The vision was mine—AI helped execute it faster while maintaining quality.
 
 **4. Documentation is Love**
 

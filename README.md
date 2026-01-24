@@ -12,6 +12,9 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
+
+[![Product Hunt](https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1067197&type=badge)](https://www.producthunt.com/products/samvada-studio)
+
 **[🌐 Try Online](https://dhruvinrsoni.github.io/samvada-studio/) • [✨ Features](#-features) • [🚀 Quick Start](#-quick-start) • [📚 Docs](#-documentation) • [🤝 Contributing](#-contributing)**
 
 </div>
