@@ -38,25 +38,25 @@ export default defineConfig({
         prefer_related_applications: false,
         icons: [
           {
-            src: base + 'icon.svg',
+            src: 'icon.svg',
             sizes: '192x192',
             type: 'image/svg+xml',
             purpose: 'any'
           },
           {
-            src: base + 'icon-512.svg',
+            src: 'icon-512.svg',
             sizes: '512x512',
             type: 'image/svg+xml',
             purpose: 'any'
           },
           {
-            src: base + 'maskable-icon.svg',
+            src: 'maskable-icon.svg',
             sizes: '192x192',
             type: 'image/svg+xml',
             purpose: 'maskable'
           },
           {
-            src: base + 'apple-touch-icon.svg',
+            src: 'apple-touch-icon.svg',
             sizes: '180x180',
             type: 'image/svg+xml'
           }
@@ -67,16 +67,33 @@ export default defineConfig({
             short_name: 'New',
             description: 'Start a new chat conversation',
             url: base + '?action=new-chat',
-            icons: [{ src: base + 'icon.svg', sizes: '192x192', type: 'image/svg+xml' }]
+            icons: [{ src: 'icon.svg', sizes: '192x192', type: 'image/svg+xml' }]
           },
           {
             name: 'Command Palette',
             short_name: 'Commands',
             description: 'Open command palette',
             url: base + '?action=command-palette',
-            icons: [{ src: base + 'icon.svg', sizes: '192x192', type: 'image/svg+xml' }]
+            icons: [{ src: 'icon.svg', sizes: '192x192', type: 'image/svg+xml' }]
+          },
+          {
+            name: 'Templates Library',
+            short_name: 'Templates',
+            description: 'Browse and use prompt templates',
+            url: base + '?action=templates',
+            icons: [{ src: 'icon.svg', sizes: '192x192', type: 'image/svg+xml' }]
           }
         ],
+        share_target: {
+          action: base + '?share',
+          method: 'GET',
+          enctype: 'application/x-www-form-urlencoded',
+          params: {
+            title: 'title',
+            text: 'text',
+            url: 'url'
+          }
+        },
         related_applications: [],
         handle_links: 'preferred'
       },

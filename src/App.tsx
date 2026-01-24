@@ -19,7 +19,7 @@ import { useState, useEffect } from 'react';
 import BRAND from './constants/brand';
 
 function AppContent() {
-  const { state, dispatch } = useChat();
+  const { state, dispatch, createChat } = useChat();
   const { toasts, removeToast } = useToast();
   const pwaStatus = usePWA();
   const [quotedText, setQuotedText] = useState<string>('');
@@ -54,6 +54,35 @@ function AppContent() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Handle PWA shortcuts and share target
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get('action');
+    const shareTitle = urlParams.get('title');
+    const shareText = urlParams.get('text');
+    const shareUrl = urlParams.get('url');
+
+    if (action === 'new-chat') {
+      createChat();
+    } else if (action === 'command-palette') {
+      dispatch({ type: 'TOGGLE_COMMAND_PALETTE' });
+    } else if (action === 'templates') {
+      dispatch({ type: 'TOGGLE_TEMPLATES_MODAL' });
+    } else if (shareTitle || shareText || shareUrl) {
+      // Handle Web Share Target
+      const sharedContent = [shareTitle, shareText, shareUrl].filter(Boolean).join('\n\n');
+      if (sharedContent) {
+        setQuotedText(sharedContent);
+        createChat();
+      }
+    }
+
+    // Clean URL after handling
+    if (action || shareTitle || shareText || shareUrl) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [dispatch, createChat]);
 
   return (
     <>

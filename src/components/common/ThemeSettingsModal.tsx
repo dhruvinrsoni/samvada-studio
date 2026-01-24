@@ -496,9 +496,13 @@ export default function ThemeSettingsModal({ onClose, pwaStatus }: ThemeSettings
                 {/* Developer Info */}
                 <details className="mt-3 pt-2 border-t border-blue-100 dark:border-blue-900">
                   <summary className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300 font-mono">
-                    🔧 DEV INFO
+                    🔧 Developer Info
                   </summary>
                   <div className="mt-2 space-y-1 text-[10px] font-mono">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 dark:text-gray-400">Version:</span>
+                      <span className="text-gray-700 dark:text-gray-300">v0.1.0</span>
+                    </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500 dark:text-gray-400">Installable:</span>
                       <span className="text-gray-700 dark:text-gray-300">{pwaStatus.isInstallable ? 'Yes' : 'No'}</span>
@@ -516,6 +520,14 @@ export default function ThemeSettingsModal({ onClose, pwaStatus }: ThemeSettings
                       <span className="text-gray-700 dark:text-gray-300 truncate max-w-[120px]" title={window.location.origin}>
                         {window.location.pathname}
                       </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 dark:text-gray-400">Build:</span>
+                      <span className="text-gray-700 dark:text-gray-300">Production</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 dark:text-gray-400">Features:</span>
+                      <span className="text-gray-700 dark:text-gray-300">26+</span>
                     </div>
                   </div>
                 </details>

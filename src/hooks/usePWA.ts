@@ -97,7 +97,7 @@ export function usePWA(): PWAStatus {
     (window.navigator as Navigator & { standalone?: boolean }).standalone === true ||
     document.referrer.includes('android-app://');
 
-  // Track last prompt time (show every 3 days if not dismissed)
+  // Track last prompt time (show every 2 days if not dismissed)
   const [lastPromptTime, setLastPromptTime] = useState<number>(() => {
     const stored = localStorage.getItem('pwa-last-prompt');
     return stored ? parseInt(stored, 10) : 0;
@@ -109,8 +109,8 @@ export function usePWA(): PWAStatus {
     const dismissed = localStorage.getItem('pwa-install-dismissed');
     if (dismissed) {
       const dismissedTime = parseInt(dismissed, 10);
-      // Reset dismissal after 3 days (not 7, to be more encouraging)
-      if (Date.now() - dismissedTime > 3 * 24 * 60 * 60 * 1000) {
+      // Reset dismissal after 2 days (not too annoying)
+      if (Date.now() - dismissedTime > 2 * 24 * 60 * 60 * 1000) {
         localStorage.removeItem('pwa-install-dismissed');
         setInstallDismissed(false);
       } else {
@@ -124,15 +124,24 @@ export function usePWA(): PWAStatus {
       e.preventDefault();
       setDeferredPrompt(e);
       
-      // Show prompt more frequently if not dismissed
+      // Show prompt with smart timing
       const now = Date.now();
       const daysSinceLastPrompt = (now - lastPromptTime) / (1000 * 60 * 60 * 24);
       
-      // Show immediately if never shown, or after 3 days
-      if (lastPromptTime === 0 || daysSinceLastPrompt >= 3) {
-        setIsInstallable(true);
-        setLastPromptTime(now);
-        localStorage.setItem('pwa-last-prompt', now.toString());
+      // Show immediately if never shown, or after 2 days
+      // Also show after 30 minutes on first session
+      const isFirstVisit = lastPromptTime === 0;
+      const shouldShowPrompt = isFirstVisit || daysSinceLastPrompt >= 2;
+      
+      if (shouldShowPrompt && !installDismissed) {
+        // For first visit, wait 30 seconds before showing
+        const delay = isFirstVisit ? 30000 : 0;
+        
+        setTimeout(() => {
+          setIsInstallable(true);
+          setLastPromptTime(now);
+          localStorage.setItem('pwa-last-prompt', now.toString());
+        }, delay);
       }
     };
 
