@@ -12,6 +12,7 @@ import ExportModal from './components/export/ExportModal';
 import StarredModal from './components/starred/StarredModal';
 import ThemeSettingsModal from './components/common/ThemeSettingsModal';
 import ConnectionStatus from './components/common/ConnectionStatus';
+import StatusBar from './components/common/StatusBar';
 import ToastContainer from './components/toast/ToastContainer';
 import { PWAInstallPrompt, PWAUpdateNotification, PWAOfflineIndicator } from './components/pwa';
 import { usePWA } from './hooks/usePWA';
@@ -265,6 +266,9 @@ function AppContent() {
       <PWAInstallPrompt pwaStatus={pwaStatus} />
       <PWAUpdateNotification pwaStatus={pwaStatus} />
       <PWAOfflineIndicator pwaStatus={pwaStatus} />
+
+      {/* Status Bar */}
+      <StatusBar />
     </div>
     </>
   );

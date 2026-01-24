@@ -489,6 +489,8 @@ export interface AppState {
   // NEW: Streaming
   isStreaming: boolean;
   streamingMessageId: string | null;
+  // NEW: Health Monitoring
+  healthMonitoringEnabled?: boolean;
 }
 
 // Secure version for localStorage (excludes sensitive provider data)
@@ -593,7 +595,9 @@ export type ChatAction =
   | { type: 'TOGGLE_STARRED_MODAL' }
   | { type: 'TOGGLE_GLOBAL_SEARCH' }
   // NEW: Streaming
-  | { type: 'SET_STREAMING'; payload: { isStreaming: boolean; messageId: string | null } };
+  | { type: 'SET_STREAMING'; payload: { isStreaming: boolean; messageId: string | null } }
+  // NEW: Health Monitoring
+  | { type: 'TOGGLE_HEALTH_MONITORING'; payload: boolean };
 
 // Toast Notification Types
 export type ToastType = 'success' | 'error' | 'warning' | 'info';

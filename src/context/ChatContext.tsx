@@ -77,6 +77,8 @@ const initialState: AppState = {
   // NEW: Streaming
   isStreaming: false,
   streamingMessageId: null,
+  // NEW: Health Monitoring
+  healthMonitoringEnabled: true,
 };
 
 function chatReducer(state: AppState, action: ChatAction): AppState {
@@ -625,6 +627,13 @@ function chatReducer(state: AppState, action: ChatAction): AppState {
         ...state,
         isStreaming: action.payload.isStreaming,
         streamingMessageId: action.payload.messageId,
+      };
+
+    // NEW: Health Monitoring
+    case 'TOGGLE_HEALTH_MONITORING':
+      return {
+        ...state,
+        healthMonitoringEnabled: action.payload,
       };
 
     default:

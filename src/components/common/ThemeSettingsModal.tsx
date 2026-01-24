@@ -330,6 +330,29 @@ export default function ThemeSettingsModal({ onClose, pwaStatus }: ThemeSettings
                   />
                 </button>
               </div>
+
+              {/* Health Monitoring */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">Provider Health Monitoring</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Show live connection status for LLM providers in bottom status bar</p>
+                </div>
+                <button
+                  onClick={() => dispatch({
+                    type: 'TOGGLE_HEALTH_MONITORING',
+                    payload: !state.healthMonitoringEnabled
+                  })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    state.healthMonitoringEnabled ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      state.healthMonitoringEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
           </div>
 
