@@ -140,7 +140,7 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
           className={`p-1 rounded text-gray-500 ${isDark ? 'hover:bg-dark-300' : 'hover:bg-light-400'}`}
           title={chat.isArchived ? 'Unarchive chat' : 'Archive chat'}
         >
-          {chat.isArchived ? '📦' : '📂'}
+          {chat.isArchived ? '�' : '📦'}
         </button>
         <button
           onClick={(e) => {
