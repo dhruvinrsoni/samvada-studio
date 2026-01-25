@@ -1,6 +1,7 @@
 import { useState, useCallback, KeyboardEvent, useEffect, useRef } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { useToast } from '../../context/ToastContext';
+import { useIsMobile } from '../../hooks/useMediaQuery';
 import { createMessage, createPromptResponse } from '../../utils/helpers';
 import { getLLMResponse } from '../../utils/llmService';
 import PromptResponseItem from './PromptResponseItem';
@@ -19,6 +20,7 @@ interface ChatAreaProps {
 export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templateContent = '', onClearTemplate }: ChatAreaProps) {
   const { state, activeChat, dispatch } = useChat();
   const { addToast } = useToast();
+  const isMobile = useIsMobile();
   const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -164,14 +166,14 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
   return (
     <div className={`chat-area flex-1 flex flex-col h-full max-w-full overflow-hidden ${isDark ? 'bg-dark-300' : 'bg-light-200'}`}>
       {/* Header */}
-      <div className={`flex items-center justify-between p-4 border-b ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
-        <div className="flex items-center gap-3">
-          <h2 className={`text-lg font-semibold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>{activeChat.title}</h2>
-          <span className="text-xs text-gray-500">
+      <div className={`flex items-center justify-between p-2 sm:p-4 border-b ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
+        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+          <h2 className={`text-base sm:text-lg font-semibold truncate ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>{activeChat.title}</h2>
+          <span className="text-xs text-gray-500 hidden sm:inline">
             {activeChat.promptResponses.length} messages
           </span>
           {/* Provider Selector - moved to left side */}
-          {enabledProviders.length > 0 && (
+          {enabledProviders.length > 0 && !isMobile && (
             <div 
               className="relative provider-dropdown"
               onMouseEnter={() => setIsProviderDropdownOpen(true)}
@@ -262,7 +264,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
       )}
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-full">
+      <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4 max-w-full">
         {/* Pinned Messages */}
         {pinnedPnRs.length > 0 && (
           <div className="mb-4">

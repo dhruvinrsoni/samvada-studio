@@ -491,6 +491,8 @@ export interface AppState {
   streamingMessageId: string | null;
   // NEW: Health Monitoring
   healthMonitoringEnabled?: boolean;
+  // NEW: Mobile/Responsive
+  isSidebarOpen: boolean; // For mobile sidebar toggle
 }
 
 // Secure version for localStorage (excludes sensitive provider data)
@@ -526,6 +528,8 @@ export interface SafeAppState {
   // NEW: Streaming
   isStreaming: boolean;
   streamingMessageId: string | null;
+  // NEW: Mobile/Responsive
+  isSidebarOpen: boolean;
 }
 
 export type ChatAction =
@@ -597,7 +601,10 @@ export type ChatAction =
   // NEW: Streaming
   | { type: 'SET_STREAMING'; payload: { isStreaming: boolean; messageId: string | null } }
   // NEW: Health Monitoring
-  | { type: 'TOGGLE_HEALTH_MONITORING'; payload: boolean };
+  | { type: 'TOGGLE_HEALTH_MONITORING'; payload: boolean }
+  // NEW: Mobile/Responsive
+  | { type: 'TOGGLE_SIDEBAR' }
+  | { type: 'SET_SIDEBAR_OPEN'; payload: boolean };
 
 // Toast Notification Types
 export type ToastType = 'success' | 'error' | 'warning' | 'info';

@@ -82,7 +82,7 @@ export default function AdminPanel() {
       />
       
       {/* Panel */}
-      <div className={`relative w-full max-w-4xl max-h-[90vh] rounded-xl shadow-2xl overflow-hidden ${
+      <div className={`relative w-full max-w-4xl max-h-[90vh] mx-4 rounded-xl shadow-2xl overflow-hidden ${
         isDark ? 'bg-dark-200' : 'bg-white'
       }`}>
         {/* Header */}

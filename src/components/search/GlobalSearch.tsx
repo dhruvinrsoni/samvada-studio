@@ -97,7 +97,7 @@ export default function GlobalSearch() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-20 px-2 sm:px-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -105,7 +105,7 @@ export default function GlobalSearch() {
       />
       
       {/* Search Panel */}
-      <div className={`relative w-full max-w-3xl rounded-xl shadow-2xl overflow-hidden ${
+      <div className={`relative w-full max-w-3xl mx-auto rounded-xl shadow-2xl overflow-hidden ${
         isDark ? 'bg-dark-200' : 'bg-white'
       }`}>
         {/* Search Input */}

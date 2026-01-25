@@ -77,7 +77,7 @@ export default function TemplatesLibrary({ onSelectTemplate }: TemplatesLibraryP
   if (!state.isTemplatesOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -85,7 +85,7 @@ export default function TemplatesLibrary({ onSelectTemplate }: TemplatesLibraryP
       />
       
       {/* Modal */}
-      <div className={`relative w-full max-w-4xl max-h-[85vh] rounded-xl shadow-2xl border overflow-hidden flex flex-col ${
+      <div className={`relative w-full max-w-4xl max-h-[90vh] sm:max-h-[85vh] mx-auto rounded-xl shadow-2xl border overflow-hidden flex flex-col ${
         isDark ? 'bg-dark-200 border-dark-300' : 'bg-white border-gray-200'
       }`}>
         {/* Header */}

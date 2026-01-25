@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { searchInChat } from '../../utils/helpers';
+import { useIsMobile } from '../../hooks/useMediaQuery';
 import ChatListItem from './ChatListItem';
 import FoldersSection from './FoldersSection';
 import SearchBar from '../common/SearchBar';
@@ -13,6 +14,7 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
   const { state, dispatch, createChat } = useChat();
   const [localShowArchived, setLocalShowArchived] = useState(showArchived);
   const [isNewChatDropdownOpen, setIsNewChatDropdownOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   // Get current theme mode
   const isDark = state.themeSettings.mode === 'dark' ||
@@ -50,12 +52,40 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
     dispatch({ type: 'CLEAR_SELECTION' });
   }, [dispatch]);
 
+  // Close sidebar on mobile when a chat is selected
+  useEffect(() => {
+    if (isMobile && state.activeChat) {
+      dispatch({ type: 'SET_SIDEBAR_OPEN', payload: false });
+    }
+  }, [state.activeChat, isMobile, dispatch]);
+
+  // Handle backdrop click on mobile
+  const handleBackdropClick = () => {
+    if (isMobile && state.isSidebarOpen) {
+      dispatch({ type: 'TOGGLE_SIDEBAR' });
+    }
+  };
+
   return (
-    <aside className={`sidebar w-72 border-r flex flex-col h-full ${
-      isDark 
-        ? 'bg-dark-200 border-dark-100' 
-        : 'bg-light-100 border-light-400'
-    }`}>
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isMobile && state.isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={handleBackdropClick}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside 
+        className={`
+          sidebar border-r flex flex-col h-full
+          ${isMobile ? 'fixed top-0 left-0 bottom-0 z-40 w-80' : 'w-72'}
+          ${isMobile && !state.isSidebarOpen ? '-translate-x-full' : 'translate-x-0'}
+          transition-transform duration-300 ease-in-out
+          ${isDark ? 'bg-dark-200 border-dark-100' : 'bg-light-100 border-light-400'}
+        `}
+      >
       {/* Header */}
       <div className={`p-3 border-b ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
         <div className="relative">
@@ -265,5 +295,6 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
         )}
       </div>
     </aside>
+    </>
   );
 }

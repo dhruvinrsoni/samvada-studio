@@ -238,6 +238,7 @@ npm run dev
 | **Animations** | Smooth transitions |
 | **Code Highlighting** | Syntax highlighting with copy buttons |
 | **Message Reactions** | Thumbs up/down, bookmark, TTS |
+| **Responsive Design** | Mobile, tablet, desktop with collapsible sidebar and burger menu |
 
 </details>
 

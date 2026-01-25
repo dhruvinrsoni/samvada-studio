@@ -21,8 +21,8 @@ export default function StarredModal({ onClose }: StarredModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className={`w-full max-w-4xl max-h-[80vh] rounded-lg shadow-xl ${
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className={`w-full max-w-4xl max-h-[90vh] sm:max-h-[80vh] mx-auto rounded-lg shadow-xl ${
         isDark ? 'bg-dark-200' : 'bg-light-100'
       } overflow-hidden`}>
         {/* Header */}
