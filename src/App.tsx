@@ -97,10 +97,12 @@ function AppContent() {
   return (
     <>
       <div className={`flex flex-col h-screen ${state.theme === 'dark' ? 'bg-dark-300 text-gray-200' : 'bg-light-200 text-gray-800'}`}>
-      {/* Top Bar with Global Search */}
-      <div className={`flex items-center justify-between px-2 sm:px-4 py-2 border-b ${
+      {/* Top Bar with Global Search - Theme-colored */}
+      <div className={`flex items-center justify-between px-2 sm:px-4 py-3 border-b relative overflow-hidden ${
         state.theme === 'dark' ? 'bg-dark-200 border-dark-100' : 'bg-light-100 border-light-400'
       }`}>
+        {/* Theme color accent strip */}
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-theme-primary via-theme-accent to-theme-primary opacity-80"></div>
           <div className="flex items-center gap-2 sm:gap-4">
             {/* Mobile Burger Menu */}
             {isMobile && (
@@ -118,7 +120,9 @@ function AppContent() {
                 </svg>
               </button>
             )}
-          <h1 className="text-base sm:text-lg font-semibold">{BRAND.displayName}</h1>
+          <h1 className="text-base sm:text-lg font-bold bg-gradient-to-r from-theme-primary to-theme-accent bg-clip-text text-transparent">
+            {BRAND.displayName}
+          </h1>
         </div>
 
         {/* Global Search Trigger - fills the empty space */}

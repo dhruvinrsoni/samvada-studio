@@ -239,6 +239,7 @@ npm run dev
 | **Code Highlighting** | Syntax highlighting with copy buttons |
 | **Message Reactions** | Thumbs up/down, bookmark, TTS |
 | **Responsive Design** | Mobile, tablet, desktop with collapsible sidebar and burger menu |
+| **Theme-Colored UI** | Top bar gradient accent, branded text effects, live preview panel |
 
 </details>
 
