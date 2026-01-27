@@ -8,7 +8,7 @@
  * - Auto-hides when all healthy, shows when issues detected
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
 import useProviderHealthMonitor from '../../hooks/useProviderHealthMonitor';
 import type { HealthStatus } from '../../hooks/useProviderHealthMonitor';
@@ -16,6 +16,10 @@ import type { HealthStatus } from '../../hooks/useProviderHealthMonitor';
 export default function StatusBar() {
   const { state, dispatch } = useChat();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [shouldScroll, setShouldScroll] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const { healthStatus, isChecking, refresh, showDisableWarning } = useProviderHealthMonitor({
     providers: state.providers,
@@ -86,6 +90,23 @@ export default function StatusBar() {
     const hours = Math.floor(minutes / 60);
     return `${hours}h ago`;
   };
+
+  // Check if scrolling is needed
+  useEffect(() => {
+    const checkScrollNeeded = () => {
+      if (scrollContainerRef.current && contentRef.current) {
+        const containerWidth = scrollContainerRef.current.offsetWidth;
+        const contentWidth = contentRef.current.scrollWidth;
+        setShouldScroll(contentWidth > containerWidth && healthStatus.length > 3);
+      }
+    };
+
+    // Check immediately and after a short delay to ensure DOM is rendered
+    checkScrollNeeded();
+    const timeoutId = setTimeout(checkScrollNeeded, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [healthStatus]);
 
   return (
     <>
@@ -196,30 +217,68 @@ export default function StatusBar() {
         </div>
 
         {/* Center: Provider Status Dots */}
-        <div className="flex items-center gap-4">
-          {healthStatus.map((health) => {
-            const statusInfo = getStatusIcon(health.status);
-            return (
-              <div
-                key={health.providerId}
-                className="flex items-center gap-1.5"
-                title={`${health.model}: ${statusInfo.label}${health.responseTime ? ` (${formatResponseTime(health.responseTime)})` : ''}`}
-              >
-                {/* Blinking Status Light */}
-                <span className={`relative flex h-2 w-2`}>
-                  {health.status === 'online' && (
-                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${statusInfo.bgColor} opacity-75`}></span>
-                  )}
-                  <span className={`relative inline-flex rounded-full h-2 w-2 ${statusInfo.bgColor}`}></span>
-                </span>
+        <div 
+          ref={scrollContainerRef}
+          className="flex-1 min-w-0 overflow-hidden"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <div 
+            ref={contentRef}
+            className={`flex items-center gap-4 ${shouldScroll ? 'animate-scroll' : ''} ${isHovered ? 'animation-paused' : ''}`}
+            style={{
+              animationDuration: `${healthStatus.length * 3}s`,
+              animationDelay: shouldScroll ? '2s' : '0s'
+            }}
+          >
+            {healthStatus.map((health) => {
+              const statusInfo = getStatusIcon(health.status);
+              return (
+                <div
+                  key={health.providerId}
+                  className="flex items-center gap-1.5 flex-shrink-0"
+                  title={`${health.model}: ${statusInfo.label}${health.responseTime ? ` (${formatResponseTime(health.responseTime)})` : ''}`}
+                >
+                  {/* Blinking Status Light */}
+                  <span className={`relative flex h-2 w-2`}>
+                    {health.status === 'online' && (
+                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${statusInfo.bgColor} opacity-75`}></span>
+                    )}
+                    <span className={`relative inline-flex rounded-full h-2 w-2 ${statusInfo.bgColor}`}></span>
+                  </span>
 
-                {/* Model Name */}
-                <span className={`text-xs font-mono ${statusInfo.color}`}>
-                  {health.model}
-                </span>
-              </div>
-            );
-          })}
+                  {/* Model Name */}
+                  <span className={`text-xs font-mono ${statusInfo.color}`}>
+                    {health.model}
+                  </span>
+                </div>
+              );
+            })}
+            {/* Duplicate content for seamless loop */}
+            {shouldScroll && healthStatus.map((health) => {
+              const statusInfo = getStatusIcon(health.status);
+              return (
+                <div
+                  key={`${health.providerId}-duplicate`}
+                  className="flex items-center gap-1.5 flex-shrink-0"
+                  title={`${health.model}: ${statusInfo.label}${health.responseTime ? ` (${formatResponseTime(health.responseTime)})` : ''}`}
+                >
+                  {/* Blinking Status Light */}
+                  <span className={`relative flex h-2 w-2`}>
+                    {health.status === 'online' && (
+                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${statusInfo.bgColor} opacity-75`}></span>
+                    )}
+                    <span className={`relative inline-flex rounded-full h-2 w-2 ${statusInfo.bgColor}`}></span>
+                  </span>
+
+                  {/* Model Name */}
+                  <span className={`text-xs font-mono ${statusInfo.color}`}>
+                    {health.model}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Right: Actions */}

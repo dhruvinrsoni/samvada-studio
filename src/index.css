@@ -271,3 +271,21 @@ mark {
   animation: fade-in 0.3s ease-out forwards;
 }
 
+/* Status Bar Auto Scroll Animation */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll linear infinite;
+}
+
+.animation-paused {
+  animation-play-state: paused;
+}
+
