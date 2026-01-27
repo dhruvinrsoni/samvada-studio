@@ -3,6 +3,15 @@ import { useChat } from '../../context/ChatContext';
 import { fetchOllamaModels, fetchOpenAIModels, fetchAnthropicModels, fetchGoogleModels } from '../../utils/llmService';
 import type { LLMProviderConfig, LLMProviderType } from '../../types';
 
+// Utility function to format bytes
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
+
 interface ProviderFormProps {
   provider?: LLMProviderConfig | null;
   onSave: (config: Omit<LLMProviderConfig, 'id'>) => void;
@@ -57,7 +66,7 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
   });
 
   // State for Ollama models
-  const [ollamaModels, setOllamaModels] = useState<string[]>([]);
+  const [ollamaModels, setOllamaModels] = useState<{ name: string; size?: number }[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [modelFetchError, setModelFetchError] = useState<string | null>(null);
   
@@ -74,8 +83,8 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
         if (result.success) {
           setOllamaModels(result.models);
           // Select first model if current model not in list
-          if (result.models.length > 0 && !result.models.includes(formData.model)) {
-            setFormData(prev => ({ ...prev, model: result.models[0] }));
+          if (result.models.length > 0 && !result.models.some(m => m.name === formData.model)) {
+            setFormData(prev => ({ ...prev, model: result.models[0].name }));
           }
         } else {
           setModelFetchError(result.error || 'Failed to fetch models');
@@ -243,7 +252,9 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
                     className={inputClass}
                   >
                     {ollamaModels.map(model => (
-                      <option key={model} value={model}>{model}</option>
+                      <option key={model.name} value={model.name}>
+                        {model.name}{model.size ? ` (${formatBytes(model.size)})` : ''}
+                      </option>
                     ))}
                   </select>
                 ) : (

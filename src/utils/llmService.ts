@@ -676,7 +676,7 @@ export interface OllamaModel {
 
 export const fetchOllamaModels = async (
   endpoint: string
-): Promise<{ success: boolean; models: string[]; error?: string }> => {
+): Promise<{ success: boolean; models: { name: string; size?: number }[]; error?: string }> => {
   try {
     // Convert generate endpoint to tags endpoint
     const baseUrl = endpoint.replace('/api/generate', '').replace('/api/chat', '');
@@ -699,7 +699,7 @@ export const fetchOllamaModels = async (
     // Filter out embedding models (they typically have 'embed' in the name)
     const filteredModels = models
       .filter(m => !m.name.toLowerCase().includes('embed'))
-      .map(m => m.name);
+      .map(m => ({ name: m.name, size: m.size }));
     
     return { success: true, models: filteredModels };
   } catch (error) {
