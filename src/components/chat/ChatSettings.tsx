@@ -514,50 +514,7 @@ export default function ChatSettings({ chat, onClose, pwaStatus }: ChatSettingsP
           )}
         </div>
 
-        {/* System Settings */}
-        <div className="space-y-4">
-          <h3 className={`text-lg font-semibold ${
-            isDark ? 'text-gray-200' : 'text-gray-800'
-          }`}>System Settings</h3>
-          
-          <div className={`p-4 rounded-lg border ${
-            isDark ? 'bg-dark-200 border-dark-300' : 'bg-light-200 border-light-400'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <label className={`text-sm font-medium ${
-                  isDark ? 'text-gray-200' : 'text-gray-800'
-                }`}>
-                  Health Monitoring
-                </label>
-                <p className={`text-xs mt-1 ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>
-                  Monitor LLM provider status in the status bar
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  dispatch({ 
-                    type: 'TOGGLE_HEALTH_MONITORING', 
-                    payload: !state.healthMonitoringEnabled 
-                  });
-                }}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  state.healthMonitoringEnabled
-                    ? 'bg-primary-600'
-                    : isDark ? 'bg-gray-700' : 'bg-gray-300'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    state.healthMonitoringEnabled ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        </div>
+
 
         {/* PWA Settings */}
         {pwaStatus && (

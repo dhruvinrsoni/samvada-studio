@@ -217,14 +217,6 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                         type: 'UPDATE_THEME_SETTINGS',
                         payload: { ...state.themeSettings, promptNavigationEnabled: !state.themeSettings.promptNavigationEnabled }
                       })
-                    },
-                    {
-                      id: 'health',
-                      title: 'Health Monitoring',
-                      desc: 'Show provider status in status bar',
-                      icon: '💚',
-                      enabled: state.healthMonitoringEnabled,
-                      toggle: () => dispatch({ type: 'TOGGLE_HEALTH_MONITORING', payload: !state.healthMonitoringEnabled })
                     }
                   ].map(item => (
                     <div key={item.id} className={`p-4 rounded-xl flex items-center justify-between ${
