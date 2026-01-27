@@ -353,7 +353,7 @@ export default function StatusBar() {
         <div className={`border-t ${
           state.theme === 'dark' ? 'border-dark-300' : 'border-light-400'
         }`}>
-          <div className="px-4 py-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {healthStatus.map((health) => {
               const statusInfo = getStatusIcon(health.status);
               return (
@@ -367,20 +367,48 @@ export default function StatusBar() {
                 >
                   {/* Provider Header */}
                   <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className={`relative flex h-2 w-2`}>
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className={`relative flex h-2 w-2 flex-shrink-0`}>
                         {health.status === 'online' && (
                           <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${statusInfo.bgColor} opacity-75`}></span>
                         )}
                         <span className={`relative inline-flex rounded-full h-2 w-2 ${statusInfo.bgColor}`}></span>
                       </span>
-                      <span className={`text-sm font-semibold ${
-                        state.theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
-                      }`}>
-                        {health.providerName}
-                      </span>
+                      <div className="min-w-0 flex-1">
+                        {/* Find the provider to get its type */}
+                        {(() => {
+                          const provider = state.providers?.find(p => p.id === health.providerId);
+                          const isOllama = provider?.type === 'ollama';
+                          
+                          if (isOllama) {
+                            // For Ollama: Show model name prominently, then provider type, then size
+                            return (
+                              <div className="flex flex-col gap-0.5">
+                                <div className={`text-sm font-semibold truncate ${state.theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
+                                  {health.model}
+                                </div>
+                                <div className={`text-xs truncate ${state.theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  Ollama (Local)
+                                  {health.modelSize && (
+                                    <span className="ml-1 opacity-75">
+                                      • {formatBytes(health.modelSize)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          } else {
+                            // For other providers: Show provider name
+                            return (
+                              <span className={`text-sm font-semibold truncate ${state.theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
+                                {health.providerName}
+                              </span>
+                            );
+                          }
+                        })()}
+                      </div>
                     </div>
-                    <span className={`text-xs font-mono px-2 py-0.5 rounded ${statusInfo.color} ${
+                    <span className={`text-xs font-mono px-2 py-0.5 rounded flex-shrink-0 ${statusInfo.color} ${
                       state.theme === 'dark' ? 'bg-dark-300' : 'bg-light-300'
                     }`}>
                       {statusInfo.label.toUpperCase()}
