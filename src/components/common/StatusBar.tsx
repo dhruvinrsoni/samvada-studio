@@ -412,11 +412,11 @@ export default function StatusBar() {
                   </div>
 
                   {/* Details */}
-                  <div className={`space-y-1 text-xs font-mono ${
+                  <div className={`space-y-1.5 text-xs ${
                     state.theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
                   }`}>
                     {health.responseTime !== undefined && (
-                      <div className="flex justify-between">
+                      <div className="flex justify-between font-mono">
                         <span>Response Time:</span>
                         <span className={
                           !health.responseTime ? 'text-gray-500' :
@@ -426,11 +426,52 @@ export default function StatusBar() {
                         </span>
                       </div>
                     )}
-                    <div className="flex justify-between">
+                    <div className="flex justify-between font-mono">
                       <span>Last Checked:</span>
                       <span>{formatLastChecked(health.lastChecked)}</span>
                     </div>
-                    {health.error && (
+                    
+                    {/* Rich Error Display */}
+                    {health.errorDetails && (
+                      <div className="mt-2 pt-2 border-t border-opacity-20 space-y-2" style={{
+                        borderColor: 'currentColor'
+                      }}>
+                        <div>
+                          <div className={`font-semibold ${state.theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
+                            {health.errorDetails.title}
+                          </div>
+                          <div className="text-xs mt-1">
+                            {health.errorDetails.message}
+                          </div>
+                        </div>
+                        
+                        {health.errorDetails.userAction && (
+                          <div className={`text-xs ${state.theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
+                            💡 {health.errorDetails.userAction}
+                          </div>
+                        )}
+                        
+                        {health.errorDetails.documentationUrl && (
+                          <a
+                            href={health.errorDetails.documentationUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`inline-flex items-center gap-1 text-xs underline hover:no-underline ${
+                              state.theme === 'dark' ? 'text-primary-400' : 'text-primary-600'
+                            }`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            📚 View Documentation
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Fallback for simple errors */}
+                    {health.error && !health.errorDetails && (
                       <div className="flex justify-between">
                         <span>Error:</span>
                         <span className="text-red-500 truncate max-w-[150px]" title={health.error}>

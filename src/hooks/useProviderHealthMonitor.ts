@@ -20,6 +20,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { LLMProviderConfig } from '../types';
 import { HealthService, type HealthStatus } from '../utils/healthService';
+import type { ProviderError } from '../utils/providerErrors';
 
 export interface ProviderHealth {
   providerId: string;
@@ -29,6 +30,7 @@ export interface ProviderHealth {
   lastChecked: number;
   responseTime?: number; // in milliseconds
   error?: string;
+  errorDetails?: ProviderError; // Rich error information
   modelSize?: number; // in bytes, for Ollama models
 }
 
@@ -149,6 +151,7 @@ export function useProviderHealthMonitor({
       lastChecked: result.lastChecked,
       responseTime: result.responseTime,
       error: result.error,
+      errorDetails: result.errorDetails,
       modelSize: result.modelSize,
     };
   }, [getCachedHealth, updateCache]);

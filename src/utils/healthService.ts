@@ -14,6 +14,7 @@
 
 import { LLMProviderConfig } from '../types';
 import { logDebug } from './debug';
+import { parseProviderError, type ProviderError, ErrorCategory } from './providerErrors';
 
 export type HealthStatus = 'online' | 'slow' | 'offline' | 'unknown' | 'disabled';
 
@@ -34,6 +35,7 @@ export interface ProviderHealthResult {
   responseTime?: number;
   modelSize?: number;
   error?: string;
+  errorDetails?: ProviderError; // Rich error information
   lastChecked: number;
 }
 
@@ -129,9 +131,11 @@ export class HealthService {
     const startTime = Date.now();
     let status: HealthStatus = 'unknown';
     let error: string | undefined;
+    let errorDetails: ProviderError | undefined;
     let responseTime: number | undefined;
     let modelSize: number | undefined;
     let healthCheckUrl: string | null = null;
+    let httpResponse: Response | null = null;
 
     try {
       // Different health check strategies per provider
@@ -162,14 +166,16 @@ export class HealthService {
           }
         } else {
           status = 'offline';
-          error = ollamaResult.error || 'Ollama service not available';
+          // Parse Ollama-specific error
+          errorDetails = parseProviderError(provider.type, ollamaResult.error || ollamaResult);
+          error = errorDetails.title;
         }
 
       } else if (provider.type === 'openai' && provider.apiEndpoint) {
         // OpenAI: Check models endpoint
         healthCheckUrl = `${provider.apiEndpoint}/v1/models`;
 
-        const response = await fetch(healthCheckUrl, {
+        httpResponse = await fetch(healthCheckUrl, {
           method: 'GET',
           signal: AbortSignal.timeout(this.PROVIDER_TIMEOUT),
           headers: provider.apiKey ? {
@@ -179,49 +185,122 @@ export class HealthService {
 
         responseTime = Date.now() - startTime;
 
-        if (response.ok) {
+        if (httpResponse.ok) {
           status = responseTime > 5000 ? 'slow' : 'online';
-        } else if (response.status === 401 || response.status === 403) {
-          // Auth issues but service is reachable
-          status = 'online';
-          error = 'Authentication failed';
         } else {
           status = 'offline';
-          error = `HTTP ${response.status}`;
+          // Parse error response
+          try {
+            const errorResponse = await httpResponse.json();
+            errorDetails = parseProviderError(provider.type, errorResponse, httpResponse.status);
+            error = errorDetails.title;
+          } catch {
+            error = `HTTP ${httpResponse.status}`;
+          }
         }
 
       } else if (provider.type === 'anthropic') {
-        // Anthropic: No public health endpoint, assume healthy if configured
-        status = provider.apiKey ? 'online' : 'offline';
-        responseTime = 0;
+        // Anthropic: Check messages endpoint with a minimal request
+        // Note: This will consume a tiny amount of credits for a health check
+        // Alternative: Just check if API key is present (less accurate)
+        if (!provider.apiKey) {
+          status = 'offline';
+          errorDetails = parseProviderError(provider.type, { error: { type: 'authentication_error', message: 'No API key configured' } }, 401);
+          error = errorDetails.title;
+        } else {
+          // Try a lightweight API call to validate credentials and billing
+          try {
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+              method: 'POST',
+              signal: AbortSignal.timeout(this.PROVIDER_TIMEOUT),
+              headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': provider.apiKey,
+                'anthropic-version': '2023-06-01',
+              },
+              body: JSON.stringify({
+                model: provider.model || 'claude-3-haiku-20240307',
+                max_tokens: 1,
+                messages: [{ role: 'user', content: 'ping' }],
+              }),
+            });
+
+            responseTime = Date.now() - startTime;
+
+            if (response.ok) {
+              status = responseTime > 5000 ? 'slow' : 'online';
+            } else {
+              status = 'offline';
+              const errorResponse = await response.json();
+              errorDetails = parseProviderError(provider.type, errorResponse, response.status);
+              error = errorDetails.title;
+            }
+          } catch (err) {
+            responseTime = Date.now() - startTime;
+            errorDetails = parseProviderError(provider.type, err);
+            error = errorDetails.title;
+            status = 'offline';
+          }
+        }
 
       } else if (provider.type === 'google') {
-        // Google: Similar to Anthropic
-        status = provider.apiKey ? 'online' : 'offline';
-        responseTime = 0;
+        // Google: Check models endpoint
+        if (!provider.apiKey) {
+          status = 'offline';
+          errorDetails = parseProviderError(provider.type, { error: { status: 'UNAUTHENTICATED', message: 'No API key configured' } }, 401);
+          error = errorDetails.title;
+        } else {
+          try {
+            const response = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models?key=${provider.apiKey}`,
+              {
+                method: 'GET',
+                signal: AbortSignal.timeout(this.PROVIDER_TIMEOUT),
+              }
+            );
+
+            responseTime = Date.now() - startTime;
+
+            if (response.ok) {
+              status = responseTime > 5000 ? 'slow' : 'online';
+            } else {
+              status = 'offline';
+              const errorResponse = await response.json();
+              errorDetails = parseProviderError(provider.type, errorResponse, response.status);
+              error = errorDetails.title;
+            }
+          } catch (err) {
+            responseTime = Date.now() - startTime;
+            errorDetails = parseProviderError(provider.type, err);
+            error = errorDetails.title;
+            status = 'offline';
+          }
+        }
 
       } else if (provider.type === 'azure' && provider.apiEndpoint) {
         // Azure: Check deployment endpoint
-        healthCheckUrl = provider.apiEndpoint;
-
-        const response = await fetch(healthCheckUrl, {
+        httpResponse = await fetch(provider.apiEndpoint, {
           method: 'GET',
           signal: AbortSignal.timeout(this.PROVIDER_TIMEOUT),
           headers: provider.apiKey ? {
             'Authorization': `Bearer ${provider.apiKey}`,
+            'api-key': provider.apiKey, // Azure uses this header too
           } : {},
         });
 
         responseTime = Date.now() - startTime;
 
-        if (response.ok) {
+        if (httpResponse.ok) {
           status = responseTime > 5000 ? 'slow' : 'online';
-        } else if (response.status === 401 || response.status === 403) {
-          status = 'online';
-          error = 'Authentication failed';
         } else {
           status = 'offline';
-          error = `HTTP ${response.status}`;
+          try {
+            const errorResponse = await httpResponse.json();
+            errorDetails = parseProviderError(provider.type, errorResponse, httpResponse.status);
+            error = errorDetails.title;
+          } catch {
+            error = `HTTP ${httpResponse.status}`;
+          }
         }
 
       } else {
@@ -232,22 +311,9 @@ export class HealthService {
 
     } catch (err) {
       responseTime = Date.now() - startTime;
-
-      if (err instanceof Error) {
-        if (err.name === 'AbortError') {
-          status = 'offline';
-          error = 'Request timeout';
-        } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-          status = 'offline';
-          error = 'Network error - service may not be running';
-        } else {
-          status = 'offline';
-          error = err.message;
-        }
-      } else {
-        status = 'offline';
-        error = 'Unknown error';
-      }
+      errorDetails = parseProviderError(provider.type, err);
+      error = errorDetails.title;
+      status = 'offline';
     }
 
     const result: ProviderHealthResult = {
@@ -255,6 +321,7 @@ export class HealthService {
       responseTime,
       modelSize,
       error,
+      errorDetails,
       lastChecked: Date.now(),
     };
 
@@ -264,6 +331,7 @@ export class HealthService {
       status: result.status,
       responseTime: result.responseTime,
       error: result.error,
+      errorCategory: result.errorDetails?.category,
     });
 
     return result;
