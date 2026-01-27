@@ -55,7 +55,7 @@ export const DEFAULT_PROVIDER_CONFIGS: Record<LLMProviderType, Partial<LLMProvid
   anthropic: {
     name: 'Anthropic (Claude)',
     apiEndpoint: 'https://api.anthropic.com/v1/messages',
-    model: 'claude-3-opus-20240229',
+    model: 'claude-sonnet-4-5',
     settings: { temperature: 0.7, maxTokens: 4096 },
   },
   google: {

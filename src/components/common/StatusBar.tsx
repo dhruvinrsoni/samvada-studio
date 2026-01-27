@@ -149,10 +149,12 @@ export default function StatusBar() {
 
       {/* Compact Bar */}
       {hasProviders && state.healthMonitoringEnabled && (
-      <div className="flex items-center justify-between px-4 py-2">
+      <div 
+        className="flex items-center justify-between px-4 py-2 cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
         {/* Left: Overall Status */}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
+        <div
           className={`flex items-center gap-2 text-xs font-mono transition-colors ${
             state.theme === 'dark' 
               ? 'text-gray-400 hover:text-gray-300' 
@@ -191,7 +193,7 @@ export default function StatusBar() {
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
-        </button>
+        </div>
 
         {/* Center: Provider Status Dots */}
         <div className="flex items-center gap-4">
@@ -238,7 +240,10 @@ export default function StatusBar() {
 
           {/* Refresh Button */}
           <button
-            onClick={refresh}
+            onClick={(e) => {
+              e.stopPropagation();
+              refresh();
+            }}
             disabled={isChecking}
             className={`p-1 rounded transition-colors ${
               state.theme === 'dark'
