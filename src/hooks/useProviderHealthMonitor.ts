@@ -19,19 +19,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { LLMProviderConfig } from '../types';
-
-/**
- * Format bytes to human readable format
- */
-const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-};
-
-export type HealthStatus = 'online' | 'slow' | 'offline' | 'unknown' | 'disabled';
+import { HealthService, type HealthStatus } from '../utils/healthService';
 
 export interface ProviderHealth {
   providerId: string;
@@ -62,8 +50,6 @@ interface HealthCache {
 const CACHE_DURATION = 30000; // 30 seconds
 const INITIAL_POLL_INTERVAL = 30000; // 30 seconds
 const MAX_POLL_INTERVAL = 300000; // 5 minutes
-const REQUEST_TIMEOUT = 30000; // 30 seconds (increased for slow networks/local services)
-const SLOW_THRESHOLD = 5000; // 5 seconds = slow
 const MAX_CONSECUTIVE_FAILURES = 3; // Show disable warning after 3 failures
 
 export function useProviderHealthMonitor({
@@ -149,175 +135,21 @@ export function useProviderHealthMonitor({
       return health;
     }
 
-    const startTime = Date.now();
-    let status: HealthStatus = 'unknown';
-    let error: string | undefined;
-    let responseTime: number | undefined;
-    let modelSize: number | undefined;
-    let healthCheckUrl: string | null = null;
-
-    try {
-      // Create abort controller for timeout
-      const abortController = new AbortController();
-      abortControllersRef.current.set(provider.id, abortController);
-
-      const timeoutId = setTimeout(() => {
-        abortController.abort();
-      }, REQUEST_TIMEOUT);
-
-      try {
-        // Different health check strategies per provider
-        
-        if (provider.type === 'ollama' && provider.apiEndpoint) {
-          // Ollama: Extract base URL and check /api/tags endpoint
-          // Example: http://localhost:11434/api/generate -> http://localhost:11434
-          let baseUrl = provider.apiEndpoint;
-          
-          // Remove /api/* suffix if present
-          if (baseUrl.includes('/api/')) {
-            baseUrl = baseUrl.substring(0, baseUrl.indexOf('/api/'));
-          }
-          
-          healthCheckUrl = `${baseUrl}/api/tags`;
-          console.log('[Health Check] Ollama:', { 
-            providerId: provider.id,
-            providerName: provider.name,
-            original: provider.apiEndpoint, 
-            extracted: baseUrl,
-            healthUrl: healthCheckUrl 
-          });
-        } else if (provider.type === 'openai' && provider.apiEndpoint) {
-          // OpenAI: Check models endpoint with HEAD request
-          healthCheckUrl = `${provider.apiEndpoint}/v1/models`;
-        } else if (provider.type === 'anthropic') {
-          // Anthropic: No public health endpoint, assume healthy if configured
-          // We can't really check without making a billable request
-          status = provider.apiKey ? 'online' : 'offline';
-          responseTime = 0;
-        } else if (provider.type === 'google') {
-          // Google: Similar to Anthropic, assume healthy if configured
-          status = provider.apiKey ? 'online' : 'offline';
-          responseTime = 0;
-        } else if (provider.type === 'azure' && provider.apiEndpoint) {
-          // Azure: Check deployment endpoint
-          healthCheckUrl = provider.apiEndpoint;
-        }
-
-        if (healthCheckUrl) {
-          console.log('[Health Check] Fetching:', healthCheckUrl);
-          const response = await fetch(healthCheckUrl, {
-            method: 'GET',
-            signal: abortController.signal,
-            mode: 'cors', // Explicitly set CORS mode
-            headers: provider.apiKey ? {
-              'Authorization': `Bearer ${provider.apiKey}`,
-            } : {},
-          });
-
-          responseTime = Date.now() - startTime;
-
-          if (response.ok || response.status === 401 || response.status === 403) {
-            // 401/403 means endpoint is live, just auth issue (expected for some checks)
-            status = responseTime > SLOW_THRESHOLD ? 'slow' : 'online';
-            
-            // Special handling for Ollama to extract model size
-            if (provider.type === 'ollama' && response.ok) {
-              try {
-                const responseClone = response.clone(); // Clone to avoid consuming the response
-                const data = await responseClone.json();
-                // Find the current model in the models array
-                const currentModel = data.models?.find((m: any) => m.name === provider.model || m.name.startsWith(`${provider.model}:`));
-                if (currentModel?.size) {
-                  modelSize = currentModel.size;
-                  console.log('[Health Check] Ollama model size:', {
-                    providerId: provider.id,
-                    model: provider.model,
-                    size: modelSize,
-                    sizeFormatted: modelSize ? formatBytes(modelSize) : 'Unknown'
-                  });
-                }
-              } catch (parseError) {
-                console.warn('[Health Check] Failed to parse Ollama response:', parseError);
-              }
-            }
-            
-            console.log('[Health Check] Success:', { 
-              providerId: provider.id,
-              providerName: provider.name,
-              status, 
-              responseTime,
-              statusCode: response.status,
-              modelSize 
-            });
-          } else {
-            status = 'offline';
-            error = `HTTP ${response.status}`;
-            const errorText = await response.text().catch(() => 'Unable to read error');
-            console.error('[Health Check] Failed:', { 
-              providerId: provider.id,
-              url: healthCheckUrl,
-              status: response.status,
-              statusText: response.statusText,
-              error: errorText 
-            });
-          }
-        }
-      } finally {
-        clearTimeout(timeoutId);
-        abortControllersRef.current.delete(provider.id);
-      }
-    } catch (err: unknown) {
-      responseTime = Date.now() - startTime;
-      
-      if (err instanceof Error) {
-        if (err.name === 'AbortError') {
-          status = 'offline';
-          error = 'Request timeout';
-          console.error('[Health Check] Timeout:', {
-            providerId: provider.id,
-            providerName: provider.name,
-            url: healthCheckUrl,
-            timeout: REQUEST_TIMEOUT
-          });
-        } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-          // Network error - could be offline, firewall, or service not running
-          status = 'offline';
-          error = 'Network error - service may not be running';
-          console.error('[Health Check] Network error:', {
-            providerId: provider.id,
-            providerName: provider.name,
-            url: healthCheckUrl,
-            message: err.message
-          });
-        } else {
-          status = 'offline';
-          error = err.message;
-          console.error('[Health Check] Error:', {
-            providerId: provider.id,
-            providerName: provider.name,
-            url: healthCheckUrl,
-            errorName: err.name,
-            errorMessage: err.message
-          });
-        }
-      } else {
-        status = 'offline';
-        error = 'Unknown error';
-      }
-    }
+    // Use unified HealthService
+    const result = await HealthService.checkProviderHealth(provider);
 
     // Update cache
-    updateCache(provider.id, status, responseTime, modelSize);
+    updateCache(provider.id, result.status, result.responseTime, result.modelSize);
 
     return {
       providerId: provider.id,
       providerName: provider.name,
       model: provider.model,
-      status,
-      lastChecked: Date.now(),
-      responseTime,
-      error,
-      modelSize,
+      status: result.status,
+      lastChecked: result.lastChecked,
+      responseTime: result.responseTime,
+      error: result.error,
+      modelSize: result.modelSize,
     };
   }, [getCachedHealth, updateCache]);
 

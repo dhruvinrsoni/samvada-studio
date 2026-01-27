@@ -5,10 +5,10 @@ import {
   getRecentLogs,
   getErrorSummary,
   getSystemInfo,
-  checkConnectivity,
   clearLogs,
   LogEntry,
 } from '../../utils/debug';
+import { HealthService } from '../../utils/healthService';
 import { STORAGE_KEY, SENSITIVE_STORAGE_KEY } from '../../utils/storage';
 
 // Helper to safely convert date (handles both Date objects and ISO strings from localStorage)
@@ -22,7 +22,7 @@ const safeToISOString = (date: Date | string | undefined): string | undefined =>
 interface DiagnosticsReport {
   generatedAt: string;
   system: ReturnType<typeof getSystemInfo>;
-  connectivity: Awaited<ReturnType<typeof checkConnectivity>>;
+  connectivity: ConnectivityResult;
   storage: {
     stateSize: number;
     sensitiveSize: number;
@@ -94,8 +94,11 @@ export default function DeveloperTools() {
   const checkConnectivityOnly = useCallback(async () => {
     setIsCheckingConnectivity(true);
     try {
-      const result = await checkConnectivity();
-      setConnectivityResult(result);
+      const result = await HealthService.checkBasicConnectivity();
+      setConnectivityResult({
+        online: navigator.onLine,
+        ...result,
+      });
       addToast(
         result.ollama ? 'success' : 'warning',
         'Connectivity Check',
@@ -154,10 +157,15 @@ export default function DeveloperTools() {
   const runDiagnostics = useCallback(async () => {
     setIsRunningFull(true);
     try {
-      const [connectivity, sysInfo] = await Promise.all([
-        checkConnectivity(),
+      const [connectivityResult, sysInfo] = await Promise.all([
+        HealthService.checkBasicConnectivity(),
         Promise.resolve(getSystemInfo()),
       ]);
+
+      const connectivity = {
+        online: navigator.onLine,
+        ...connectivityResult,
+      };
 
       // Calculate storage sizes
       const stateData = localStorage.getItem(STORAGE_KEY) || '';

@@ -160,50 +160,6 @@ export const getSystemInfo = () => {
   };
 };
 
-// Check API connectivity
-export const checkConnectivity = async (): Promise<{
-  online: boolean;
-  ollama: boolean;
-  internet: boolean;
-  ollamaModels: string[];
-}> => {
-  const result = {
-    online: navigator.onLine,
-    ollama: false,
-    internet: false,
-    ollamaModels: [] as string[],
-  };
-
-  // Check Ollama
-  try {
-    const ollamaResponse = await fetch('http://localhost:11434/api/tags', {
-      method: 'GET',
-      signal: AbortSignal.timeout(2000),
-    });
-    if (ollamaResponse.ok) {
-      result.ollama = true;
-      const data = await ollamaResponse.json();
-      result.ollamaModels = (data.models || []).map((m: { name: string }) => m.name);
-    }
-  } catch {
-    result.ollama = false;
-  }
-
-  // Check internet (using public API)
-  try {
-    await fetch('https://www.google.com/favicon.ico', {
-      method: 'HEAD',
-      mode: 'no-cors',
-      signal: AbortSignal.timeout(2000),
-    });
-    result.internet = true;
-  } catch {
-    result.internet = false;
-  }
-
-  return result;
-};
-
 // Expose a debug accessor on window for manual inspection in browser console
 // Usage in browser console: window.__SAMVADA_DEBUG__
 
@@ -229,12 +185,10 @@ export const installDebug = () => {
     endTiming,
     // System
     getSystemInfo,
-    checkConnectivity,
     // Quick diagnostics
     diagnose: async () => {
       console.log('🔍 Running diagnostics...');
       console.log('System Info:', getSystemInfo());
-      console.log('Connectivity:', await checkConnectivity());
       console.log('Error Summary:', getErrorSummary());
       console.log('Recent Logs:', getRecentLogs(10));
       console.log('Storage:', {

@@ -11,7 +11,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
 import useProviderHealthMonitor from '../../hooks/useProviderHealthMonitor';
-import type { HealthStatus } from '../../hooks/useProviderHealthMonitor';
+import { HealthService, type HealthStatus } from '../../utils/healthService';
 
 export default function StatusBar() {
   const { state, dispatch } = useChat();
@@ -51,11 +51,7 @@ export default function StatusBar() {
    * Format bytes to human readable format
    */
   const formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    return HealthService.formatBytes(bytes);
   };
 
   /**

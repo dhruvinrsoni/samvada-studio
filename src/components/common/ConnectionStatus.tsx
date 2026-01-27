@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
-import { checkConnectivity } from '../../utils/debug';
+import { HealthService } from '../../utils/healthService';
 
 export default function ConnectionStatus() {
   const { state } = useChat();
@@ -19,8 +19,11 @@ export default function ConnectionStatus() {
   const checkStatus = async () => {
     setIsChecking(true);
     try {
-      const status = await checkConnectivity();
-      setConnectivity(status);
+      const status = await HealthService.checkBasicConnectivity();
+      setConnectivity({
+        online: navigator.onLine,
+        ...status,
+      });
     } catch (error) {
       console.error('Failed to check connectivity:', error);
     } finally {
