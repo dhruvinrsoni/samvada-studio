@@ -280,32 +280,15 @@ export function useProviderHealthMonitor({
             timeout: REQUEST_TIMEOUT
           });
         } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-          // For localhost Ollama, CORS errors often show as "Failed to fetch"
-          // If it's localhost and we get a network error, it might be CORS, not actual offline
-          const isLocalhost = healthCheckUrl?.includes('localhost') || healthCheckUrl?.includes('127.0.0.1');
-          const isOllama = provider.type === 'ollama';
-          
-          if (isLocalhost && isOllama) {
-            // Assume online for localhost Ollama with CORS issues
-            status = 'online';
-            responseTime = 0;
-            error = undefined;
-            console.warn('[Health Check] CORS blocked for localhost Ollama - assuming online:', {
-              providerId: provider.id,
-              providerName: provider.name,
-              url: healthCheckUrl,
-              hint: 'Set OLLAMA_ORIGINS=* to enable health checks'
-            });
-          } else {
-            status = 'offline';
-            error = 'Network error';
-            console.error('[Health Check] Network error:', {
-              providerId: provider.id,
-              providerName: provider.name,
-              url: healthCheckUrl,
-              message: err.message
-            });
-          }
+          // Network error - could be offline, firewall, or service not running
+          status = 'offline';
+          error = 'Network error - service may not be running';
+          console.error('[Health Check] Network error:', {
+            providerId: provider.id,
+            providerName: provider.name,
+            url: healthCheckUrl,
+            message: err.message
+          });
         } else {
           status = 'offline';
           error = err.message;

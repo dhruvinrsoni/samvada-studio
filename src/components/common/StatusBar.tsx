@@ -422,7 +422,10 @@ export default function StatusBar() {
                     {health.responseTime !== undefined && (
                       <div className="flex justify-between">
                         <span>Response Time:</span>
-                        <span className={health.responseTime > 3000 ? 'text-yellow-500' : 'text-green-500'}>
+                        <span className={
+                          !health.responseTime ? 'text-gray-500' :
+                          health.responseTime > 3000 ? 'text-yellow-500' : 'text-green-500'
+                        }>
                           {formatResponseTime(health.responseTime)}
                         </span>
                       </div>
