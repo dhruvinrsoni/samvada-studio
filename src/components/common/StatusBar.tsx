@@ -18,6 +18,7 @@ export default function StatusBar() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldScroll, setShouldScroll] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [expandedTechnicalDetails, setExpandedTechnicalDetails] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -91,6 +92,25 @@ export default function StatusBar() {
     if (minutes < 60) return `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
     return `${hours}h ago`;
+  };
+
+  /**
+   * Format JSON with color syntax highlighting
+   */
+  const formatJsonWithColors = (jsonString: string, _theme: 'light' | 'dark') => {
+    try {
+      // Try to parse and pretty-print if it's valid JSON
+      let parsed;
+      try {
+        parsed = JSON.parse(jsonString);
+        return JSON.stringify(parsed, null, 2);
+      } catch {
+        // If not valid JSON, return as-is
+        return jsonString;
+      }
+    } catch {
+      return jsonString;
+    }
   };
 
   // Check if scrolling is needed
@@ -346,7 +366,7 @@ export default function StatusBar() {
 
       {/* Expanded Details */}
       {hasProviders && isExpanded && (
-        <div className={`border-t ${
+        <div className={`border-t max-h-[60vh] overflow-y-auto ${
           state.theme === 'dark' ? 'border-dark-300' : 'border-light-400'
         }`}>
           <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -433,16 +453,16 @@ export default function StatusBar() {
                     
                     {/* Rich Error Display */}
                     {health.errorDetails && (
-                      <div className="mt-2 pt-2 border-t border-opacity-20 space-y-2" style={{
+                      <div className="mt-2 pt-2 border-t border-opacity-20 space-y-1.5" style={{
                         borderColor: 'currentColor'
                       }}>
-                        <div>
-                          <div className={`font-semibold ${state.theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
-                            {health.errorDetails.title}
-                          </div>
-                          <div className="text-xs mt-1">
-                            {health.errorDetails.message}
-                          </div>
+                        {/* Compact error header: title and message on same line */}
+                        <div className="text-xs">
+                          <span className={`font-semibold ${state.theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
+                            {health.errorDetails.title}:
+                          </span>
+                          {' '}
+                          <span>{health.errorDetails.message}</span>
                         </div>
                         
                         {health.errorDetails.userAction && (
@@ -467,6 +487,35 @@ export default function StatusBar() {
                             </svg>
                           </a>
                         )}
+                        
+                        {/* Technical Details Toggle */}
+                        {health.errorDetails.technicalDetails && (
+                          <div className="mt-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedTechnicalDetails(
+                                  expandedTechnicalDetails === health.providerId ? null : health.providerId
+                                );
+                              }}
+                              className={`flex items-center gap-1 text-xs ${
+                                state.theme === 'dark' ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'
+                              }`}
+                            >
+                              <svg 
+                                className={`w-3 h-3 transition-transform ${
+                                  expandedTechnicalDetails === health.providerId ? 'rotate-90' : ''
+                                }`} 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                              <span className="font-mono">Show Technical Details</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                     
@@ -480,6 +529,28 @@ export default function StatusBar() {
                       </div>
                     )}
                   </div>
+                  
+                  {/* Expanded Technical Details - Full Width Below Card */}
+                  {health.errorDetails?.technicalDetails && expandedTechnicalDetails === health.providerId && (
+                    <div 
+                      className={`mt-3 -mx-3 -mb-3 p-3 rounded-b-lg overflow-auto ${
+                        state.theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'
+                      }`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="mb-2 text-xs font-semibold flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                        Raw API Response
+                      </div>
+                      <pre className={`text-xs font-mono overflow-x-auto p-2 rounded ${
+                        state.theme === 'dark' ? 'bg-black text-green-400' : 'bg-white text-gray-800'
+                      }`}>
+                        <code>{formatJsonWithColors(health.errorDetails.technicalDetails, state.theme)}</code>
+                      </pre>
+                    </div>
+                  )}
                 </div>
               );
             })}

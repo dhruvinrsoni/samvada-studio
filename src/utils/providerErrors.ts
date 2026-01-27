@@ -350,7 +350,7 @@ class OpenAIErrorClassifier extends ProviderErrorClassifier {
  * Google/Gemini error classifier
  */
 class GoogleErrorClassifier extends ProviderErrorClassifier {
-  parseError(response: any, statusCode?: number): ProviderError {
+  parseError(response: any, _statusCode?: number): ProviderError {
     if (this.isNetworkError(response)) {
       return this.createError(
         ErrorCategory.NETWORK,
@@ -530,7 +530,7 @@ class AzureErrorClassifier extends ProviderErrorClassifier {
  * Ollama error classifier
  */
 class OllamaErrorClassifier extends ProviderErrorClassifier {
-  parseError(response: any, statusCode?: number): ProviderError {
+  parseError(response: any, _statusCode?: number): ProviderError {
     if (this.isNetworkError(response)) {
       return this.createError(
         ErrorCategory.NETWORK,
@@ -571,7 +571,7 @@ class OllamaErrorClassifier extends ProviderErrorClassifier {
     }
 
     // Service unavailable
-    if (statusCode && statusCode >= 500) {
+    if (_statusCode && _statusCode >= 500) {
       return this.createError(
         ErrorCategory.SERVICE_UNAVAILABLE,
         'Ollama Service Error',

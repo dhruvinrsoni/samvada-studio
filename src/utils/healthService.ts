@@ -14,7 +14,7 @@
 
 import { LLMProviderConfig } from '../types';
 import { logDebug } from './debug';
-import { parseProviderError, type ProviderError, ErrorCategory } from './providerErrors';
+import { parseProviderError, type ProviderError } from './providerErrors';
 
 export type HealthStatus = 'online' | 'slow' | 'offline' | 'unknown' | 'disabled';
 
@@ -168,6 +168,12 @@ export class HealthService {
           status = 'offline';
           // Parse Ollama-specific error
           errorDetails = parseProviderError(provider.type, ollamaResult.error || ollamaResult);
+          // Add technical details
+          if (ollamaResult.error) {
+            errorDetails.technicalDetails = typeof ollamaResult.error === 'string' 
+              ? ollamaResult.error 
+              : JSON.stringify(ollamaResult.error, null, 2);
+          }
           error = errorDetails.title;
         }
 
@@ -190,9 +196,15 @@ export class HealthService {
         } else {
           status = 'offline';
           // Parse error response
+          let rawResponse: string = '';
           try {
-            const errorResponse = await httpResponse.json();
+            const responseText = await httpResponse.text();
+            rawResponse = responseText;
+            const errorResponse = JSON.parse(responseText);
             errorDetails = parseProviderError(provider.type, errorResponse, httpResponse.status);
+            if (rawResponse) {
+              errorDetails.technicalDetails = rawResponse;
+            }
             error = errorDetails.title;
           } catch {
             error = `HTTP ${httpResponse.status}`;
@@ -209,8 +221,9 @@ export class HealthService {
           error = errorDetails.title;
         } else {
           // Try a lightweight API call to validate credentials and billing
+          let response: Response | null = null;
           try {
-            const response = await fetch('https://api.anthropic.com/v1/messages', {
+            response = await fetch('https://api.anthropic.com/v1/messages', {
               method: 'POST',
               signal: AbortSignal.timeout(this.PROVIDER_TIMEOUT),
               headers: {
@@ -231,15 +244,62 @@ export class HealthService {
               status = responseTime > 5000 ? 'slow' : 'online';
             } else {
               status = 'offline';
-              const errorResponse = await response.json();
+              // Try to parse error response body
+              let errorResponse: any;
+              let rawResponse: string = '';
+              try {
+                const responseText = await response.text();
+                rawResponse = responseText;
+                console.log('[HealthService] Anthropic error response:', {
+                  status: response.status,
+                  statusText: response.statusText,
+                  body: responseText
+                });
+                try {
+                  errorResponse = JSON.parse(responseText);
+                } catch {
+                  errorResponse = {
+                    error: {
+                      type: 'api_error',
+                      message: responseText || `HTTP ${response.status}: ${response.statusText}`
+                    }
+                  };
+                }
+              } catch {
+                // If reading response fails, create a generic error with status code
+                errorResponse = {
+                  error: {
+                    type: 'api_error',
+                    message: `HTTP ${response.status}: ${response.statusText}`
+                  }
+                };
+              }
               errorDetails = parseProviderError(provider.type, errorResponse, response.status);
+              // Add raw response as technical details
+              if (rawResponse) {
+                errorDetails.technicalDetails = rawResponse;
+              }
               error = errorDetails.title;
             }
           } catch (err) {
             responseTime = Date.now() - startTime;
-            errorDetails = parseProviderError(provider.type, err);
-            error = errorDetails.title;
             status = 'offline';
+            console.log('[HealthService] Anthropic fetch error:', err);
+            // Only treat as network error if we didn't get a response at all
+            if (!response) {
+              errorDetails = parseProviderError(provider.type, err);
+              if (err instanceof Error) {
+                errorDetails.technicalDetails = err.message;
+              }
+              error = errorDetails.title;
+            } else {
+              // We got a response but something else failed - shouldn't happen but handle it
+              errorDetails = parseProviderError(provider.type, { error: { type: 'unknown_error', message: String(err) } });
+              if (err instanceof Error) {
+                errorDetails.technicalDetails = err.message;
+              }
+              error = errorDetails.title;
+            }
           }
         }
 
@@ -265,13 +325,26 @@ export class HealthService {
               status = responseTime > 5000 ? 'slow' : 'online';
             } else {
               status = 'offline';
-              const errorResponse = await response.json();
-              errorDetails = parseProviderError(provider.type, errorResponse, response.status);
-              error = errorDetails.title;
+              let rawResponse: string = '';
+              try {
+                const responseText = await response.text();
+                rawResponse = responseText;
+                const errorResponse = JSON.parse(responseText);
+                errorDetails = parseProviderError(provider.type, errorResponse, response.status);
+                if (rawResponse) {
+                  errorDetails.technicalDetails = rawResponse;
+                }
+                error = errorDetails.title;
+              } catch {
+                error = `HTTP ${response.status}`;
+              }
             }
           } catch (err) {
             responseTime = Date.now() - startTime;
             errorDetails = parseProviderError(provider.type, err);
+            if (err instanceof Error) {
+              errorDetails.technicalDetails = err.message;
+            }
             error = errorDetails.title;
             status = 'offline';
           }
@@ -294,9 +367,15 @@ export class HealthService {
           status = responseTime > 5000 ? 'slow' : 'online';
         } else {
           status = 'offline';
+          let rawResponse: string = '';
           try {
-            const errorResponse = await httpResponse.json();
+            const responseText = await httpResponse.text();
+            rawResponse = responseText;
+            const errorResponse = JSON.parse(responseText);
             errorDetails = parseProviderError(provider.type, errorResponse, httpResponse.status);
+            if (rawResponse) {
+              errorDetails.technicalDetails = rawResponse;
+            }
             error = errorDetails.title;
           } catch {
             error = `HTTP ${httpResponse.status}`;
@@ -312,6 +391,9 @@ export class HealthService {
     } catch (err) {
       responseTime = Date.now() - startTime;
       errorDetails = parseProviderError(provider.type, err);
+      if (err instanceof Error) {
+        errorDetails.technicalDetails = err.message;
+      }
       error = errorDetails.title;
       status = 'offline';
     }
