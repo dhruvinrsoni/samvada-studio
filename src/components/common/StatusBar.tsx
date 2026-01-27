@@ -29,11 +29,6 @@ export default function StatusBar() {
   // Show message if no providers configured
   const hasProviders = state.providers.length > 0;
 
-  // Don't render if monitoring is disabled or no providers configured
-  if (!state.healthMonitoringEnabled || !hasProviders) {
-    return null;
-  }
-
   /**
    * Get status icon and color
    */
@@ -50,6 +45,17 @@ export default function StatusBar() {
       default:
         return { icon: '●', color: 'text-gray-500', bgColor: 'bg-gray-500', label: 'Unknown' };
     }
+  };
+
+  /**
+   * Format bytes to human readable format
+   */
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
   /**
@@ -107,6 +113,11 @@ export default function StatusBar() {
 
     return () => clearTimeout(timeoutId);
   }, [healthStatus]);
+
+  // Don't render if monitoring is disabled or no providers configured
+  if (!state.healthMonitoringEnabled || !hasProviders) {
+    return null;
+  }
 
   return (
     <>
@@ -233,11 +244,15 @@ export default function StatusBar() {
           >
             {healthStatus.map((health) => {
               const statusInfo = getStatusIcon(health.status);
+              // Find the provider to get its type
+              const provider = state.providers?.find(p => p.id === health.providerId);
+              const isOllama = provider?.type === 'ollama';
+              
               return (
                 <div
                   key={health.providerId}
                   className="flex items-center gap-1.5 flex-shrink-0"
-                  title={`${health.model}: ${statusInfo.label}${health.responseTime ? ` (${formatResponseTime(health.responseTime)})` : ''}`}
+                  title={`${health.model}: ${statusInfo.label}${health.responseTime ? ` (${formatResponseTime(health.responseTime)})` : ''}${health.modelSize ? ` (${formatBytes(health.modelSize)})` : ''}`}
                 >
                   {/* Blinking Status Light */}
                   <span className={`relative flex h-2 w-2`}>
@@ -250,6 +265,11 @@ export default function StatusBar() {
                   {/* Model Name */}
                   <span className={`text-xs font-mono ${statusInfo.color}`}>
                     {health.model}
+                    {isOllama && health.modelSize && (
+                      <span className="ml-1 opacity-75">
+                        ({formatBytes(health.modelSize)})
+                      </span>
+                    )}
                   </span>
                 </div>
               );
@@ -257,11 +277,15 @@ export default function StatusBar() {
             {/* Duplicate content for seamless loop */}
             {shouldScroll && healthStatus.map((health) => {
               const statusInfo = getStatusIcon(health.status);
+              // Find the provider to get its type
+              const provider = state.providers?.find(p => p.id === health.providerId);
+              const isOllama = provider?.type === 'ollama';
+              
               return (
                 <div
                   key={`${health.providerId}-duplicate`}
                   className="flex items-center gap-1.5 flex-shrink-0"
-                  title={`${health.model}: ${statusInfo.label}${health.responseTime ? ` (${formatResponseTime(health.responseTime)})` : ''}`}
+                  title={`${health.model}: ${statusInfo.label}${health.responseTime ? ` (${formatResponseTime(health.responseTime)})` : ''}${health.modelSize ? ` (${formatBytes(health.modelSize)})` : ''}`}
                 >
                   {/* Blinking Status Light */}
                   <span className={`relative flex h-2 w-2`}>
@@ -274,6 +298,11 @@ export default function StatusBar() {
                   {/* Model Name */}
                   <span className={`text-xs font-mono ${statusInfo.color}`}>
                     {health.model}
+                    {isOllama && health.modelSize && (
+                      <span className="ml-1 opacity-75">
+                        ({formatBytes(health.modelSize)})
+                      </span>
+                    )}
                   </span>
                 </div>
               );

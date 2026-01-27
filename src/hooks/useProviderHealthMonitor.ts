@@ -20,6 +20,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { LLMProviderConfig } from '../types';
 
+/**
+ * Format bytes to human readable format
+ */
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
+
 export type HealthStatus = 'online' | 'slow' | 'offline' | 'unknown' | 'disabled';
 
 export interface ProviderHealth {
@@ -30,6 +41,7 @@ export interface ProviderHealth {
   lastChecked: number;
   responseTime?: number; // in milliseconds
   error?: string;
+  modelSize?: number; // in bytes, for Ollama models
 }
 
 interface UseProviderHealthMonitorProps {
@@ -43,6 +55,7 @@ interface HealthCache {
     status: HealthStatus;
     timestamp: number;
     responseTime?: number;
+    modelSize?: number;
   };
 }
 
@@ -93,11 +106,12 @@ export function useProviderHealthMonitor({
   /**
    * Update cache
    */
-  const updateCache = useCallback((providerId: string, status: HealthStatus, responseTime?: number) => {
+  const updateCache = useCallback((providerId: string, status: HealthStatus, responseTime?: number, modelSize?: number) => {
     cacheRef.current[providerId] = {
       status,
       timestamp: Date.now(),
       responseTime,
+      modelSize,
     };
   }, []);
 
@@ -117,6 +131,7 @@ export function useProviderHealthMonitor({
         status: cached,
         lastChecked: cacheRef.current[provider.id].timestamp,
         responseTime: cacheRef.current[provider.id].responseTime,
+        modelSize: cacheRef.current[provider.id].modelSize,
       };
     }
 
@@ -138,6 +153,7 @@ export function useProviderHealthMonitor({
     let status: HealthStatus = 'unknown';
     let error: string | undefined;
     let responseTime: number | undefined;
+    let modelSize: number | undefined;
     let healthCheckUrl: string | null = null;
 
     try {
@@ -203,12 +219,35 @@ export function useProviderHealthMonitor({
           if (response.ok || response.status === 401 || response.status === 403) {
             // 401/403 means endpoint is live, just auth issue (expected for some checks)
             status = responseTime > SLOW_THRESHOLD ? 'slow' : 'online';
+            
+            // Special handling for Ollama to extract model size
+            if (provider.type === 'ollama' && response.ok) {
+              try {
+                const responseClone = response.clone(); // Clone to avoid consuming the response
+                const data = await responseClone.json();
+                // Find the current model in the models array
+                const currentModel = data.models?.find((m: any) => m.name === provider.model || m.name.startsWith(`${provider.model}:`));
+                if (currentModel?.size) {
+                  modelSize = currentModel.size;
+                  console.log('[Health Check] Ollama model size:', {
+                    providerId: provider.id,
+                    model: provider.model,
+                    size: modelSize,
+                    sizeFormatted: modelSize ? formatBytes(modelSize) : 'Unknown'
+                  });
+                }
+              } catch (parseError) {
+                console.warn('[Health Check] Failed to parse Ollama response:', parseError);
+              }
+            }
+            
             console.log('[Health Check] Success:', { 
               providerId: provider.id,
               providerName: provider.name,
               status, 
               responseTime,
-              statusCode: response.status 
+              statusCode: response.status,
+              modelSize 
             });
           } else {
             status = 'offline';
@@ -285,7 +324,7 @@ export function useProviderHealthMonitor({
     }
 
     // Update cache
-    updateCache(provider.id, status, responseTime);
+    updateCache(provider.id, status, responseTime, modelSize);
 
     return {
       providerId: provider.id,
@@ -295,6 +334,7 @@ export function useProviderHealthMonitor({
       lastChecked: Date.now(),
       responseTime,
       error,
+      modelSize,
     };
   }, [getCachedHealth, updateCache]);
 
