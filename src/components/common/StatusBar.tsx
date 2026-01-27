@@ -236,7 +236,7 @@ export default function StatusBar() {
         >
           <div 
             ref={contentRef}
-            className={`flex items-center gap-4 ${shouldScroll ? 'animate-scroll' : ''} ${isHovered ? 'animation-paused' : ''}`}
+            className={`flex items-center gap-4 ${shouldScroll ? 'animate-scroll' : 'justify-center'} ${isHovered ? 'animation-paused' : ''}`}
             style={{
               animationDuration: `${healthStatus.length * 3}s`,
               animationDelay: shouldScroll ? '2s' : '0s'
