@@ -22,13 +22,11 @@ export default function StatusBar() {
     enabled: state.healthMonitoringEnabled ?? true,
   });
 
-  // Don't render if monitoring is disabled
-  if (!state.healthMonitoringEnabled) {
-    return null;
-  }
+  // Show message if no providers configured
+  const hasProviders = state.providers.length > 0;
 
-  // Don't render if no providers configured
-  if (state.providers.length === 0) {
+  // Don't render if monitoring is disabled or no providers configured
+  if (!state.healthMonitoringEnabled || !hasProviders) {
     return null;
   }
 
@@ -140,7 +138,17 @@ export default function StatusBar() {
           state.theme === 'dark' ? 'bg-dark-100 border-dark-300' : 'bg-light-100 border-light-400'
         } border-t`}
       >
+      {/* No Providers Message */}
+      {!hasProviders && (
+        <div className={`px-4 py-2 text-center text-xs font-mono ${
+          state.theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
+        }`}>
+          No providers configured. Add providers in Settings ⚙️ to enable health monitoring.
+        </div>
+      )}
+
       {/* Compact Bar */}
+      {hasProviders && state.healthMonitoringEnabled && (
       <div className="flex items-center justify-between px-4 py-2">
         {/* Left: Overall Status */}
         <button
@@ -193,7 +201,7 @@ export default function StatusBar() {
               <div
                 key={health.providerId}
                 className="flex items-center gap-1.5"
-                title={`${health.providerName}: ${statusInfo.label}${health.responseTime ? ` (${formatResponseTime(health.responseTime)})` : ''}`}
+                title={`${health.model}: ${statusInfo.label}${health.responseTime ? ` (${formatResponseTime(health.responseTime)})` : ''}`}
               >
                 {/* Blinking Status Light */}
                 <span className={`relative flex h-2 w-2`}>
@@ -203,9 +211,9 @@ export default function StatusBar() {
                   <span className={`relative inline-flex rounded-full h-2 w-2 ${statusInfo.bgColor}`}></span>
                 </span>
 
-                {/* Provider Name */}
+                {/* Model Name */}
                 <span className={`text-xs font-mono ${statusInfo.color}`}>
-                  {health.providerName}
+                  {health.model}
                 </span>
               </div>
             );
@@ -245,9 +253,10 @@ export default function StatusBar() {
           </button>
         </div>
       </div>
+      )}
 
       {/* Expanded Details */}
-      {isExpanded && (
+      {hasProviders && isExpanded && (
         <div className={`border-t ${
           state.theme === 'dark' ? 'border-dark-300' : 'border-light-400'
         }`}>

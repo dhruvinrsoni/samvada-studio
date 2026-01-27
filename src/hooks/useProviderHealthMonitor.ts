@@ -25,6 +25,7 @@ export type HealthStatus = 'online' | 'slow' | 'offline' | 'unknown' | 'disabled
 export interface ProviderHealth {
   providerId: string;
   providerName: string;
+  model: string;
   status: HealthStatus;
   lastChecked: number;
   responseTime?: number; // in milliseconds
@@ -112,6 +113,7 @@ export function useProviderHealthMonitor({
       return {
         providerId: provider.id,
         providerName: provider.name,
+        model: provider.model,
         status: cached,
         lastChecked: cacheRef.current[provider.id].timestamp,
         responseTime: cacheRef.current[provider.id].responseTime,
@@ -123,6 +125,7 @@ export function useProviderHealthMonitor({
       const health: ProviderHealth = {
         providerId: provider.id,
         providerName: provider.name,
+        model: provider.model,
         status: 'offline',
         lastChecked: Date.now(),
         error: 'No internet connection',
@@ -287,6 +290,7 @@ export function useProviderHealthMonitor({
     return {
       providerId: provider.id,
       providerName: provider.name,
+      model: provider.model,
       status,
       lastChecked: Date.now(),
       responseTime,
@@ -455,6 +459,7 @@ export function useProviderHealthMonitor({
         offlineHealth.set(provider.id, {
           providerId: provider.id,
           providerName: provider.name,
+          model: provider.model,
           status: 'offline',
           lastChecked: Date.now(),
           error: 'No internet connection',

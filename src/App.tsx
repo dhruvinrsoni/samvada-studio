@@ -278,6 +278,7 @@ function AppContent() {
           onQuote={handleQuote}
           templateContent={templateContent}
           onClearTemplate={clearTemplateContent}
+          pwaStatus={pwaStatus}
         />
 
         {/* Context Panel (Conditional) */}
@@ -292,7 +293,7 @@ function AppContent() {
       <TemplatesLibrary onSelectTemplate={handleSelectTemplate} />
       <ExportModal />
       {state.isStarredModalOpen && <StarredModal onClose={() => dispatch({ type: 'TOGGLE_STARRED_MODAL' })} />}
-      {isThemeSettingsOpen && <ThemeSettingsModal onClose={() => setIsThemeSettingsOpen(false)} pwaStatus={pwaStatus} />}
+      {isThemeSettingsOpen && <ThemeSettingsModal onClose={() => setIsThemeSettingsOpen(false)} />}
 
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onRemove={removeToast} position="top-right" />

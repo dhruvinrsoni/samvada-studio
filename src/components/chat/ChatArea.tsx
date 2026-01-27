@@ -8,6 +8,7 @@ import PromptResponseItem from './PromptResponseItem';
 import PromptInput from './PromptInput';
 import ChatSettings from './ChatSettings';
 import type { LLMProviderConfig } from '../../types';
+import type { PWAStatus } from '../../hooks/usePWA';
 
 interface ChatAreaProps {
   quotedText?: string;
@@ -15,9 +16,10 @@ interface ChatAreaProps {
   onQuote?: (text: string) => void;
   templateContent?: string;
   onClearTemplate?: () => void;
+  pwaStatus?: PWAStatus;
 }
 
-export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templateContent = '', onClearTemplate }: ChatAreaProps) {
+export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templateContent = '', onClearTemplate, pwaStatus }: ChatAreaProps) {
   const { state, activeChat, dispatch } = useChat();
   const { addToast } = useToast();
   const isMobile = useIsMobile();
@@ -260,7 +262,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
 
       {/* Settings Panel */}
       {showSettings && (
-        <ChatSettings chat={activeChat} onClose={() => setShowSettings(false)} />
+        <ChatSettings chat={activeChat} onClose={() => setShowSettings(false)} pwaStatus={pwaStatus} />
       )}
 
       {/* Messages Area */}

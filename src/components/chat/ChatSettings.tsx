@@ -4,13 +4,15 @@ import { createExample } from '../../utils/helpers';
 import type { Chat, Example, FormattingProfile, FormattingRule } from '../../types';
 import { DEFAULT_FORMATTING_PROFILES } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
+import type { PWAStatus } from '../../hooks/usePWA';
 
 interface ChatSettingsProps {
   chat: Chat;
   onClose: () => void;
+  pwaStatus?: PWAStatus;
 }
 
-export default function ChatSettings({ chat, onClose }: ChatSettingsProps) {
+export default function ChatSettings({ chat, onClose, pwaStatus }: ChatSettingsProps) {
   const { state, dispatch } = useChat();
   const [settings, setSettings] = useState(chat.settings);
   const [title, setTitle] = useState(chat.title);
@@ -18,6 +20,8 @@ export default function ChatSettings({ chat, onClose }: ChatSettingsProps) {
   const [selectedPresetId, setSelectedPresetId] = useState<string>(
     settings.formattingProfile?.id || 'none'
   );
+  const [isInstalling, setIsInstalling] = useState(false);
+  const [installMessage, setInstallMessage] = useState<{ type: 'success' | 'info'; text: string } | null>(null);
   const isDark = state.theme === 'dark';
 
   const handleSave = () => {
@@ -509,6 +513,155 @@ export default function ChatSettings({ chat, onClose }: ChatSettingsProps) {
             </div>
           )}
         </div>
+
+        {/* System Settings */}
+        <div className="space-y-4">
+          <h3 className={`text-lg font-semibold ${
+            isDark ? 'text-gray-200' : 'text-gray-800'
+          }`}>System Settings</h3>
+          
+          <div className={`p-4 rounded-lg border ${
+            isDark ? 'bg-dark-200 border-dark-300' : 'bg-light-200 border-light-400'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <label className={`text-sm font-medium ${
+                  isDark ? 'text-gray-200' : 'text-gray-800'
+                }`}>
+                  Health Monitoring
+                </label>
+                <p className={`text-xs mt-1 ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  Monitor LLM provider status in the status bar
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  dispatch({ 
+                    type: 'TOGGLE_HEALTH_MONITORING', 
+                    payload: !state.healthMonitoringEnabled 
+                  });
+                }}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  state.healthMonitoringEnabled
+                    ? 'bg-primary-600'
+                    : isDark ? 'bg-gray-700' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    state.healthMonitoringEnabled ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* PWA Settings */}
+        {pwaStatus && (
+          <div className="space-y-4">
+            <h3 className={`text-lg font-semibold ${
+              isDark ? 'text-gray-200' : 'text-gray-800'
+            }`}>App Installation</h3>
+            
+            <div className={`p-4 rounded-lg border ${
+              isDark ? 'bg-dark-200 border-dark-300 border-l-4 border-l-blue-500' : 'bg-light-200 border-light-400 border-l-4 border-l-blue-500'
+            }`}>
+              {pwaStatus.isInstalled || pwaStatus.isStandalone ? (
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <div className={`text-sm font-semibold ${
+                      isDark ? 'text-gray-200' : 'text-gray-800'
+                    }`}>
+                      App is installed!
+                    </div>
+                    <div className={`text-xs ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      You're using the installed version
+                    </div>
+                  </div>
+                </div>
+              ) : pwaStatus.isInstallable ? (
+                <div className="space-y-3">
+                  <div>
+                    <div className={`text-sm font-semibold mb-1 ${
+                      isDark ? 'text-gray-200' : 'text-gray-800'
+                    }`}>
+                      Install Samvada Studio
+                    </div>
+                    <p className={`text-xs ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      Get faster loading, offline support, and desktop experience
+                    </p>
+                  </div>
+
+                  {installMessage && (
+                    <div className={`text-xs px-3 py-2 rounded-lg ${
+                      installMessage.type === 'success' 
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                        : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                    }`}>
+                      {installMessage.text}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={async () => {
+                      setIsInstalling(true);
+                      setInstallMessage(null);
+                      const success = await pwaStatus.installApp();
+                      setIsInstalling(false);
+                      if (success) {
+                        setInstallMessage({ type: 'success', text: 'App installed successfully! 🎉' });
+                      } else {
+                        setInstallMessage({ type: 'info', text: 'Installation was cancelled or not supported.' });
+                      }
+                    }}
+                    disabled={isInstalling}
+                    className={`flex items-center justify-center gap-2 px-4 py-2 w-full
+                      bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700
+                      text-white text-sm font-medium rounded-lg transition-all
+                      ${
+                        isInstalling ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                  >
+                    {isInstalling ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Installing...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Install App
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div className={`text-xs ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
+                    App installation not available in this browser or context. Try Chrome, Edge, or Safari.
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Model Parameters */}
         <div className="grid grid-cols-2 gap-4">

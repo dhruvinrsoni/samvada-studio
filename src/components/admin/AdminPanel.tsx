@@ -265,7 +265,40 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              {/* Data Management */}
+              {/* System Settings */}
+              <div className={`p-4 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300' : 'border-light-400 bg-light-200'}`}>
+                <h3 className={`font-medium mb-4 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                  System Settings
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Health Monitoring
+                      </p>
+                      <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                        Monitor LLM provider connectivity and response times
+                      </p>
+                      {!state.healthMonitoringEnabled && (
+                        <p className={`text-xs mt-1 ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                          Status bar is hidden when disabled
+                        </p>
+                      )}
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={state.healthMonitoringEnabled ?? true}
+                        onChange={(e) => dispatch({ type: 'TOGGLE_HEALTH_MONITORING', payload: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600 ${
+                        isDark ? 'bg-gray-600' : 'bg-gray-300'
+                      }`}></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
               <div className={`p-4 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300' : 'border-light-400 bg-light-200'}`}>
                 <h3 className={`font-medium mb-4 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
                   Data Management
