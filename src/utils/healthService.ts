@@ -166,14 +166,22 @@ export class HealthService {
           }
         } else {
           status = 'offline';
-          // Parse Ollama-specific error
+          // Parse Ollama-specific error and add comprehensive details
           errorDetails = parseProviderError(provider.type, ollamaResult.error || ollamaResult);
-          // Add technical details
-          if (ollamaResult.error) {
-            errorDetails.technicalDetails = typeof ollamaResult.error === 'string' 
-              ? ollamaResult.error 
-              : JSON.stringify(ollamaResult.error, null, 2);
-          }
+          // Add technical details with full context
+          const technicalDetails = {
+            errorType: 'OllamaConnectionError',
+            errorMessage: ollamaResult.error || 'Unknown error',
+            timestamp: new Date().toISOString(),
+            request: {
+              url: `${baseUrl}/api/tags`,
+              method: 'GET',
+            },
+            ollamaEndpoint: baseUrl,
+            configuredModel: provider.model,
+            availableModels: ollamaResult.models?.map(m => m.name) || [],
+          };
+          errorDetails.technicalDetails = JSON.stringify(technicalDetails, null, 2);
           error = errorDetails.title;
         }
 
@@ -222,20 +230,24 @@ export class HealthService {
         } else {
           // Try a lightweight API call to validate credentials and billing
           let response: Response | null = null;
+          const requestUrl = 'https://api.anthropic.com/v1/messages';
+          const requestHeaders = {
+            'Content-Type': 'application/json',
+            'x-api-key': provider.apiKey,
+            'anthropic-version': '2023-06-01',
+          };
+          const requestBody = {
+            model: provider.model || 'claude-3-haiku-20240307',
+            max_tokens: 1,
+            messages: [{ role: 'user', content: 'ping' }],
+          };
+          
           try {
-            response = await fetch('https://api.anthropic.com/v1/messages', {
+            response = await fetch(requestUrl, {
               method: 'POST',
               signal: AbortSignal.timeout(this.PROVIDER_TIMEOUT),
-              headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': provider.apiKey,
-                'anthropic-version': '2023-06-01',
-              },
-              body: JSON.stringify({
-                model: provider.model || 'claude-3-haiku-20240307',
-                max_tokens: 1,
-                messages: [{ role: 'user', content: 'ping' }],
-              }),
+              headers: requestHeaders,
+              body: JSON.stringify(requestBody),
             });
 
             responseTime = Date.now() - startTime;
@@ -285,19 +297,38 @@ export class HealthService {
             responseTime = Date.now() - startTime;
             status = 'offline';
             console.log('[HealthService] Anthropic fetch error:', err);
+            
+            // Build comprehensive technical details
+            const technicalDetails = {
+              errorType: err instanceof Error ? err.name : 'Unknown',
+              errorMessage: err instanceof Error ? err.message : String(err),
+              timestamp: new Date().toISOString(),
+              request: {
+                url: requestUrl,
+                method: 'POST',
+                headers: {
+                  'Content-Type': requestHeaders['Content-Type'],
+                  'anthropic-version': requestHeaders['anthropic-version'],
+                  'x-api-key': provider.apiKey ? `${provider.apiKey.substring(0, 8)}...` : 'missing',
+                },
+                body: requestBody,
+              },
+              responseReceived: !!response,
+              ...(response && {
+                httpStatus: response.status,
+                httpStatusText: response.statusText,
+              }),
+            };
+            
             // Only treat as network error if we didn't get a response at all
             if (!response) {
               errorDetails = parseProviderError(provider.type, err);
-              if (err instanceof Error) {
-                errorDetails.technicalDetails = err.message;
-              }
+              errorDetails.technicalDetails = JSON.stringify(technicalDetails, null, 2);
               error = errorDetails.title;
             } else {
               // We got a response but something else failed - shouldn't happen but handle it
               errorDetails = parseProviderError(provider.type, { error: { type: 'unknown_error', message: String(err) } });
-              if (err instanceof Error) {
-                errorDetails.technicalDetails = err.message;
-              }
+              errorDetails.technicalDetails = JSON.stringify(technicalDetails, null, 2);
               error = errorDetails.title;
             }
           }
@@ -310,14 +341,12 @@ export class HealthService {
           errorDetails = parseProviderError(provider.type, { error: { status: 'UNAUTHENTICATED', message: 'No API key configured' } }, 401);
           error = errorDetails.title;
         } else {
+          const requestUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${provider.apiKey}`;
           try {
-            const response = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models?key=${provider.apiKey}`,
-              {
-                method: 'GET',
-                signal: AbortSignal.timeout(this.PROVIDER_TIMEOUT),
-              }
-            );
+            const response = await fetch(requestUrl, {
+              method: 'GET',
+              signal: AbortSignal.timeout(this.PROVIDER_TIMEOUT),
+            });
 
             responseTime = Date.now() - startTime;
 
@@ -341,10 +370,17 @@ export class HealthService {
             }
           } catch (err) {
             responseTime = Date.now() - startTime;
+            const technicalDetails = {
+              errorType: err instanceof Error ? err.name : 'Unknown',
+              errorMessage: err instanceof Error ? err.message : String(err),
+              timestamp: new Date().toISOString(),
+              request: {
+                url: requestUrl.replace(provider.apiKey || '', '***'),
+                method: 'GET',
+              },
+            };
             errorDetails = parseProviderError(provider.type, err);
-            if (err instanceof Error) {
-              errorDetails.technicalDetails = err.message;
-            }
+            errorDetails.technicalDetails = JSON.stringify(technicalDetails, null, 2);
             error = errorDetails.title;
             status = 'offline';
           }

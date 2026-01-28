@@ -12,6 +12,7 @@ export default function ConnectionStatus() {
   } | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
 
   const isDark = state.themeSettings.mode === 'dark' ||
     (state.themeSettings.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -54,6 +55,10 @@ export default function ConnectionStatus() {
 
   if (!showWarning && connectivity.online) {
     return null; // Everything is fine
+  }
+
+  if (isDismissed) {
+    return null; // User dismissed the warning
   }
 
   return (
@@ -117,16 +122,32 @@ export default function ConnectionStatus() {
               </p>
             )}
           </div>
-          <svg
-            className={`w-4 h-4 flex-shrink-0 transition-transform ${
-              showDetails ? 'rotate-180' : ''
-            } ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDismissed(true);
+              }}
+              className={`p-1 rounded hover:bg-opacity-10 hover:bg-gray-500 ${
+                isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'
+              }`}
+              title="Dismiss"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <svg
+              className={`w-4 h-4 flex-shrink-0 transition-transform ${
+                showDetails ? 'rotate-180' : ''
+              } ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
 
         {/* Details - Expandable */}
