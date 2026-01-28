@@ -19,6 +19,7 @@ import { PWAInstallPrompt, PWAUpdateNotification, PWAOfflineIndicator } from './
 import { usePWA } from './hooks/usePWA';
 import { useState, useEffect } from 'react';
 import BRAND from './constants/brand';
+import { HealthService } from './utils/healthService';
 
 function AppContent() {
   const { state, dispatch, createChat } = useChat();
@@ -29,6 +30,7 @@ function AppContent() {
   const [quotedText, setQuotedText] = useState<string>('');
   const [templateContent, setTemplateContent] = useState<string>('');
   const [isThemeSettingsOpen, setIsThemeSettingsOpen] = useState(false);
+  const [minimizedOllamaWarnings, setMinimizedOllamaWarnings] = useState(false);
 
   const handleQuote = (text: string) => {
     setQuotedText(prev => prev ? `${prev}\n\n> ${text}` : `> ${text}`);
@@ -44,6 +46,14 @@ function AppContent() {
 
   const clearTemplateContent = () => {
     setTemplateContent('');
+  };
+
+  const minimizeOllamaWarnings = () => {
+    setMinimizedOllamaWarnings(true);
+  };
+
+  const showOllamaWarnings = () => {
+    setMinimizedOllamaWarnings(false);
   };
 
   // Global keyboard shortcuts
@@ -87,6 +97,25 @@ function AppContent() {
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [dispatch, createChat]);
+
+  // Refresh Ollama cache on app startup
+  useEffect(() => {
+    const refreshOllamaCache = async () => {
+      try {
+        // For testing: populate cache with test data if no real Ollama
+        if (!navigator.onLine || window.location.hostname === 'localhost') {
+          HealthService.populateTestCache();
+        } else {
+          await HealthService.refreshOllamaCache();
+        }
+      } catch (error) {
+        console.warn('Failed to refresh Ollama cache on startup:', error);
+        // Fallback to test data
+        HealthService.populateTestCache();
+      }
+    };
+    refreshOllamaCache();
+  }, []);
 
   // Initialize sidebar state based on screen size
   useEffect(() => {
@@ -299,7 +328,10 @@ function AppContent() {
       <ToastContainer toasts={toasts} onRemove={removeToast} position="top-right" />
 
       {/* Connection Status Indicator */}
-      <ConnectionStatus />
+      <ConnectionStatus 
+        minimized={minimizedOllamaWarnings} 
+        onMinimize={minimizeOllamaWarnings} 
+      />
 
       {/* PWA Components */}
       <PWAInstallPrompt pwaStatus={pwaStatus} />
@@ -307,7 +339,10 @@ function AppContent() {
       <PWAOfflineIndicator pwaStatus={pwaStatus} />
 
       {/* Status Bar */}
-      <StatusBar />
+      <StatusBar 
+        minimizedOllamaWarnings={minimizedOllamaWarnings}
+        onShowOllamaWarnings={showOllamaWarnings}
+      />
     </div>
     </>
   );

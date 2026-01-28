@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { HealthService } from '../../utils/healthService';
 
-export default function ConnectionStatus() {
+interface ConnectionStatusProps {
+  minimized?: boolean;
+  onMinimize?: () => void;
+}
+
+export default function ConnectionStatus({ minimized = false, onMinimize }: ConnectionStatusProps) {
   const { state } = useChat();
   const [connectivity, setConnectivity] = useState<{
     online: boolean;
@@ -55,6 +60,10 @@ export default function ConnectionStatus() {
 
   if (!showWarning && connectivity.online) {
     return null; // Everything is fine
+  }
+
+  if (minimized) {
+    return null; // Minimized to status bar
   }
 
   if (isDismissed) {
@@ -126,12 +135,16 @@ export default function ConnectionStatus() {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setIsDismissed(true);
+                if (onMinimize) {
+                  onMinimize(); // Minimize to status bar for Ollama
+                } else {
+                  setIsDismissed(true); // Regular dismiss for others
+                }
               }}
               className={`p-1 rounded hover:bg-opacity-10 hover:bg-gray-500 ${
                 isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'
               }`}
-              title="Dismiss"
+              title={onMinimize ? "Minimize to status bar" : "Dismiss"}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

@@ -44,6 +44,75 @@ export class HealthService {
   private static readonly OLLAMA_TIMEOUT = 2000; // 2 seconds for basic checks
   private static readonly PROVIDER_TIMEOUT = 30000; // 30 seconds for detailed checks
   private static readonly INTERNET_TIMEOUT = 2000; // 2 seconds for internet checks
+  
+  // Cache settings
+  private static readonly OLLAMA_CACHE_KEY = 'ollama_model_cache';
+  private static readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+  /**
+   * Ollama model cache interface
+   */
+  private static getOllamaCache(): { models: { name: string; size: number }[]; timestamp: number } | null {
+    try {
+      const cached = localStorage.getItem(this.OLLAMA_CACHE_KEY);
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private static setOllamaCache(models: { name: string; size: number }[]): void {
+    try {
+      const cacheData = {
+        models,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(this.OLLAMA_CACHE_KEY, JSON.stringify(cacheData));
+    } catch (error) {
+      console.warn('Failed to cache Ollama models:', error);
+    }
+  }
+
+  private static isCacheValid(): boolean {
+    const cache = this.getOllamaCache();
+    if (!cache) return false;
+    
+    const now = Date.now();
+    const cacheAge = now - cache.timestamp;
+    return cacheAge < this.CACHE_DURATION;
+  }
+
+  /**
+   * Force refresh Ollama model cache
+   */
+  static async refreshOllamaCache(customEndpoint?: string): Promise<void> {
+    await this.checkOllamaConnectivity(customEndpoint, true);
+  }
+
+  /**
+   * Debug: Populate cache with test data
+   */
+  static populateTestCache(): void {
+    const testModels = [
+      { name: 'llama2', size: 3791733504 },
+      { name: 'llama2:7b', size: 3791733504 },
+      { name: 'codellama', size: 5368709120 },
+      { name: 'mistral', size: 4140000000 }
+    ];
+    this.setOllamaCache(testModels);
+    logDebug('HealthService', `Populated cache with test data: ${testModels.map(m => `${m.name} (${this.formatBytes(m.size)})`).join(', ')}`);
+  }
+
+  /**
+   * Clear Ollama model cache
+   */
+  static clearOllamaCache(): void {
+    try {
+      localStorage.removeItem(this.OLLAMA_CACHE_KEY);
+    } catch (error) {
+      console.warn('Failed to clear Ollama cache:', error);
+    }
+  }
 
   /**
    * Check basic connectivity (used by ConnectionStatus)
@@ -81,13 +150,47 @@ export class HealthService {
   }
 
   /**
-   * Check Ollama connectivity and get models
+   * Check Ollama connectivity and get models (with caching)
    */
   static async checkOllamaConnectivity(
-    customEndpoint?: string
+    customEndpoint?: string,
+    forceRefresh: boolean = false
   ): Promise<OllamaConnectivityResult> {
     const endpoint = customEndpoint || 'http://localhost:11434';
 
+    // Check cache first (unless forced refresh)
+    if (!forceRefresh && this.isCacheValid()) {
+      const cache = this.getOllamaCache();
+      if (cache) {
+        logDebug('HealthService', `Using cached Ollama models: ${cache.models.length} models`);
+        // Verify Ollama is still running by doing a quick ping
+        try {
+          const pingResponse = await fetch(`${endpoint}/api/tags`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(1000), // Quick 1-second ping
+          });
+          
+          if (pingResponse.ok) {
+            // Ollama is running, return cached models
+            return {
+              available: true,
+              models: cache.models,
+            };
+          }
+        } catch {
+          // Ollama not running, return cached data but mark as unavailable
+          logDebug('HealthService', 'Ollama ping failed, returning cached models but marking as unavailable');
+          return {
+            available: false,
+            models: cache.models,
+            error: 'Ollama server not responding',
+          };
+        }
+      }
+    }
+
+    // Cache invalid or forced refresh - fetch fresh data
+    logDebug('HealthService', `Fetching fresh Ollama models from ${endpoint}`);
     try {
       const response = await fetch(`${endpoint}/api/tags`, {
         method: 'GET',
@@ -101,11 +204,16 @@ export class HealthService {
           size: m.size
         }));
 
+        // Cache the fresh data
+        this.setOllamaCache(models);
+        logDebug('HealthService', `Fetched and cached ${models.length} Ollama models: ${models.map((m: any) => `${m.name} (${m.size ? this.formatBytes(m.size) : 'no size'})`).join(', ')}`);
+
         return {
           available: true,
           models,
         };
       } else {
+        logDebug('HealthService', `Ollama API returned status ${response.status}`);
         return {
           available: false,
           models: [],
@@ -150,19 +258,29 @@ export class HealthService {
 
         healthCheckUrl = `${baseUrl}/api/tags`;
 
-        // Use unified Ollama checking
+        // Check Ollama connectivity (will use cache if available)
         const ollamaResult = await this.checkOllamaConnectivity(baseUrl);
         responseTime = Date.now() - startTime;
 
         if (ollamaResult.available) {
           status = responseTime > 5000 ? 'slow' : 'online';
 
-          // Find the current model size
-          const currentModel = ollamaResult.models.find(m =>
-            m.name === provider.model || m.name.startsWith(`${provider.model}:`)
-          );
+          // Find the current model size from cached/available models
+          // More robust matching: exact match, starts with, or contains
+          const currentModel = ollamaResult.models.find(m => {
+            const providerModel = provider.model.toLowerCase();
+            const cachedModel = m.name.toLowerCase();
+            return cachedModel === providerModel ||
+                   cachedModel.startsWith(`${providerModel}:`) ||
+                   providerModel.startsWith(`${cachedModel}:`) ||
+                   cachedModel.includes(providerModel) ||
+                   providerModel.includes(cachedModel);
+          });
           if (currentModel?.size) {
             modelSize = currentModel.size;
+            logDebug('HealthService', `Found model size for ${provider.model}: ${this.formatBytes(modelSize)} (${modelSize} bytes)`);
+          } else {
+            logDebug('HealthService', `No model size found for ${provider.model}. Available models: ${ollamaResult.models.map((m: any) => `${m.name} (${m.size ? this.formatBytes(m.size) : 'no size'})`).join(', ')}`);
           }
         } else {
           status = 'offline';

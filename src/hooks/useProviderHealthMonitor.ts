@@ -279,8 +279,21 @@ export function useProviderHealthMonitor({
   const refresh = useCallback(async () => {
     // Clear cache to force fresh check
     cacheRef.current = {};
+    
+    // Also refresh Ollama model cache
+    const ollamaProviders = providers.filter(p => p.type === 'ollama');
+    for (const provider of ollamaProviders) {
+      if (provider.apiEndpoint) {
+        let baseUrl = provider.apiEndpoint;
+        if (baseUrl.includes('/api/')) {
+          baseUrl = baseUrl.substring(0, baseUrl.indexOf('/api/'));
+        }
+        await HealthService.refreshOllamaCache(baseUrl);
+      }
+    }
+    
     await checkAllProviders();
-  }, [checkAllProviders]);
+  }, [checkAllProviders, providers]);
 
   /**
    * Effect: Start/stop monitoring based on enabled state

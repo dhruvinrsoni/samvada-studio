@@ -13,7 +13,12 @@ import { useChat } from '../../context/ChatContext';
 import useProviderHealthMonitor from '../../hooks/useProviderHealthMonitor';
 import { HealthService, type HealthStatus } from '../../utils/healthService';
 
-export default function StatusBar() {
+interface StatusBarProps {
+  minimizedOllamaWarnings?: boolean;
+  onShowOllamaWarnings?: () => void;
+}
+
+export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllamaWarnings }: StatusBarProps) {
   const { state, dispatch } = useChat();
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldScroll, setShouldScroll] = useState(false);
@@ -26,6 +31,18 @@ export default function StatusBar() {
     providers: state.providers,
     enabled: state.healthMonitoringEnabled ?? true,
   });
+
+  // Debug logging for health status
+  useEffect(() => {
+    const healthArray = Array.from(healthStatus.values());
+    console.log('[StatusBar] Health status update:', healthArray.map(h => ({
+      providerId: h.providerId,
+      model: h.model,
+      status: h.status,
+      modelSize: h.modelSize,
+      hasModelSize: !!h.modelSize
+    })));
+  }, [healthStatus]);
 
   // Show message if no providers configured
   const hasProviders = state.providers.length > 0;
@@ -111,6 +128,13 @@ export default function StatusBar() {
     } catch {
       return jsonString;
     }
+  };
+
+  /**
+   * Handle showing Ollama warnings
+   */
+  const showOllamaWarnings = () => {
+    onShowOllamaWarnings?.();
   };
 
   // Check if scrolling is needed
@@ -281,11 +305,15 @@ export default function StatusBar() {
                   {/* Model Name */}
                   <span className={`text-xs font-mono ${statusInfo.color}`}>
                     {health.model}
-                    {isOllama && health.modelSize && (
+                    {isOllama && health.modelSize ? (
                       <span className="ml-1 opacity-75">
                         ({formatBytes(health.modelSize)})
                       </span>
-                    )}
+                    ) : isOllama ? (
+                      <span className="ml-1 opacity-50 text-yellow-500">
+                        (size unknown)
+                      </span>
+                    ) : null}
                   </span>
                 </div>
               );
@@ -314,17 +342,45 @@ export default function StatusBar() {
                   {/* Model Name */}
                   <span className={`text-xs font-mono ${statusInfo.color}`}>
                     {health.model}
-                    {isOllama && health.modelSize && (
+                    {isOllama && health.modelSize ? (
                       <span className="ml-1 opacity-75">
                         ({formatBytes(health.modelSize)})
                       </span>
-                    )}
+                    ) : isOllama ? (
+                      <span className="ml-1 opacity-50 text-yellow-500">
+                        (size unknown)
+                      </span>
+                    ) : null}
                   </span>
                 </div>
               );
             })}
           </div>
         </div>
+
+        {/* Minimized Ollama Warning Icon */}
+        {minimizedOllamaWarnings && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={showOllamaWarnings}
+              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-mono ${
+                state.theme === 'dark'
+                  ? 'bg-yellow-900 text-yellow-300 hover:bg-yellow-800'
+                  : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+              }`}
+              title="Ollama warnings minimized - Click to show"
+            >
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Ollama
+            </button>
+          </div>
+        )}
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
@@ -405,9 +461,13 @@ export default function StatusBar() {
                                 </div>
                                 <div className={`text-xs truncate ${state.theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                                   Ollama (Local)
-                                  {health.modelSize && (
+                                  {health.modelSize ? (
                                     <span className="ml-1 opacity-75">
                                       • {formatBytes(health.modelSize)}
+                                    </span>
+                                  ) : (
+                                    <span className="ml-1 opacity-50 text-yellow-500">
+                                      • size unknown
                                     </span>
                                   )}
                                 </div>
@@ -492,7 +552,7 @@ export default function StatusBar() {
                         {health.errorDetails.technicalDetails && (
                           <div className="mt-2">
                             <button
-                              onClick={(e) => {
+                              onClick={(e) => { 
                                 e.stopPropagation();
                                 setExpandedTechnicalDetails(
                                   expandedTechnicalDetails === health.providerId ? null : health.providerId
