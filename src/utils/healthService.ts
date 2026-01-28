@@ -99,7 +99,6 @@ export class HealthService {
       { name: 'codellama', size: 5368709120 },
       { name: 'mistral', size: 4140000000 }
     ];
-    this.setOllamaCache(testModels);
     logDebug('HealthService', `Populated cache with test data: ${testModels.map(m => `${m.name} (${this.formatBytes(m.size)})`).join(', ')}`);
   }
 
@@ -162,7 +161,6 @@ export class HealthService {
     if (!forceRefresh && this.isCacheValid()) {
       const cache = this.getOllamaCache();
       if (cache) {
-        logDebug('HealthService', `Using cached Ollama models: ${cache.models.length} models`);
         // Verify Ollama is still running by doing a quick ping
         try {
           const pingResponse = await fetch(`${endpoint}/api/tags`, {
@@ -179,7 +177,6 @@ export class HealthService {
           }
         } catch {
           // Ollama not running, return cached data but mark as unavailable
-          logDebug('HealthService', 'Ollama ping failed, returning cached models but marking as unavailable');
           return {
             available: false,
             models: cache.models,
@@ -190,7 +187,6 @@ export class HealthService {
     }
 
     // Cache invalid or forced refresh - fetch fresh data
-    logDebug('HealthService', `Fetching fresh Ollama models from ${endpoint}`);
     try {
       const response = await fetch(`${endpoint}/api/tags`, {
         method: 'GET',
@@ -206,14 +202,12 @@ export class HealthService {
 
         // Cache the fresh data
         this.setOllamaCache(models);
-        logDebug('HealthService', `Fetched and cached ${models.length} Ollama models: ${models.map((m: any) => `${m.name} (${m.size ? this.formatBytes(m.size) : 'no size'})`).join(', ')}`);
 
         return {
           available: true,
           models,
         };
       } else {
-        logDebug('HealthService', `Ollama API returned status ${response.status}`);
         return {
           available: false,
           models: [],
@@ -278,9 +272,6 @@ export class HealthService {
           });
           if (currentModel?.size) {
             modelSize = currentModel.size;
-            logDebug('HealthService', `Found model size for ${provider.model}: ${this.formatBytes(modelSize)} (${modelSize} bytes)`);
-          } else {
-            logDebug('HealthService', `No model size found for ${provider.model}. Available models: ${ollamaResult.models.map((m: any) => `${m.name} (${m.size ? this.formatBytes(m.size) : 'no size'})`).join(', ')}`);
           }
         } else {
           status = 'offline';

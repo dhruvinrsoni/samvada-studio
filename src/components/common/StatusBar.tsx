@@ -24,6 +24,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
   const [shouldScroll, setShouldScroll] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [expandedTechnicalDetails, setExpandedTechnicalDetails] = useState<string | null>(null);
+  const [warningDismissed, setWarningDismissed] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -32,17 +33,33 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
     enabled: state.healthMonitoringEnabled ?? true,
   });
 
-  // Debug logging for health status
+  // Check if warning was dismissed and if enough time has passed to show it again
   useEffect(() => {
-    const healthArray = Array.from(healthStatus.values());
-    console.log('[StatusBar] Health status update:', healthArray.map(h => ({
-      providerId: h.providerId,
-      model: h.model,
-      status: h.status,
-      modelSize: h.modelSize,
-      hasModelSize: !!h.modelSize
-    })));
-  }, [healthStatus]);
+    const dismissedTimestamp = localStorage.getItem('healthWarningDismissed');
+    if (dismissedTimestamp) {
+      const timePassed = Date.now() - parseInt(dismissedTimestamp, 10);
+      const fourHours = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
+      if (timePassed < fourHours) {
+        setWarningDismissed(true);
+      } else {
+        // Enough time has passed, clear the dismissal
+        localStorage.removeItem('healthWarningDismissed');
+      }
+    }
+  }, []);
+
+  // Reset dismissal when warning resolves
+  useEffect(() => {
+    if (!showDisableWarning) {
+      setWarningDismissed(false);
+      localStorage.removeItem('healthWarningDismissed');
+    }
+  }, [showDisableWarning]);
+
+  const dismissWarning = () => {
+    setWarningDismissed(true);
+    localStorage.setItem('healthWarningDismissed', Date.now().toString());
+  };
 
   // Show message if no providers configured
   const hasProviders = state.providers.length > 0;
@@ -162,7 +179,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
   return (
     <>
       {/* Disable Warning Banner */}
-      {showDisableWarning && (
+      {showDisableWarning && !warningDismissed && (
         <div 
           className={`fixed bottom-0 left-0 right-0 z-50 px-4 py-3 border-t-2 border-yellow-500 ${
             state.theme === 'dark' ? 'bg-yellow-900/20' : 'bg-yellow-100'
@@ -186,18 +203,33 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => {
-                dispatch({ type: 'TOGGLE_HEALTH_MONITORING', payload: false });
-              }}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                state.theme === 'dark'
-                  ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                  : 'bg-yellow-500 hover:bg-yellow-600 text-white'
-              }`}
-            >
-              Disable Monitoring
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={dismissWarning}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  state.theme === 'dark'
+                    ? 'hover:bg-yellow-800/50 text-yellow-300 hover:text-yellow-200'
+                    : 'hover:bg-yellow-200 text-yellow-700 hover:text-yellow-900'
+                }`}
+                title="Dismiss for 4 hours"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <button
+                onClick={() => {
+                  dispatch({ type: 'TOGGLE_HEALTH_MONITORING', payload: false });
+                }}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                  state.theme === 'dark'
+                    ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                    : 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                }`}
+              >
+                Disable Monitoring
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -205,7 +237,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
       {/* Status Bar */}
       <div 
         className={`fixed left-0 right-0 z-40 transition-all duration-300 ${
-          showDisableWarning ? 'bottom-[68px]' : 'bottom-0'
+          showDisableWarning && !warningDismissed ? 'bottom-[68px]' : 'bottom-0'
         } ${
           state.theme === 'dark' ? 'bg-dark-100 border-dark-300' : 'bg-light-100 border-light-400'
         } border-t`}

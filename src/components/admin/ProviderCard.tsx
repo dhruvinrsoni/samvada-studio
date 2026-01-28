@@ -1,6 +1,8 @@
 import { useChat } from '../../context/ChatContext';
 import type { LLMProviderConfig } from '../../types';
 import { formatDate } from '../../utils/helpers';
+import useProviderHealthMonitor from '../../hooks/useProviderHealthMonitor';
+import { HealthService } from '../../utils/healthService';
 
 interface ProviderCardProps {
   provider: LLMProviderConfig;
@@ -21,6 +23,15 @@ export default function ProviderCard({
 }: ProviderCardProps) {
   const { state } = useChat();
   const isDark = state.theme === 'dark';
+
+  // Get health status for this specific provider
+  const { healthStatus } = useProviderHealthMonitor({
+    providers: [provider], // Only monitor this provider
+    enabled: state.healthMonitoringEnabled ?? true,
+  });
+
+  // Get the health data for this provider
+  const providerHealth = healthStatus.find(h => h.providerId === provider.id);
 
   const getProviderIcon = (type: string) => {
     switch (type) {
@@ -70,7 +81,14 @@ export default function ProviderCard({
               {getStatusBadge()}
             </div>
             <p className={`text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Model: <code className={`px-1 py-0.5 rounded ${isDark ? 'bg-dark-100' : 'bg-light-400'}`}>{provider.model}</code>
+              Model: <code className={`px-1 py-0.5 rounded ${isDark ? 'bg-dark-100' : 'bg-light-400'}`}>
+                {provider.model}
+                {provider.type === 'ollama' && providerHealth?.modelSize && (
+                  <span className="ml-1 opacity-75">
+                    ({HealthService.formatBytes(providerHealth.modelSize)})
+                  </span>
+                )}
+              </code>
             </p>
             <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
               Endpoint: {provider.apiEndpoint || 'Not configured'}
