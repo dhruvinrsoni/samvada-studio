@@ -14,7 +14,7 @@
 
 import { LLMProviderConfig } from '../types';
 import { logDebug } from './debug';
-import { parseProviderError, type ProviderError } from './providerErrors';
+import { parseProviderError, type ProviderError, ErrorCategory } from './providerErrors';
 
 export type HealthStatus = 'online' | 'slow' | 'offline' | 'unknown' | 'disabled';
 
@@ -451,38 +451,53 @@ export class HealthService {
             status = 'offline';
             console.log('[HealthService] Anthropic fetch error:', err);
             
-            // Build comprehensive technical details
-            const technicalDetails = {
-              errorType: err instanceof Error ? err.name : 'Unknown',
-              errorMessage: err instanceof Error ? err.message : String(err),
-              timestamp: new Date().toISOString(),
-              request: {
-                url: requestUrl,
+            // Check for CORS errors specifically
+            const errorMsg = err instanceof Error ? err.message : '';
+            if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') || errorMsg.includes('CORS')) {
+              errorDetails = {
+                category: ErrorCategory.NETWORK,
+                title: 'CORS Error',
+                message: 'Anthropic API blocks direct browser requests for security. This is a browser limitation, not a problem with your API key.',
+                userAction: 'Install a CORS proxy browser extension (e.g., "CORS Unblock", "Allow CORS"), use a local proxy server, build a backend API, or try a different LLM provider.',
+                documentationUrl: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS',
+                retryable: false,
+                technicalDetails: 'Browser CORS policy prevents direct API calls to Anthropic. ⚠️ Note: Browser extensions bypass security - use with caution.',
+              };
+              error = errorDetails.title;
+            } else {
+              // Build comprehensive technical details
+              const technicalDetails = {
+                errorType: err instanceof Error ? err.name : 'Unknown',
+                errorMessage: err instanceof Error ? err.message : String(err),
+                timestamp: new Date().toISOString(),
+                request: {
+                  url: requestUrl,
                 method: 'POST',
                 headers: {
                   'Content-Type': requestHeaders['Content-Type'],
                   'anthropic-version': requestHeaders['anthropic-version'],
                   'x-api-key': provider.apiKey ? `${provider.apiKey.substring(0, 8)}...` : 'missing',
                 },
-                body: requestBody,
-              },
-              responseReceived: !!response,
-              ...(response && {
-                httpStatus: response.status,
-                httpStatusText: response.statusText,
-              }),
-            };
-            
-            // Only treat as network error if we didn't get a response at all
-            if (!response) {
-              errorDetails = parseProviderError(provider.type, err);
-              errorDetails.technicalDetails = JSON.stringify(technicalDetails, null, 2);
-              error = errorDetails.title;
-            } else {
-              // We got a response but something else failed - shouldn't happen but handle it
-              errorDetails = parseProviderError(provider.type, { error: { type: 'unknown_error', message: String(err) } });
-              errorDetails.technicalDetails = JSON.stringify(technicalDetails, null, 2);
-              error = errorDetails.title;
+                  body: requestBody,
+                },
+                responseReceived: !!response,
+                ...(response && {
+                  httpStatus: response.status,
+                  httpStatusText: response.statusText,
+                }),
+              };
+              
+              // Only treat as network error if we didn't get a response at all
+              if (!response) {
+                errorDetails = parseProviderError(provider.type, err);
+                errorDetails.technicalDetails = JSON.stringify(technicalDetails, null, 2);
+                error = errorDetails.title;
+              } else {
+                // We got a response but something else failed - shouldn't happen but handle it
+                errorDetails = parseProviderError(provider.type, { error: { type: 'unknown_error', message: String(err) } });
+                errorDetails.technicalDetails = JSON.stringify(technicalDetails, null, 2);
+                error = errorDetails.title;
+              }
             }
           }
         }

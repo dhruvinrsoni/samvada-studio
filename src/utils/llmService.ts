@@ -695,6 +695,13 @@ export const testProviderConnection = async (
       
       // Network errors
       if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+        // Special handling for Anthropic CORS issues
+        if (provider.type === 'anthropic') {
+          return {
+            success: false,
+            message: 'CORS Error: Anthropic API blocks browser requests. Solutions: 1) Install a CORS proxy extension (e.g., "CORS Unblock"), 2) Use a backend proxy server, or 3) Try a different provider. ⚠️ Browser extensions may pose security risks.'
+          };
+        }
         return { 
           success: false, 
           message: 'Network error. Check your internet connection or endpoint URL.' 
@@ -826,19 +833,29 @@ export const fetchAnthropicModels = async (
     }
     
     // Validate key by making a minimal API call
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307', // Use cheapest model for validation
-        max_tokens: 10,
-        messages: [{ role: 'user', content: 'test' }],
-      }),
-    });
+    let response;
+    try {
+      response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-3-haiku-20240307', // Use cheapest model for validation
+          max_tokens: 10,
+          messages: [{ role: 'user', content: 'test' }],
+        }),
+      });
+    } catch (fetchError) {
+      // CORS error - this is expected for Anthropic API from browser
+      const errorMsg = fetchError instanceof Error ? fetchError.message : '';
+      if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') || errorMsg.includes('CORS')) {
+        throw new Error('CORS Error: Anthropic API cannot be called directly from browser. Solutions: 1) Use a CORS proxy browser extension (e.g., "CORS Unblock" for Chrome/Edge), 2) Run a local proxy server, or 3) Use Anthropic through a backend API. Note: Browser extensions may pose security risks.');
+      }
+      throw fetchError;
+    }
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -864,6 +881,16 @@ export const fetchAnthropicModels = async (
     
     return { success: true, models };
   } catch (error) {
+    // Check if it's a CORS-related error
+    const errorMsg = error instanceof Error ? error.message : '';
+    if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') || errorMsg.includes('CORS')) {
+      return {
+        success: false,
+        models: [],
+        error: 'CORS Error: Anthropic API blocks browser requests. Use a CORS proxy extension or backend server. Learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS',
+      };
+    }
+    
     return {
       success: false,
       models: [],
