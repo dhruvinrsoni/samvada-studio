@@ -27,6 +27,7 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
   const [cacheList, setCacheList] = useState<CacheInfo[]>([]);
   const [totalCacheSize, setTotalCacheSize] = useState(0);
   const [isClearing, setIsClearing] = useState(false);
+  const [isFetchingCache, setIsFetchingCache] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const {
@@ -53,6 +54,7 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
   }, []);
 
   const fetchCacheInfo = async () => {
+    setIsFetchingCache(true);
     try {
       const cacheNames = await caches.keys();
       const cacheInfoPromises = cacheNames.map(async (name) => {
@@ -81,6 +83,8 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
       setTotalCacheSize(info.reduce((sum, cache) => sum + cache.size, 0));
     } catch (error) {
       console.error('[PWA] Error fetching cache info:', error);
+    } finally {
+      setIsFetchingCache(false);
     }
   };
 
@@ -274,20 +278,25 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
                 <li>✓ Full-screen mode</li>
               </ul>
             </div>
-            {isInstallable && (
+            <div>
               <button
                 onClick={handleInstall}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors"
+                disabled={!isInstallable}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                  !isInstallable
+                    ? 'bg-gray-400 cursor-not-allowed text-white'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
+                title={!isInstallable ? 'Browser is evaluating the app for installation. Try again in a moment.' : 'Install the app'}
               >
                 📥 Install App
               </button>
-            )}
-            {!isInstallable && (
-              <div className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                <p>Install prompt not available.</p>
-                <p className="mt-1">Use browser's install option.</p>
-              </div>
-            )}
+              {!isInstallable && (
+                <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                  Browser is evaluating the app for installation. Please wait a moment or refresh the page.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -369,13 +378,22 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
               </button>
               <button
                 onClick={fetchCacheInfo}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isDark
-                    ? 'bg-dark-100 hover:bg-dark-50 text-gray-300'
-                    : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                disabled={isFetchingCache}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  isFetchingCache
+                    ? 'bg-gray-400 cursor-not-allowed text-white'
+                    : isDark
+                      ? 'bg-dark-100 hover:bg-dark-50 text-gray-300 hover:scale-105'
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-700 hover:scale-105'
                 }`}
               >
-                🔄 Refresh
+                {isFetchingCache ? (
+                  <span className="flex items-center gap-1">
+                    <span className="animate-spin">⏳</span> Loading...
+                  </span>
+                ) : (
+                  '🔄 Refresh'
+                )}
               </button>
             </div>
           </div>

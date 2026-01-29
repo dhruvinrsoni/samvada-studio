@@ -124,6 +124,9 @@ export function usePWA(): PWAStatus {
       e.preventDefault();
       setDeferredPrompt(e);
       
+      // Immediately mark as installable when browser fires the event
+      setIsInstallable(true);
+      
       // Show prompt with smart timing
       const now = Date.now();
       const daysSinceLastPrompt = (now - lastPromptTime) / (1000 * 60 * 60 * 24);
@@ -138,7 +141,6 @@ export function usePWA(): PWAStatus {
         const delay = isFirstVisit ? 30000 : 0;
         
         setTimeout(() => {
-          setIsInstallable(true);
           setLastPromptTime(now);
           localStorage.setItem('pwa-last-prompt', now.toString());
         }, delay);
