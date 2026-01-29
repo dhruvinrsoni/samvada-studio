@@ -322,21 +322,28 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
             {/* ADVANCED TAB */}
             {activeTab === 'advanced' && (
               <div className="space-y-6">
-            <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-                <span className="text-xl">⚙️</span>
-                Advanced Theme Options
-              </h3>
-              
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Advanced theme customization options coming soon.
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">
-                  PWA installation moved to Chat Settings. Health monitoring toggle also in Chat Settings.
-                </p>
-              </div>
-            </div>
+                <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                    <span className="text-xl">⚙️</span>
+                    Advanced Theme Options
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Advanced theme customization options will appear here.
+                    </p>
+                    <div className={`p-3 rounded-lg ${isDark ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                        <strong>👉 Looking for PWA settings?</strong>
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        Progressive Web App installation and management has been moved to:
+                        <br />
+                        <strong>Admin Settings (⚙️) → PWA Tab (📱)</strong>
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

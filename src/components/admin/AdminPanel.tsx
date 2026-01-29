@@ -18,7 +18,7 @@ interface AdminPanelProps {
 
 export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
   const { state, dispatch } = useChat();
-  const [activeTab, setActiveTab] = useState<'providers' | 'settings' | 'developer'>('providers');
+  const [activeTab, setActiveTab] = useState<'providers' | 'settings' | 'pwa' | 'developer'>('providers');
   const [editingProvider, setEditingProvider] = useState<LLMProviderConfig | null>(null);
   const [isAddingProvider, setIsAddingProvider] = useState(false);
   const isDark = state.theme === 'dark';
@@ -120,7 +120,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                       : 'text-gray-600 hover:bg-light-300'
                 }`}
               >
-                🤖 LLM Providers
+                🤖 Providers
               </button>
               <button
                 onClick={() => setActiveTab('settings')}
@@ -133,6 +133,18 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                 }`}
               >
                 🔧 General
+              </button>
+              <button
+                onClick={() => setActiveTab('pwa')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'pwa'
+                    ? 'bg-primary-600 text-white'
+                    : isDark 
+                      ? 'text-gray-400 hover:bg-dark-100' 
+                      : 'text-gray-600 hover:bg-light-300'
+                }`}
+              >
+                📱 PWA
               </button>
               <button
                 onClick={() => setActiveTab('developer')}
@@ -233,9 +245,6 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
             <div className="space-y-6">
               {/* Local Network Access */}
               <LocalNetworkAccess isDark={isDark} />
-
-              {/* PWA Status and Management */}
-              <PWAStatusPanel pwaStatus={pwaStatus} isDark={isDark} />
 
               <div className={`p-4 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300' : 'border-light-400 bg-light-200'}`}>
                 <h3 className={`font-medium mb-4 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
@@ -385,12 +394,41 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
             </div>
           )}
 
+          {/* PWA Tab */}
+          {activeTab === 'pwa' && (
+            <div className="space-y-6">
+              {/* PWA Info Banner */}
+              <div className={`p-4 rounded-lg border ${
+                isDark ? 'border-purple-900 bg-purple-900/20' : 'border-purple-200 bg-purple-50'
+              }`}>
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">📱</span>
+                  <div className="flex-1">
+                    <h3 className={`font-semibold mb-1 ${
+                      isDark ? 'text-purple-200' : 'text-purple-900'
+                    }`}>
+                      Progressive Web App (PWA)
+                    </h3>
+                    <p className={`text-sm ${
+                      isDark ? 'text-purple-300' : 'text-purple-700'
+                    }`}>
+                      Install Samvada Studio as a native app for offline access, faster performance, and desktop integration.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Main PWA Installation & Status */}
+              <PWAStatusPanel pwaStatus={pwaStatus} isDark={isDark} />
+
+              {/* Advanced PWA Controls */}
+              <PWAAdvancedControls pwaStatus={pwaStatus} isDark={isDark} />
+            </div>
+          )}
+
           {/* Developer Tab */}
           {activeTab === 'developer' && (
             <div className="space-y-6">
-              {/* PWA Advanced Controls */}
-              <PWAAdvancedControls pwaStatus={pwaStatus} isDark={isDark} />
-              
               <DeveloperTools />
             </div>
           )}
