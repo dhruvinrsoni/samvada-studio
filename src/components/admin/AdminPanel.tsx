@@ -8,6 +8,7 @@ import ProviderForm from './ProviderForm';
 import DeveloperTools from './DeveloperTools';
 import LocalNetworkAccess from './LocalNetworkAccess';
 import PWAStatusPanel from './PWAStatusPanel';
+import PWAAdvancedControls from './PWAAdvancedControls';
 import useProviderHealthMonitor from '../../hooks/useProviderHealthMonitor';
 import type { PWAStatus } from '../../hooks/usePWA';
 
@@ -386,7 +387,12 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
 
           {/* Developer Tab */}
           {activeTab === 'developer' && (
-            <DeveloperTools />
+            <div className="space-y-6">
+              {/* PWA Advanced Controls */}
+              <PWAAdvancedControls pwaStatus={pwaStatus} isDark={isDark} />
+              
+              <DeveloperTools />
+            </div>
           )}
         </div>
       </div>
