@@ -351,6 +351,31 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
               ? 'Ollama runs locally and typically doesn\'t require an API key'
               : 'Your API key is stored locally and never sent to our servers'}
           </p>
+          
+          {/* Anthropic CORS Warning */}
+          {formData.type === 'anthropic' && (
+            <div className={`mt-3 p-3 rounded-lg border ${
+              isDark 
+                ? 'bg-yellow-900/20 border-yellow-800 text-yellow-300' 
+                : 'bg-yellow-50 border-yellow-300 text-yellow-800'
+            }`}>
+              <div className="flex items-start gap-2">
+                <span className="text-lg flex-shrink-0">⚠️</span>
+                <div className="text-xs">
+                  <p className="font-semibold mb-1">CORS Limitation</p>
+                  <p className="mb-2">
+                    Anthropic's API blocks direct browser requests for security. You'll need one of these solutions:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li>Install a CORS proxy browser extension (e.g., "CORS Unblock")</li>
+                    <li>Use a local proxy server</li>
+                    <li>Build a backend API</li>
+                    <li>Consider OpenAI, Google Gemini, or Ollama (no CORS issues)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div>

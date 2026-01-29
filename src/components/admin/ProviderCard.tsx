@@ -100,6 +100,25 @@ export default function ProviderCard({
                 Error: {provider.testMessage}
               </p>
             )}
+            
+            {/* Anthropic CORS Warning */}
+            {provider.type === 'anthropic' && (
+              <div className={`mt-2 p-2 rounded-lg border text-xs ${
+                isDark 
+                  ? 'bg-yellow-900/20 border-yellow-800 text-yellow-300' 
+                  : 'bg-yellow-50 border-yellow-300 text-yellow-800'
+              }`}>
+                <div className="flex items-start gap-2">
+                  <span className="flex-shrink-0">⚠️</span>
+                  <div>
+                    <p className="font-semibold mb-1">CORS Limitation</p>
+                    <p className="mb-1">
+                      Anthropic's API blocks direct browser requests. You'll need a CORS proxy extension or use a different provider.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

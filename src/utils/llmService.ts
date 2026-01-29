@@ -259,27 +259,39 @@ export const callLLMProvider = async (
         break;
 
       case 'anthropic':
-        response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': provider.apiKey || '',
-            'anthropic-version': '2023-06-01',
-          },
-          body: JSON.stringify({
-            model: provider.model,
-            max_tokens: provider.settings.maxTokens,
-            messages: [{ role: 'user', content: prompt }],
-            system: systemPrompt,
-          }),
-        });
+        try {
+          response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': provider.apiKey || '',
+              'anthropic-version': '2023-06-01',
+            },
+            body: JSON.stringify({
+              model: provider.model,
+              max_tokens: provider.settings.maxTokens,
+              messages: [{ role: 'user', content: prompt }],
+              system: systemPrompt,
+            }),
+          });
 
-        if (!response.ok) {
-          throw new Error(`Anthropic API error: ${response.status}`);
+          if (!response.ok) {
+            throw new Error(`Anthropic API error: ${response.status}`);
+          }
+
+          const anthropicData = await response.json();
+          content = sanitizeLLMResponse(anthropicData.content[0].text);
+        } catch (error) {
+          // Check for CORS errors
+          const errorMsg = error instanceof Error ? error.message : '';
+          if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') || errorMsg.includes('CORS')) {
+            throw new Error(
+              'Anthropic API blocked by browser CORS policy. ' +
+              'Install a CORS proxy extension or use a different provider (OpenAI, Gemini, Ollama).'
+            );
+          }
+          throw error;
         }
-
-        const anthropicData = await response.json();
-        content = sanitizeLLMResponse(anthropicData.content[0].text);
         break;
 
       case 'google':
