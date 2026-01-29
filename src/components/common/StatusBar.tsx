@@ -342,7 +342,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
                         ({formatBytes(health.modelSize)})
                       </span>
                     ) : isOllama ? (
-                      <span className="ml-1 opacity-50 text-yellow-500">
+                      <span className="ml-1 opacity-50 text-gray-600">
                         (size unknown)
                       </span>
                     ) : null}
@@ -379,7 +379,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
                         ({formatBytes(health.modelSize)})
                       </span>
                     ) : isOllama ? (
-                      <span className="ml-1 opacity-50 text-yellow-500">
+                      <span className="ml-1 opacity-50 text-gray-600">
                         (size unknown)
                       </span>
                     ) : null}
@@ -498,7 +498,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
                                       • {formatBytes(health.modelSize)}
                                     </span>
                                   ) : (
-                                    <span className="ml-1 opacity-50 text-yellow-500">
+                                    <span className="ml-1 opacity-50 text-gray-600">
                                       • size unknown
                                     </span>
                                   )}
