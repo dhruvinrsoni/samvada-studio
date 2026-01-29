@@ -39,7 +39,7 @@ export default defineConfig({
         icons: [
           {
             src: 'icon.svg',
-            sizes: '192x192',
+            sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'any'
           },
@@ -51,7 +51,7 @@ export default defineConfig({
           },
           {
             src: 'maskable-icon.svg',
-            sizes: '192x192',
+            sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'maskable'
           },
@@ -67,21 +67,21 @@ export default defineConfig({
             short_name: 'New',
             description: 'Start a new chat conversation',
             url: base + '?action=new-chat',
-            icons: [{ src: 'icon.svg', sizes: '192x192', type: 'image/svg+xml' }]
+            icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml' }]
           },
           {
             name: 'Command Palette',
             short_name: 'Commands',
             description: 'Open command palette',
             url: base + '?action=command-palette',
-            icons: [{ src: 'icon.svg', sizes: '192x192', type: 'image/svg+xml' }]
+            icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml' }]
           },
           {
             name: 'Templates Library',
             short_name: 'Templates',
             description: 'Browse and use prompt templates',
             url: base + '?action=templates',
-            icons: [{ src: 'icon.svg', sizes: '192x192', type: 'image/svg+xml' }]
+            icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml' }]
           }
         ],
         share_target: {
