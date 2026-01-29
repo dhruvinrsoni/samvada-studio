@@ -171,8 +171,17 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
     if (success) {
       alert('App installed successfully!');
     } else {
-      alert('Installation cancelled or failed.');
+      // Check if it's because prompt isn't available yet
+      if (!isInstallable) {
+        alert('The install prompt is not available yet. This usually happens when:\n\n1. The browser is still evaluating the app\n2. The app is already installed\n3. Installation criteria are not met\n\nTry refreshing the page or visiting the app a few more times.');
+      } else {
+        alert('Installation cancelled or failed.');
+      }
     }
+  };
+
+  const handleUninstall = () => {
+    alert('To uninstall the app:\n\n• Chrome/Edge (Desktop): Right-click the app icon in taskbar/dock → Uninstall\n• Chrome/Edge (Mobile): Long-press the app icon → Uninstall\n• Safari (iOS): Long-press the app icon → Remove App\n• Firefox: Remove from Apps menu\n\nYou can also use the "Reset PWA" button in Advanced Controls to clear all app data.');
   };
 
   const getStatusBadge = () => {
@@ -261,45 +270,60 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
         </div>
       </div>
 
-      {/* Install Section (if not installed) */}
-      {!isInstalled && !isStandalone && (
-        <div className={`p-3 rounded-lg mb-4 ${
-          isDark ? 'bg-blue-900/20 border border-blue-800/30' : 'bg-blue-50 border border-blue-200'
-        }`}>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className={`text-sm font-medium mb-1 ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>
-                Install Samvada Studio
-              </p>
+      {/* Install/Uninstall Section */}
+      <div className={`p-3 rounded-lg mb-4 ${
+        (isInstalled || isStandalone)
+          ? (isDark ? 'bg-green-900/20 border border-green-800/30' : 'bg-green-50 border border-green-200')
+          : (isDark ? 'bg-blue-900/20 border border-blue-800/30' : 'bg-blue-50 border border-blue-200')
+      }`}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <p className={`text-sm font-medium mb-1 ${
+              (isInstalled || isStandalone)
+                ? (isDark ? 'text-green-300' : 'text-green-800')
+                : (isDark ? 'text-blue-300' : 'text-blue-800')
+            }`}>
+              {(isInstalled || isStandalone) ? '✓ App Installed' : 'Install Samvada Studio'}
+            </p>
+            {!(isInstalled || isStandalone) ? (
               <ul className={`text-xs space-y-1 ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>
                 <li>✓ Works offline</li>
                 <li>✓ Faster loading</li>
                 <li>✓ Desktop/Mobile icon</li>
                 <li>✓ Full-screen mode</li>
               </ul>
-            </div>
-            <div>
+            ) : (
+              <p className={`text-xs ${isDark ? 'text-green-400' : 'text-green-700'}`}>
+                Enjoying full offline support and app-like experience
+              </p>
+            )}
+            {!isInstallable && !(isInstalled || isStandalone) && (
+              <p className={`text-xs mt-2 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                💡 Tip: If install fails, try refreshing the page or visiting a few times
+              </p>
+            )}
+          </div>
+          <div className="flex-shrink-0">
+            {(isInstalled || isStandalone) ? (
+              <button
+                onClick={handleUninstall}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-sm transition-colors"
+                title="View uninstall instructions"
+              >
+                🗑️ Uninstall
+              </button>
+            ) : (
               <button
                 onClick={handleInstall}
-                disabled={!isInstallable}
-                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                  !isInstallable
-                    ? 'bg-gray-400 cursor-not-allowed text-white'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
-                title={!isInstallable ? 'Browser is evaluating the app for installation. Try again in a moment.' : 'Install the app'}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors"
+                title="Install the app for offline access and faster performance"
               >
                 📥 Install App
               </button>
-              {!isInstallable && (
-                <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                  Browser is evaluating the app for installation. Please wait a moment or refresh the page.
-                </p>
-              )}
-            </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* Update Available */}
       {needsUpdate && (
