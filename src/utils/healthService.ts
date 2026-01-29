@@ -149,6 +149,32 @@ export class HealthService {
   }
 
   /**
+   * Check if local network access is permitted
+   */
+  private static checkLocalNetworkPermission(endpoint: string): boolean {
+    // Check if endpoint is localhost/local network
+    const isLocalEndpoint = endpoint.includes('localhost') || 
+                            endpoint.includes('127.0.0.1') ||
+                            endpoint.includes('192.168.') ||
+                            endpoint.includes('10.') ||
+                            endpoint.match(/172\.(1[6-9]|2[0-9]|3[01])\./);
+
+    if (!isLocalEndpoint) {
+      return true; // Not a local endpoint, no permission needed
+    }
+
+    // Check stored permission
+    const permission = localStorage.getItem('samvada-local-network-permission');
+    
+    if (permission === 'denied') {
+      return false; // Permission explicitly denied
+    }
+
+    // If not set or granted, allow (will prompt on first use via hook)
+    return true;
+  }
+
+  /**
    * Check Ollama connectivity and get models (with caching)
    */
   static async checkOllamaConnectivity(
@@ -156,6 +182,15 @@ export class HealthService {
     forceRefresh: boolean = false
   ): Promise<OllamaConnectivityResult> {
     const endpoint = customEndpoint || 'http://localhost:11434';
+
+    // Check local network permission first
+    if (!this.checkLocalNetworkPermission(endpoint)) {
+      return {
+        available: false,
+        models: [],
+        error: 'Local network access denied. Enable in Admin Settings → General.',
+      };
+    }
 
     // Check cache first (unless forced refresh)
     if (!forceRefresh && this.isCacheValid()) {
@@ -240,6 +275,15 @@ export class HealthService {
     let httpResponse: Response | null = null;
 
     try {
+      // Check local network permission for local endpoints
+      if (provider.apiEndpoint && !this.checkLocalNetworkPermission(provider.apiEndpoint)) {
+        return {
+          status: 'disabled',
+          error: 'Local network access denied',
+          lastChecked: Date.now(),
+        };
+      }
+
       // Different health check strategies per provider
       if (provider.type === 'ollama' && provider.apiEndpoint) {
         // Ollama: Extract base URL and check /api/tags endpoint

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import './utils/persistenceTest' // Load persistence test utilities for console use
+import { ConfirmDialogProvider } from './context/ConfirmDialogContext'
 
 // Service Worker Registration Logging
 if ('serviceWorker' in navigator) {
@@ -13,6 +14,8 @@ if ('serviceWorker' in navigator) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ConfirmDialogProvider>
+      <App />
+    </ConfirmDialogProvider>
   </StrictMode>,
 )

@@ -1,6 +1,7 @@
 import { ChatProvider, useChat } from './context/ChatContext';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { useIsMobile, useIsTablet } from './hooks/useMediaQuery';
+import { useLocalNetworkPermission } from './hooks/useLocalNetworkPermission';
 import Sidebar from './components/sidebar/Sidebar';
 import ChatArea from './components/chat/ChatArea';
 import ContextPanel from './components/context/ContextPanel';
@@ -27,6 +28,10 @@ function AppContent() {
   const pwaStatus = usePWA();
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
+  
+  // Local network permission hook - prompts on first use with Ollama
+  useLocalNetworkPermission();
+  
   const [quotedText, setQuotedText] = useState<string>('');
   const [templateContent, setTemplateContent] = useState<string>('');
   const [isThemeSettingsOpen, setIsThemeSettingsOpen] = useState(false);

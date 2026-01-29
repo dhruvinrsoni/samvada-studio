@@ -1,12 +1,13 @@
 import { useChat } from '../../context/ChatContext';
 import type { LLMProviderConfig } from '../../types';
 import { formatDate } from '../../utils/helpers';
-import useProviderHealthMonitor from '../../hooks/useProviderHealthMonitor';
 import { HealthService } from '../../utils/healthService';
+import type { ProviderHealth } from '../../hooks/useProviderHealthMonitor';
 
 interface ProviderCardProps {
   provider: LLMProviderConfig;
   isDefault: boolean;
+  providerHealth?: ProviderHealth; // Passed from parent to avoid duplicate monitoring
   onEdit: () => void;
   onDelete: () => void;
   onSetDefault: () => void;
@@ -16,6 +17,7 @@ interface ProviderCardProps {
 export default function ProviderCard({
   provider,
   isDefault,
+  providerHealth,
   onEdit,
   onDelete,
   onSetDefault,
@@ -24,14 +26,7 @@ export default function ProviderCard({
   const { state } = useChat();
   const isDark = state.theme === 'dark';
 
-  // Get health status for this specific provider
-  const { healthStatus } = useProviderHealthMonitor({
-    providers: [provider], // Only monitor this provider
-    enabled: state.healthMonitoringEnabled ?? true,
-  });
-
-  // Get the health data for this provider
-  const providerHealth = healthStatus.find(h => h.providerId === provider.id);
+  // Health status is passed from parent (AdminPanel) to avoid duplicate API calls
 
   const getProviderIcon = (type: string) => {
     switch (type) {

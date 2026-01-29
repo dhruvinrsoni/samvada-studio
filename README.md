@@ -263,6 +263,14 @@ Connect to **6 providers** with unified interface:
 - Set defaults per chat
 - Run multiple providers simultaneously
 
+**🌐 Local Network Access (NEW!):**
+- One-click permission management for local LLM servers
+- Full control over localhost access (no browser settings needed)
+- Auto-detect Ollama and prompt for permission on first use
+- Grant, revoke, or reset permissions anytime
+- Test connections directly from Admin settings
+- **📖 [Complete Guide](docs/LOCAL_NETWORK_ACCESS.md)**
+
 </details>
 
 <details>
@@ -308,7 +316,8 @@ Connect to **6 providers** with unified interface:
 |----------|-------------|
 | [📋 FEATURES.md](docs/FEATURES.md) | Complete feature documentation with examples |
 | [💎 FORMATTING_PROFILES_GUIDE.md](docs/FORMATTING_PROFILES_GUIDE.md) | Complete guide to formatting profiles |
-| [📱 PWA_GUIDE.md](docs/PWA_GUIDE.md) | **NEW:** Progressive Web App installation & offline guide |
+| [🌐 LOCAL_NETWORK_ACCESS.md](docs/LOCAL_NETWORK_ACCESS.md) | **NEW:** Local network permission management for Ollama & local LLMs |
+| [📱 PWA_GUIDE.md](docs/PWA_GUIDE.md) | Progressive Web App installation & offline guide |
 | [💾 PERSISTENCE.md](docs/PERSISTENCE.md) | How data is saved and restored |
 | [🔒 CONTENT_SANITIZATION.md](docs/CONTENT_SANITIZATION.md) | Content security and validation |
 | [🐛 TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions |

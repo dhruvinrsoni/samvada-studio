@@ -9,6 +9,48 @@ export interface LLMResponse {
 }
 
 /**
+ * Check if local network access is allowed
+ * Returns true if allowed or not needed, false if denied
+ */
+const checkLocalNetworkPermission = (endpoint: string): boolean => {
+  // Check if endpoint is localhost/local network
+  const isLocalEndpoint = endpoint.includes('localhost') || 
+                          endpoint.includes('127.0.0.1') ||
+                          endpoint.includes('192.168.') ||
+                          endpoint.includes('10.') ||
+                          endpoint.includes('172.16.') ||
+                          endpoint.includes('172.17.') ||
+                          endpoint.includes('172.18.') ||
+                          endpoint.includes('172.19.') ||
+                          endpoint.includes('172.20.') ||
+                          endpoint.includes('172.21.') ||
+                          endpoint.includes('172.22.') ||
+                          endpoint.includes('172.23.') ||
+                          endpoint.includes('172.24.') ||
+                          endpoint.includes('172.25.') ||
+                          endpoint.includes('172.26.') ||
+                          endpoint.includes('172.27.') ||
+                          endpoint.includes('172.28.') ||
+                          endpoint.includes('172.29.') ||
+                          endpoint.includes('172.30.') ||
+                          endpoint.includes('172.31.');
+
+  if (!isLocalEndpoint) {
+    return true; // Not a local endpoint, no permission needed
+  }
+
+  // Check stored permission
+  const permission = localStorage.getItem('samvada-local-network-permission');
+  
+  if (permission === 'denied') {
+    return false; // Permission explicitly denied
+  }
+
+  // If not set or granted, allow (will prompt on first use via hook)
+  return true;
+};
+
+/**
  * Build system prompt with formatting profile instructions
  */
 export const buildSystemPromptWithFormatting = (
@@ -127,6 +169,20 @@ export const callLLMProvider = async (
   }
 
   const endpoint = provider.apiEndpoint;
+
+  // Check local network permission for local endpoints
+  if (!checkLocalNetworkPermission(endpoint)) {
+    const error = new Error(
+      `🌐 Local network access denied.\n\n` +
+      `${provider.name} requires access to ${endpoint}.\n\n` +
+      `Please enable local network access in Admin Settings → General → Local Network Access`
+    );
+    logError('Local Network Permission Denied', error, { 
+      provider: provider.name,
+      endpoint 
+    });
+    throw error;
+  }
 
   try {
     let response: Response;

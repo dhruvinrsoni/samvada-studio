@@ -6,6 +6,8 @@ import type { LLMProviderConfig } from '../../types';
 import ProviderCard from './ProviderCard';
 import ProviderForm from './ProviderForm';
 import DeveloperTools from './DeveloperTools';
+import LocalNetworkAccess from './LocalNetworkAccess';
+import useProviderHealthMonitor from '../../hooks/useProviderHealthMonitor';
 
 export default function AdminPanel() {
   const { state, dispatch } = useChat();
@@ -13,6 +15,12 @@ export default function AdminPanel() {
   const [editingProvider, setEditingProvider] = useState<LLMProviderConfig | null>(null);
   const [isAddingProvider, setIsAddingProvider] = useState(false);
   const isDark = state.theme === 'dark';
+
+  // Centralized health monitoring for all providers (only when panel is open and on providers tab)
+  const { healthStatus } = useProviderHealthMonitor({
+    providers: state.providers,
+    enabled: state.isAdminPanelOpen && activeTab === 'providers' && (state.healthMonitoringEnabled ?? true),
+  });
 
   if (!state.isAdminPanelOpen) return null;
 
@@ -176,17 +184,21 @@ export default function AdminPanel() {
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {state.providers.map(provider => (
-                    <ProviderCard
-                      key={provider.id}
-                      provider={provider}
-                      isDefault={provider.id === state.defaultProviderId}
-                      onEdit={() => setEditingProvider(provider)}
-                      onDelete={() => handleDeleteProvider(provider.id)}
-                      onSetDefault={() => handleSetDefault(provider.id)}
-                      onTest={() => handleTestProvider(provider)}
-                    />
-                  ))}
+                  {state.providers.map(provider => {
+                    const health = healthStatus.find(h => h.providerId === provider.id);
+                    return (
+                      <ProviderCard
+                        key={provider.id}
+                        provider={provider}
+                        isDefault={provider.id === state.defaultProviderId}
+                        providerHealth={health}
+                        onEdit={() => setEditingProvider(provider)}
+                        onDelete={() => handleDeleteProvider(provider.id)}
+                        onSetDefault={() => handleSetDefault(provider.id)}
+                        onTest={() => handleTestProvider(provider)}
+                      />
+                    );
+                  })}
                 </div>
               )}
 
@@ -212,6 +224,9 @@ export default function AdminPanel() {
 
           {activeTab === 'settings' && (
             <div className="space-y-6">
+              {/* Local Network Access */}
+              <LocalNetworkAccess isDark={isDark} />
+
               <div className={`p-4 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300' : 'border-light-400 bg-light-200'}`}>
                 <h3 className={`font-medium mb-4 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
                   General Settings
