@@ -154,7 +154,7 @@ function AppContent() {
                 </svg>
               </button>
             )}
-          <h1 className="text-base sm:text-lg font-bold bg-gradient-to-r from-theme-primary to-theme-accent bg-clip-text text-transparent">
+          <h1 className="text-base sm:text-lg font-bold text-theme-primary">
             {BRAND.displayName}
           </h1>
         </div>
