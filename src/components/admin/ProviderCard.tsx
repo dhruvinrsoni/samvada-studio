@@ -79,7 +79,7 @@ export default function ProviderCard({
               Model: <code className={`px-1 py-0.5 rounded ${isDark ? 'bg-dark-100' : 'bg-light-400'}`}>
                 {provider.model}
                 {provider.type === 'ollama' && (
-                  <span className="ml-1 opacity-75">
+                  <span className="ml-1 opacity-75 text-gray-700">
                     ({providerHealth?.modelSize 
                       ? HealthService.formatBytes(providerHealth.modelSize)
                       : 'size unknown'})
