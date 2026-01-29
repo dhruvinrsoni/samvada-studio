@@ -353,6 +353,7 @@ export function useProviderHealthMonitor({
     isChecking,
     refresh,
     showDisableWarning,
+    currentPollInterval: pollIntervalRef.current,
   };
 }
 

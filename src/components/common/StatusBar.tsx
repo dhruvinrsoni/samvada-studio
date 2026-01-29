@@ -25,10 +25,12 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
   const [isHovered, setIsHovered] = useState(false);
   const [expandedTechnicalDetails, setExpandedTechnicalDetails] = useState<string | null>(null);
   const [warningDismissed, setWarningDismissed] = useState(false);
+  const [nextCheckIn, setNextCheckIn] = useState<number>(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const lastCheckTimeRef = useRef<number>(Date.now());
 
-  const { healthStatus, isChecking, refresh, showDisableWarning } = useProviderHealthMonitor({
+  const { healthStatus, isChecking, refresh, showDisableWarning, currentPollInterval } = useProviderHealthMonitor({
     providers: state.providers,
     enabled: state.healthMonitoringEnabled ?? true,
   });
@@ -153,6 +155,36 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
   const showOllamaWarnings = () => {
     onShowOllamaWarnings?.();
   };
+
+  // Track when checks happen to calculate countdown
+  useEffect(() => {
+    if (!isChecking) {
+      lastCheckTimeRef.current = Date.now();
+    }
+  }, [isChecking]);
+
+  // Countdown timer for next check (only when expanded)
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    const updateCountdown = () => {
+      const elapsed = Date.now() - lastCheckTimeRef.current;
+      const remaining = Math.max(0, Math.ceil((currentPollInterval - elapsed) / 1000));
+      setNextCheckIn(remaining);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [isExpanded, currentPollInterval, isChecking]);
+
+  // Refresh immediately when expanded
+  useEffect(() => {
+    if (isExpanded && !isChecking) {
+      refresh();
+    }
+  }, [isExpanded]);
 
   // Check if scrolling is needed
   useEffect(() => {
@@ -442,7 +474,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
                 ? 'text-gray-400 hover:text-gray-300 hover:bg-dark-200'
                 : 'text-gray-600 hover:text-gray-700 hover:bg-light-200'
             } ${isChecking ? 'opacity-50 cursor-not-allowed' : ''}`}
-            title="Refresh health status"
+            title="Refresh health status now"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -657,8 +689,13 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
             <div className="flex items-center justify-between">
               <span>
                 Monitoring: {healthStatus.length} provider{healthStatus.length !== 1 ? 's' : ''} • 
-                Check interval: 30s • 
+                Check interval: {currentPollInterval / 1000}s • 
                 Cache: 30s
+                {!isChecking && (
+                  <span className="ml-1">
+                    • Next check: {nextCheckIn}s
+                  </span>
+                )}
               </span>
               <span className={state.theme === 'dark' ? 'text-gray-600' : 'text-gray-400'}>
                 Smart polling with exponential backoff
