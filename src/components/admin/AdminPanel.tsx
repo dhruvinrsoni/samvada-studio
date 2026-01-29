@@ -7,9 +7,15 @@ import ProviderCard from './ProviderCard';
 import ProviderForm from './ProviderForm';
 import DeveloperTools from './DeveloperTools';
 import LocalNetworkAccess from './LocalNetworkAccess';
+import PWAStatusPanel from './PWAStatusPanel';
 import useProviderHealthMonitor from '../../hooks/useProviderHealthMonitor';
+import type { PWAStatus } from '../../hooks/usePWA';
 
-export default function AdminPanel() {
+interface AdminPanelProps {
+  pwaStatus: PWAStatus;
+}
+
+export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
   const { state, dispatch } = useChat();
   const [activeTab, setActiveTab] = useState<'providers' | 'settings' | 'developer'>('providers');
   const [editingProvider, setEditingProvider] = useState<LLMProviderConfig | null>(null);
@@ -226,6 +232,9 @@ export default function AdminPanel() {
             <div className="space-y-6">
               {/* Local Network Access */}
               <LocalNetworkAccess isDark={isDark} />
+
+              {/* PWA Status and Management */}
+              <PWAStatusPanel pwaStatus={pwaStatus} isDark={isDark} />
 
               <div className={`p-4 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300' : 'border-light-400 bg-light-200'}`}>
                 <h3 className={`font-medium mb-4 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>

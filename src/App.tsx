@@ -320,7 +320,7 @@ function AppContent() {
       </div>
 
       {/* Modals */}
-      <AdminPanel />
+      <AdminPanel pwaStatus={pwaStatus} />
       <GlobalSearch />
       <CommandPalette />
       <KeyboardShortcuts />

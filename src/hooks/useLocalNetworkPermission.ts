@@ -10,23 +10,9 @@ export function useLocalNetworkPermission() {
   const { confirm } = useConfirmDialog();
 
   useEffect(() => {
-    // Check and prompt if needed
+    // Check and prompt if needed on mount only
     checkAndPromptIfNeeded();
-    
-    // Listen for reset events - when user clicks reset in admin settings
-    const handleReset = () => {
-      // Clear the prompted flag so it can prompt again after reload
-      setHasPrompted(false);
-      // Re-check conditions
-      setTimeout(() => checkAndPromptIfNeeded(), 100);
-    };
-    
-    window.addEventListener('local-storage-change', handleReset);
-    
-    return () => {
-      window.removeEventListener('local-storage-change', handleReset);
-    };
-  }, [hasPrompted]); // Re-run when hasPrompted changes
+  }, []); // Re-run when hasPrompted changes
 
   const checkAndPromptIfNeeded = async () => {
     // Prevent multiple prompts
@@ -90,6 +76,8 @@ export function useLocalNetworkPermission() {
     } else {
       // User declined, mark as denied
       localStorage.setItem('samvada-local-network-permission', 'denied');
+      // Dispatch event to update UI
+      window.dispatchEvent(new Event('local-storage-change'));
     }
   };
 
@@ -106,9 +94,11 @@ export function useLocalNetworkPermission() {
       
       // Connection successful or attempted - mark as granted
       localStorage.setItem('samvada-local-network-permission', 'granted');
+      window.dispatchEvent(new Event('local-storage-change'));
     } catch (error) {
       // Even if connection fails, user agreed to grant permission
       localStorage.setItem('samvada-local-network-permission', 'granted');
+      window.dispatchEvent(new Event('local-storage-change'));
     }
   };
 

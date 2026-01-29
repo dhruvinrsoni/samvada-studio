@@ -96,7 +96,7 @@ export default function ProviderCard({
               </p>
             )}
             {provider.testMessage && provider.testStatus === 'failed' && (
-              <p className="text-xs mt-1 text-red-400">
+              <p className="text-xs mt-1 text-red-400 break-words">
                 Error: {provider.testMessage}
               </p>
             )}

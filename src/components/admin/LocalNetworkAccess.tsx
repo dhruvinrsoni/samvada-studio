@@ -135,12 +135,12 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
     // Update local state
     setPermissionState('prompt');
     
-    // Dispatch custom event for same-window sync
-    window.dispatchEvent(new Event('local-storage-change'));
+    // Dispatch custom event for same-window sync (but NOT to trigger immediate re-prompt)
+    window.dispatchEvent(new CustomEvent('local-storage-reset'));
     
     setTestResult({
       status: 'success',
-      message: '🔄 Permission reset. The app will prompt you again on next reload or when accessing Ollama.',
+      message: '🔄 Permission reset. The app will prompt you again on next reload.',
     });
   };
 
@@ -300,6 +300,7 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
                     ? 'bg-red-900/30 hover:bg-red-900/50 text-red-300'
                     : 'bg-red-100 hover:bg-red-200 text-red-700'
                 }`}
+                title="Immediately deny access (can re-enable anytime)"
               >
                 🚫 Revoke
               </button>
@@ -311,9 +312,16 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
                   ? 'bg-dark-100 hover:bg-dark-50 text-gray-300 border border-dark-50'
                   : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
               }`}
+              title="Clear permission - will prompt again on next app reload"
             >
               🔄 Reset to Default
             </button>
+            <p className={`text-xs mt-2 ${
+              isDark ? 'text-gray-500' : 'text-gray-500'
+            }`}>
+              <strong>Revoke:</strong> Immediately blocks access (changeable anytime). 
+              <strong className="ml-2">Reset:</strong> Clears choice - app will ask again on next reload.
+            </p>
           </div>
         )}
 
@@ -327,6 +335,7 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
               <button
                 onClick={requestPermission}
                 className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium text-sm"
+                title="Grant access to connect to local LLM servers"
               >
                 🔓 Grant Access
               </button>
@@ -337,10 +346,17 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
                     ? 'bg-dark-100 hover:bg-dark-50 text-gray-300'
                     : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
                 }`}
+                title="Clear permission - will prompt again on next reload"
               >
                 🔄 Reset
               </button>
             </div>
+            <p className={`text-xs ${
+              isDark ? 'text-gray-500' : 'text-gray-500'
+            }`}>
+              <strong>Grant Access:</strong> Allow connection to local servers. 
+              <strong className="ml-2">Reset:</strong> Clear denied state - app will ask again on reload.
+            </p>
           </div>
         )}
       </div>
