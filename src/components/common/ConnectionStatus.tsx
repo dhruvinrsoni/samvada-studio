@@ -18,9 +18,30 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
   const [isChecking, setIsChecking] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [localNetworkPermission, setLocalNetworkPermission] = useState<'granted' | 'denied' | null>(null);
 
   const isDark = state.themeSettings.mode === 'dark' ||
     (state.themeSettings.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  // Check local network permission status
+  useEffect(() => {
+    const checkPermission = () => {
+      const permission = localStorage.getItem('samvada-local-network-permission') as 'granted' | 'denied' | null;
+      setLocalNetworkPermission(permission);
+    };
+    
+    checkPermission();
+    
+    // Listen for permission changes
+    const handleStorageChange = () => checkPermission();
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-change', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-change', handleStorageChange);
+    };
+  }, []);
 
   const checkStatus = async () => {
     setIsChecking(true);
@@ -193,19 +214,43 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
                 <div className={`p-3 rounded-lg text-xs ${
                   isDark ? 'bg-yellow-500/10 text-yellow-400' : 'bg-yellow-50 text-yellow-800'
                 }`}>
-                  <p className="font-semibold mb-2">Ollama is not running:</p>
-                  <ol className="list-decimal list-inside space-y-1 ml-1">
-                    <li>Install Ollama: <code className={`px-1 py-0.5 rounded ${
-                      isDark ? 'bg-yellow-500/20' : 'bg-yellow-100'
-                    }`}>https://ollama.ai</code></li>
-                    <li>Start the server: <code className={`px-1 py-0.5 rounded ${
-                      isDark ? 'bg-yellow-500/20' : 'bg-yellow-100'
-                    }`}>ollama serve</code></li>
-                  </ol>
-                  {!ollamaIsDefault && (
-                    <p className="mt-2 text-xs opacity-80">
-                      💡 Or select a different provider (OpenAI, Claude, Gemini) in Admin Settings
-                    </p>
+                  {localNetworkPermission === 'denied' ? (
+                    // Show permission-specific message if denied
+                    <>
+                      <p className="font-semibold mb-2">🌐 Local Network Access Denied</p>
+                      <p className="mb-2">
+                        Ollama cannot be accessed because local network permission is blocked.
+                      </p>
+                      <p className="mb-2">To fix this:</p>
+                      <ol className="list-decimal list-inside space-y-1 ml-1">
+                        <li>Go to <strong>Admin Settings</strong> → <strong>General</strong></li>
+                        <li>Find <strong>"Local Network Access"</strong> section</li>
+                        <li>Click <strong>"Grant Local Network Access"</strong></li>
+                      </ol>
+                      {!ollamaIsDefault && (
+                        <p className="mt-2 text-xs opacity-80">
+                          💡 Or select a different provider (OpenAI, Claude, Gemini) in Admin Settings
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    // Show standard Ollama installation/startup message
+                    <>
+                      <p className="font-semibold mb-2">Ollama is not running:</p>
+                      <ol className="list-decimal list-inside space-y-1 ml-1">
+                        <li>Install Ollama: <code className={`px-1 py-0.5 rounded ${
+                          isDark ? 'bg-yellow-500/20' : 'bg-yellow-100'
+                        }`}>https://ollama.ai</code></li>
+                        <li>Start the server: <code className={`px-1 py-0.5 rounded ${
+                          isDark ? 'bg-yellow-500/20' : 'bg-yellow-100'
+                        }`}>ollama serve</code></li>
+                      </ol>
+                      {!ollamaIsDefault && (
+                        <p className="mt-2 text-xs opacity-80">
+                          💡 Or select a different provider (OpenAI, Claude, Gemini) in Admin Settings
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               )}
