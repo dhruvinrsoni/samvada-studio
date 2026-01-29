@@ -545,6 +545,8 @@ export type ChatAction =
   | { type: 'UPDATE_PROMPT_RESPONSE'; payload: { chatId: string; promptResponse: PromptResponse } }
   | { type: 'DELETE_PROMPT_RESPONSE'; payload: { chatId: string; pnrId: string } }
   | { type: 'TOGGLE_COLLAPSE'; payload: { chatId: string; pnrId: string } }
+  | { type: 'EXPAND_ALL'; payload: { chatId: string } }
+  | { type: 'COLLAPSE_ALL'; payload: { chatId: string } }
   | { type: 'TOGGLE_PIN_PNR'; payload: { chatId: string; pnrId: string } }
   | { type: 'TOGGLE_STAR_PNR'; payload: { chatId: string; pnrId: string } }
   | { type: 'TOGGLE_STAR_MESSAGE'; payload: { chatId: string; pnrId: string; messageId: string } }

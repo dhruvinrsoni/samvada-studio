@@ -232,6 +232,36 @@ function chatReducer(state: AppState, action: ChatAction): AppState {
       };
     }
 
+    case 'EXPAND_ALL': {
+      const { chatId } = action.payload;
+      return {
+        ...state,
+        chats: state.chats.map(chat =>
+          chat.id === chatId
+            ? {
+                ...chat,
+                promptResponses: chat.promptResponses.map(pnr => ({ ...pnr, isCollapsed: false })),
+              }
+            : chat
+        ),
+      };
+    }
+
+    case 'COLLAPSE_ALL': {
+      const { chatId } = action.payload;
+      return {
+        ...state,
+        chats: state.chats.map(chat =>
+          chat.id === chatId
+            ? {
+                ...chat,
+                promptResponses: chat.promptResponses.map(pnr => ({ ...pnr, isCollapsed: true })),
+              }
+            : chat
+        ),
+      };
+    }
+
     case 'TOGGLE_PIN_PNR': {
       const { chatId, pnrId } = action.payload;
       return {
