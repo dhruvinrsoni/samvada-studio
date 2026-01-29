@@ -366,11 +366,12 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                           try {
                             // Clear app state only
                             localStorage.removeItem('samvada-studio-state');
+                            alert('All data cleared. You can reload the page to see the changes take effect.');
                           } catch (e) {
                             // fallback to clear all if removal fails
                             localStorage.clear();
+                            alert('All data cleared (including fallback). You can reload the page to see the changes take effect.');
                           }
-                          window.location.reload();
                         }
                       }}
                       className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"

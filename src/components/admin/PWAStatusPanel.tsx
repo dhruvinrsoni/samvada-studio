@@ -28,6 +28,7 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
   const [totalCacheSize, setTotalCacheSize] = useState(0);
   const [isClearing, setIsClearing] = useState(false);
   const [isFetchingCache, setIsFetchingCache] = useState(false);
+  const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const {
@@ -107,8 +108,7 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
       await Promise.all(cacheNames.map(name => caches.delete(name)));
       console.log('[PWA] All caches cleared');
       await fetchCacheInfo();
-      alert('Cache cleared successfully! The app will reload.');
-      window.location.reload();
+      alert('Cache cleared successfully! You can reload the page to see the changes take effect.');
     } catch (error) {
       console.error('[PWA] Error clearing cache:', error);
       alert('Failed to clear cache. Check console for details.');
@@ -128,8 +128,7 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
         await registration.unregister();
       }
       console.log('[PWA] Service worker unregistered');
-      alert('Service worker unregistered. The app will reload.');
-      window.location.reload();
+      alert('Service worker unregistered. You can reload the page to complete the changes.');
     } catch (error) {
       console.error('[PWA] Error unregistering service worker:', error);
       alert('Failed to unregister service worker. Check console for details.');
@@ -158,8 +157,7 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
       localStorage.removeItem('pwa-last-prompt');
 
       console.log('[PWA] Complete reset performed');
-      alert('PWA reset complete. The app will reload.');
-      window.location.reload();
+      alert('PWA reset complete. You can reload the page to complete the reset and see the changes take effect.');
     } catch (error) {
       console.error('[PWA] Error during reset:', error);
       alert('Failed to reset PWA. Check console for details.');
@@ -177,6 +175,20 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
       } else {
         alert('Installation cancelled or failed.');
       }
+    }
+  };
+
+  const handleCheckUpdates = async () => {
+    setIsCheckingUpdates(true);
+    try {
+      await checkForUpdates();
+      // Show success feedback briefly
+      setTimeout(() => {
+        setIsCheckingUpdates(false);
+      }, 1000);
+    } catch (error) {
+      console.error('[PWA] Error checking for updates:', error);
+      setIsCheckingUpdates(false);
     }
   };
 
@@ -440,14 +452,17 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
 
             <div className="flex gap-2">
               <button
-                onClick={checkForUpdates}
+                onClick={handleCheckUpdates}
+                disabled={isCheckingUpdates}
                 className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isDark
+                  isCheckingUpdates
+                    ? 'bg-gray-400 cursor-not-allowed text-gray-200'
+                    : isDark
                     ? 'bg-blue-900/30 hover:bg-blue-900/50 text-blue-300'
                     : 'bg-blue-100 hover:bg-blue-200 text-blue-700'
                 }`}
               >
-                🔍 Check Updates
+                {isCheckingUpdates ? '⏳ Checking...' : '🔍 Check Updates'}
               </button>
               <button
                 onClick={handleUnregisterSW}
