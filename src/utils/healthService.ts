@@ -14,7 +14,7 @@
 
 import { LLMProviderConfig } from '../types';
 import { logDebug } from './debug';
-import { parseProviderError, type ProviderError, ErrorCategory } from './providerErrors';
+import { parseProviderError, type ProviderError } from './providerErrors';
 
 export type HealthStatus = 'online' | 'slow' | 'offline' | 'unknown' | 'disabled';
 
@@ -373,133 +373,22 @@ export class HealthService {
         }
 
       } else if (provider.type === 'anthropic') {
-        // Anthropic: Check messages endpoint with a minimal request
-        // Note: This will consume a tiny amount of credits for a health check
-        // Alternative: Just check if API key is present (less accurate)
+        // Anthropic: No actual API call - CORS will always block browser requests
+        // Just verify API key is configured (same approach as Google Gemini)
         if (!provider.apiKey) {
           status = 'offline';
           errorDetails = parseProviderError(provider.type, { error: { type: 'authentication_error', message: 'No API key configured' } }, 401);
           error = errorDetails.title;
         } else {
-          // Try a lightweight API call to validate credentials and billing
-          let response: Response | null = null;
-          const requestUrl = 'https://api.anthropic.com/v1/messages';
-          const requestHeaders = {
-            'Content-Type': 'application/json',
-            'x-api-key': provider.apiKey,
-            'anthropic-version': '2023-06-01',
-          };
-          const requestBody = {
-            model: provider.model || 'claude-3-haiku-20240307',
-            max_tokens: 1,
-            messages: [{ role: 'user', content: 'ping' }],
-          };
+          // API key is configured - mark as online
+          // Anthropic API doesn't support direct browser calls due to CORS policy
+          // Users must use the actual chat to verify functionality
+          status = 'online';
+          responseTime = 0;
+          error = undefined;
+          errorDetails = undefined;
           
-          try {
-            response = await fetch(requestUrl, {
-              method: 'POST',
-              signal: AbortSignal.timeout(this.PROVIDER_TIMEOUT),
-              headers: requestHeaders,
-              body: JSON.stringify(requestBody),
-            });
-
-            responseTime = Date.now() - startTime;
-
-            if (response.ok) {
-              status = responseTime > 5000 ? 'slow' : 'online';
-            } else {
-              status = 'offline';
-              // Try to parse error response body
-              let errorResponse: any;
-              let rawResponse: string = '';
-              try {
-                const responseText = await response.text();
-                rawResponse = responseText;
-                console.log('[HealthService] Anthropic error response:', {
-                  status: response.status,
-                  statusText: response.statusText,
-                  body: responseText
-                });
-                try {
-                  errorResponse = JSON.parse(responseText);
-                } catch {
-                  errorResponse = {
-                    error: {
-                      type: 'api_error',
-                      message: responseText || `HTTP ${response.status}: ${response.statusText}`
-                    }
-                  };
-                }
-              } catch {
-                // If reading response fails, create a generic error with status code
-                errorResponse = {
-                  error: {
-                    type: 'api_error',
-                    message: `HTTP ${response.status}: ${response.statusText}`
-                  }
-                };
-              }
-              errorDetails = parseProviderError(provider.type, errorResponse, response.status);
-              // Add raw response as technical details
-              if (rawResponse) {
-                errorDetails.technicalDetails = rawResponse;
-              }
-              error = errorDetails.title;
-            }
-          } catch (err) {
-            responseTime = Date.now() - startTime;
-            status = 'offline';
-            console.log('[HealthService] Anthropic fetch error:', err);
-            
-            // Check for CORS errors specifically
-            const errorMsg = err instanceof Error ? err.message : '';
-            if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') || errorMsg.includes('CORS')) {
-              errorDetails = {
-                category: ErrorCategory.NETWORK,
-                title: 'CORS Error',
-                message: 'Anthropic API blocks direct browser requests for security. This is a browser limitation, not a problem with your API key.',
-                userAction: 'Install a CORS proxy browser extension (e.g., "CORS Unblock", "Allow CORS"), use a local proxy server, build a backend API, or try a different LLM provider.',
-                documentationUrl: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS',
-                retryable: false,
-                technicalDetails: 'Browser CORS policy prevents direct API calls to Anthropic. ⚠️ Note: Browser extensions bypass security - use with caution.',
-              };
-              error = errorDetails.title;
-            } else {
-              // Build comprehensive technical details
-              const technicalDetails = {
-                errorType: err instanceof Error ? err.name : 'Unknown',
-                errorMessage: err instanceof Error ? err.message : String(err),
-                timestamp: new Date().toISOString(),
-                request: {
-                  url: requestUrl,
-                method: 'POST',
-                headers: {
-                  'Content-Type': requestHeaders['Content-Type'],
-                  'anthropic-version': requestHeaders['anthropic-version'],
-                  'x-api-key': provider.apiKey ? `${provider.apiKey.substring(0, 8)}...` : 'missing',
-                },
-                  body: requestBody,
-                },
-                responseReceived: !!response,
-                ...(response && {
-                  httpStatus: response.status,
-                  httpStatusText: response.statusText,
-                }),
-              };
-              
-              // Only treat as network error if we didn't get a response at all
-              if (!response) {
-                errorDetails = parseProviderError(provider.type, err);
-                errorDetails.technicalDetails = JSON.stringify(technicalDetails, null, 2);
-                error = errorDetails.title;
-              } else {
-                // We got a response but something else failed - shouldn't happen but handle it
-                errorDetails = parseProviderError(provider.type, { error: { type: 'unknown_error', message: String(err) } });
-                errorDetails.technicalDetails = JSON.stringify(technicalDetails, null, 2);
-                error = errorDetails.title;
-              }
-            }
-          }
+          logDebug('HealthService', 'Anthropic: API key configured, marked as online (no API call - CORS restriction)');
         }
 
       } else if (provider.type === 'google') {
