@@ -10,11 +10,23 @@ export function useLocalNetworkPermission() {
   const { confirm } = useConfirmDialog();
 
   useEffect(() => {
-    // Only check once on mount
-    if (!hasPrompted) {
-      checkAndPromptIfNeeded();
-    }
-  }, []); // Empty deps - only run once
+    // Check and prompt if needed
+    checkAndPromptIfNeeded();
+    
+    // Listen for reset events - when user clicks reset in admin settings
+    const handleReset = () => {
+      // Clear the prompted flag so it can prompt again after reload
+      setHasPrompted(false);
+      // Re-check conditions
+      setTimeout(() => checkAndPromptIfNeeded(), 100);
+    };
+    
+    window.addEventListener('local-storage-change', handleReset);
+    
+    return () => {
+      window.removeEventListener('local-storage-change', handleReset);
+    };
+  }, [hasPrompted]); // Re-run when hasPrompted changes
 
   const checkAndPromptIfNeeded = async () => {
     // Prevent multiple prompts

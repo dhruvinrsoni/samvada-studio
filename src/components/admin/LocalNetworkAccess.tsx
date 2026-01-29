@@ -16,6 +16,27 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
 
   useEffect(() => {
     checkPermissionState();
+    
+    // Listen for localStorage changes (e.g., from reset in another component)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'samvada-local-network-permission' || e.key === null) {
+        checkPermissionState();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom events from same window
+    const handleLocalChange = () => {
+      checkPermissionState();
+    };
+    
+    window.addEventListener('local-storage-change', handleLocalChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-change', handleLocalChange);
+    };
   }, []);
 
   const checkPermissionState = () => {
@@ -48,6 +69,7 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
       if (response.ok) {
         localStorage.setItem('samvada-local-network-permission', 'granted');
         setPermissionState('granted');
+        window.dispatchEvent(new Event('local-storage-change'));
         setTestResult({
           status: 'success',
           message: '✅ Successfully connected to local network! Ollama server detected.',
@@ -56,6 +78,7 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
         // Connection attempt was made, permission granted but service not available
         localStorage.setItem('samvada-local-network-permission', 'granted');
         setPermissionState('granted');
+        window.dispatchEvent(new Event('local-storage-change'));
         setTestResult({
           status: 'success',
           message: '✅ Local network access granted! (No Ollama server running, but permission is active)',
@@ -67,6 +90,7 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
           // Timeout - permission likely granted but no service
           localStorage.setItem('samvada-local-network-permission', 'granted');
           setPermissionState('granted');
+          window.dispatchEvent(new Event('local-storage-change'));
           setTestResult({
             status: 'success',
             message: '✅ Local network access granted! (No response from localhost, but permission is active)',
@@ -76,6 +100,7 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
           // We'll assume permission was prompted
           localStorage.setItem('samvada-local-network-permission', 'granted');
           setPermissionState('granted');
+          window.dispatchEvent(new Event('local-storage-change'));
           setTestResult({
             status: 'success',
             message: '✅ Local network access initiated! You may need to allow the connection in your browser if prompted.',
@@ -95,6 +120,7 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
   const revokePermission = () => {
     localStorage.setItem('samvada-local-network-permission', 'denied');
     setPermissionState('denied');
+    window.dispatchEvent(new Event('local-storage-change'));
     setTestResult({
       status: 'success',
       message: '🚫 Local network access revoked. Local LLM providers won\'t be accessible.',
@@ -102,11 +128,19 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
   };
 
   const resetPermission = () => {
+    // Clear BOTH keys to fully reset
     localStorage.removeItem('samvada-local-network-permission');
+    localStorage.removeItem('samvada-network-prompt-shown');
+    
+    // Update local state
     setPermissionState('prompt');
+    
+    // Dispatch custom event for same-window sync
+    window.dispatchEvent(new Event('local-storage-change'));
+    
     setTestResult({
       status: 'success',
-      message: '🔄 Permission reset. Browser will prompt again on next connection attempt.',
+      message: '🔄 Permission reset. The app will prompt you again on next reload or when accessing Ollama.',
     });
   };
 
