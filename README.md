@@ -29,6 +29,8 @@ No installation needed! Try Samvada Studio directly in your browser. All data st
 
 > 📱 **Install as App**: Click the install prompt or visit Settings to install as a Progressive Web App for offline access!
 
+> ⚠️ **Hosted Version Limitations**: The online version supports OpenAI, Anthropic, Google, and Azure providers. Local providers (Ollama) and custom CORS proxy features require running the app locally.
+
 ---
 
 ## 📖 What is Samvada?
@@ -124,7 +126,8 @@ npm run dev
 3. Click **+ Add Provider**
 4. Choose your provider (OpenAI, Anthropic, Google, Ollama, Azure, Custom)
 5. Enter your API key
-6. Click **Test Connection** to verify
+6. **For OpenAI/Anthropic**: Configure CORS proxy (see [CORS Proxy Guide](docs/CORS_PROXY.md))
+7. Click **Test Connection** to verify
 
 ### Step 2: Create Your First Chat
 1. Click **New Chat** in the sidebar
@@ -266,7 +269,7 @@ Connect to **6 providers** with unified interface:
 **🔧 CORS Proxy Support (NEW!):**
 - OpenAI & Anthropic require CORS proxy for browser use
 - Built-in local proxy server: `npm run proxy`
-- Cloudflare Worker support for production
+- SSL bypass support for corporate networks: `npm run proxy:insecure`
 - Automatic proxy routing when configured
 - **📖 [Setup Guide](docs/CORS_PROXY.md)**
 

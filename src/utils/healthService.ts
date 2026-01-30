@@ -30,6 +30,18 @@ export interface OllamaConnectivityResult {
   error?: string;
 }
 
+/**
+ * Check if the app is running on localhost or hosted remotely
+ * @returns true if running on localhost, false if hosted (GitHub Pages, Netlify, etc.)
+ */
+function isLocalhost(): boolean {
+  const hostname = window.location.hostname;
+  return hostname === 'localhost' || 
+         hostname === '127.0.0.1' || 
+         hostname === '[::1]' || 
+         hostname.includes('local');
+}
+
 export interface ProviderHealthResult {
   status: HealthStatus;
   responseTime?: number;
@@ -182,6 +194,16 @@ export class HealthService {
     forceRefresh: boolean = false
   ): Promise<OllamaConnectivityResult> {
     const endpoint = customEndpoint || 'http://localhost:11434';
+    
+    // Skip localhost checks when app is hosted remotely (GitHub Pages, etc.)
+    // Browsers block access to localhost from remote origins for security
+    if (!isLocalhost() && !customEndpoint) {
+      return {
+        available: false,
+        models: [],
+        error: 'Ollama requires local installation. Not available on hosted version.',
+      };
+    }
 
     // Check local network permission first
     if (!this.checkLocalNetworkPermission(endpoint)) {
