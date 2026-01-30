@@ -9,6 +9,7 @@ export interface LLMProviderConfig {
   type: LLMProviderType;
   apiKey?: string; // ⚠️ SENSITIVE - Never stored in localStorage
   apiEndpoint?: string;
+  corsProxy?: string; // Optional CORS proxy URL for browser-blocked APIs (OpenAI, Anthropic)
   model: string;
   isEnabled: boolean;
   isDefault: boolean;
@@ -32,6 +33,7 @@ export interface SafeLLMProviderConfig {
   name: string;
   type: LLMProviderType;
   apiEndpoint?: string;
+  corsProxy?: string; // Optional CORS proxy URL for browser-blocked APIs
   model: string;
   isEnabled: boolean;
   isDefault: boolean;

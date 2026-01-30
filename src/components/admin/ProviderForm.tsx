@@ -63,7 +63,11 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
     topP: provider?.settings.topP ?? 1,
     frequencyPenalty: provider?.settings.frequencyPenalty ?? 0,
     presencePenalty: provider?.settings.presencePenalty ?? 0,
+    corsProxy: provider?.corsProxy || '',
   });
+  
+  // Show advanced settings (CORS proxy, etc.)
+  const [showAdvanced, setShowAdvanced] = useState(!!provider?.corsProxy);
 
   // State for Ollama models
   const [ollamaModels, setOllamaModels] = useState<{ name: string; size?: number }[]>([]);
@@ -173,6 +177,7 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
       model: formData.model,
       isEnabled: formData.isEnabled,
       isDefault: formData.isDefault,
+      corsProxy: formData.corsProxy || undefined,
       settings: {
         temperature: formData.temperature,
         maxTokens: formData.maxTokens,
@@ -364,14 +369,30 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
                 <div className="text-xs">
                   <p className="font-semibold mb-1">CORS Limitation</p>
                   <p className="mb-2">
-                    Anthropic's API blocks direct browser requests for security. You'll need one of these solutions:
+                    Anthropic's API blocks direct browser requests for security. You need to configure a CORS Proxy URL in <strong>Advanced Settings</strong> below.
                   </p>
-                  <ul className="list-disc list-inside space-y-1 ml-2">
-                    <li>Install a CORS proxy browser extension (e.g., "CORS Unblock")</li>
-                    <li>Use a local proxy server</li>
-                    <li>Build a backend API</li>
-                    <li>Consider OpenAI, Google Gemini, or Ollama (no CORS issues)</li>
-                  </ul>
+                  <p className="text-xs opacity-80">
+                    Alternatively, use Google Gemini or Ollama which work directly in browsers.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* OpenAI CORS Warning */}
+          {formData.type === 'openai' && (
+            <div className={`mt-3 p-3 rounded-lg border ${
+              isDark 
+                ? 'bg-blue-900/20 border-blue-800 text-blue-300' 
+                : 'bg-blue-50 border-blue-300 text-blue-800'
+            }`}>
+              <div className="flex items-start gap-2">
+                <span className="text-lg flex-shrink-0">ℹ️</span>
+                <div className="text-xs">
+                  <p className="font-semibold mb-1">Browser CORS Requirement</p>
+                  <p>
+                    OpenAI's API blocks direct browser requests for security. Configure a CORS Proxy URL in <strong>Advanced Settings</strong> below to use OpenAI from this browser app.
+                  </p>
                 </div>
               </div>
             </div>
@@ -402,13 +423,93 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
                   <p className="font-semibold mb-1">Custom OpenAI Endpoint</p>
                   <p>
                     Custom OpenAI endpoints may have CORS restrictions when called from browsers. 
-                    If you encounter CORS errors, consider using a CORS proxy extension or backend proxy.
+                    Configure a CORS Proxy URL in Advanced Settings below if you encounter CORS errors.
                   </p>
                 </div>
               </div>
             </div>
           )}
         </div>
+
+        {/* Advanced Settings (CORS Proxy) */}
+        {(formData.type === 'openai' || formData.type === 'anthropic' || formData.type === 'azure' || formData.type === 'custom') && (
+          <div className={`border rounded-lg ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className={`w-full p-3 flex items-center justify-between text-left ${
+                isDark ? 'hover:bg-dark-200' : 'hover:bg-light-200'
+              } rounded-lg transition-colors`}
+            >
+              <span className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                🔧 Advanced Settings
+                {formData.corsProxy && <span className="ml-2 text-xs text-green-500">• Proxy configured</span>}
+              </span>
+              <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>
+                {showAdvanced ? '▲' : '▼'}
+              </span>
+            </button>
+            
+            {showAdvanced && (
+              <div className={`p-4 border-t ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
+                <div>
+                  <label className={labelClass}>
+                    CORS Proxy URL
+                    <span className={`ml-1 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>(optional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.corsProxy}
+                    onChange={(e) => setFormData({ ...formData, corsProxy: e.target.value })}
+                    className={inputClass}
+                    placeholder="https://your-cors-proxy.workers.dev"
+                  />
+                  <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                    OpenAI and Anthropic APIs block browser requests (CORS). Configure a proxy to relay API calls.
+                  </p>
+                </div>
+                
+                {/* CORS Proxy Setup Instructions */}
+                <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-dark-200' : 'bg-light-300'}`}>
+                  <p className={`text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    🚀 Quick Setup: Deploy a Cloudflare Worker
+                  </p>
+                  <div className={`text-xs space-y-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <p>1. Go to <a href="https://workers.cloudflare.com" target="_blank" rel="noopener noreferrer" className="text-primary-500 underline">workers.cloudflare.com</a> and create a free account</p>
+                    <p>2. Create a new Worker and paste this code:</p>
+                    <pre className={`p-2 rounded text-xs overflow-x-auto ${isDark ? 'bg-dark-300' : 'bg-white'}`}>
+{`export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const targetUrl = url.pathname.slice(1) + url.search;
+    
+    if (!targetUrl) {
+      return new Response("CORS Proxy - Pass target URL as path", { status: 400 });
+    }
+    
+    const proxyReq = new Request(targetUrl, {
+      method: request.method,
+      headers: request.headers,
+      body: request.body,
+    });
+    
+    const response = await fetch(proxyReq);
+    const newResponse = new Response(response.body, response);
+    newResponse.headers.set("Access-Control-Allow-Origin", "*");
+    newResponse.headers.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    newResponse.headers.set("Access-Control-Allow-Headers", "*");
+    
+    return newResponse;
+  }
+}`}</pre>
+                    <p>3. Deploy and copy your Worker URL (e.g., <code className="px-1 rounded bg-opacity-50 bg-primary-500">https://your-proxy.workers.dev</code>)</p>
+                    <p>4. Paste the URL above. Requests will be routed as: <code className="px-1 rounded bg-opacity-50 bg-primary-500">{'{proxy}/{api-url}'}</code></p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Model Parameters */}
         <div className={`p-4 rounded-lg ${isDark ? 'bg-dark-200' : 'bg-light-300'}`}>

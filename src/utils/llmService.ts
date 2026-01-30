@@ -25,6 +25,45 @@ export class LLMError extends Error {
 }
 
 /**
+ * Build the request URL applying CORS proxy if configured
+ * For CORS proxy, the format is: {proxyUrl}/{targetUrl}
+ * Example: https://your-worker.workers.dev/https://api.openai.com/v1/chat/completions
+ */
+const buildProxiedUrl = (targetUrl: string, corsProxy?: string): string => {
+  if (!corsProxy) {
+    return targetUrl;
+  }
+  
+  // Ensure proxy URL doesn't end with slash
+  const proxyBase = corsProxy.replace(/\/+$/, '');
+  // Ensure target URL doesn't start with slash (we'll add it)
+  const target = targetUrl.startsWith('/') ? targetUrl.slice(1) : targetUrl;
+  
+  logDebug('Using CORS proxy', {
+    proxy: proxyBase,
+    target: target,
+  });
+  
+  return `${proxyBase}/${target}`;
+};
+
+/**
+ * Make a proxied fetch request
+ * Applies CORS proxy if configured, otherwise makes direct request
+ */
+const proxiedFetch = async (
+  url: string,
+  options: RequestInit,
+  corsProxy?: string
+): Promise<Response> => {
+  const finalUrl = buildProxiedUrl(url, corsProxy);
+  
+  // When using a proxy, we may need to pass original headers differently
+  // Most CORS proxies just forward the request as-is
+  return fetch(finalUrl, options);
+};
+
+/**
  * Check if local network access is allowed
  * Returns true if allowed or not needed, false if denied
  */
@@ -206,7 +245,7 @@ export const callLLMProvider = async (
 
     switch (provider.type) {
       case 'openai':
-        response = await fetch(endpoint, {
+        response = await proxiedFetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -221,7 +260,7 @@ export const callLLMProvider = async (
             temperature: provider.settings.temperature,
             max_tokens: provider.settings.maxTokens,
           }),
-        });
+        }, provider.corsProxy);
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -238,7 +277,7 @@ export const callLLMProvider = async (
           throw new Error('Azure endpoint must include api-version parameter (e.g., ?api-version=2024-02-01)');
         }
         
-        response = await fetch(endpoint, {
+        response = await proxiedFetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -252,7 +291,7 @@ export const callLLMProvider = async (
             temperature: provider.settings.temperature,
             max_tokens: provider.settings.maxTokens,
           }),
-        });
+        }, provider.corsProxy);
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -271,7 +310,7 @@ export const callLLMProvider = async (
 
       case 'anthropic':
         try {
-          response = await fetch(endpoint, {
+          response = await proxiedFetch(endpoint, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -284,7 +323,7 @@ export const callLLMProvider = async (
               messages: [{ role: 'user', content: prompt }],
               system: systemPrompt,
             }),
-          });
+          }, provider.corsProxy);
 
           if (!response.ok) {
             const errorText = await response.text();
@@ -426,7 +465,7 @@ export const callLLMProvider = async (
 
       default:
         // Custom provider - try OpenAI-compatible format
-        response = await fetch(endpoint, {
+        response = await proxiedFetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -441,7 +480,7 @@ export const callLLMProvider = async (
             temperature: provider.settings.temperature,
             max_tokens: provider.settings.maxTokens,
           }),
-        });
+        }, provider.corsProxy);
 
         if (!response.ok) {
           throw new Error(`Custom API error: ${response.status}`);
@@ -759,20 +798,49 @@ export const testProviderConnection = async (
         
         // Special handling for Anthropic CORS issues
         if (provider.type === 'anthropic') {
+          const hasProxy = !!provider.corsProxy;
           return {
             success: false,
-            message: 'CORS Error: Anthropic API blocks browser requests. Solutions: 1) Install a CORS proxy extension (e.g., "CORS Unblock"), 2) Use a backend proxy server, or 3) Try a different provider. ⚠️ Browser extensions may pose security risks.',
+            message: hasProxy 
+              ? 'CORS proxy failed. Check if the proxy URL is correct and running.'
+              : 'CORS Error: Anthropic API blocks browser requests. Configure a CORS Proxy URL in Advanced Settings, or use a different provider (Google, Ollama).',
             errorDetails,
             rawResponse: rawResponse || JSON.stringify({ 
               error: 'CORS policy blocked the request',
               provider: provider.type,
               endpoint: provider.apiEndpoint,
-              details: 'Browser security prevents direct API calls to Anthropic from web applications'
+              corsProxy: provider.corsProxy || 'Not configured',
+              details: 'Browser security prevents direct API calls to Anthropic from web applications',
+              solution: hasProxy 
+                ? 'Verify your CORS proxy is running and accessible'
+                : 'Configure a CORS Proxy URL in Advanced Settings (e.g., a Cloudflare Worker)'
             }, null, 2)
           };
         }
         
-        // For custom OpenAI endpoints or other network errors
+        // For OpenAI endpoints (including custom ones)
+        if (provider.type === 'openai') {
+          const hasProxy = !!provider.corsProxy;
+          return { 
+            success: false, 
+            message: hasProxy 
+              ? 'CORS proxy failed. Check if the proxy URL is correct and running.'
+              : 'CORS Error: OpenAI API blocks browser requests. Configure a CORS Proxy URL in Advanced Settings.',
+            errorDetails,
+            rawResponse: rawResponse || JSON.stringify({
+              error: 'Network request failed - likely CORS blocked',
+              provider: provider.type,
+              endpoint: provider.apiEndpoint,
+              corsProxy: provider.corsProxy || 'Not configured',
+              details: 'OpenAI API does not support browser requests due to security policy',
+              solution: hasProxy 
+                ? 'Verify your CORS proxy is running and accessible'
+                : 'Configure a CORS Proxy URL in Advanced Settings (e.g., a Cloudflare Worker)'
+            }, null, 2)
+          };
+        }
+        
+        // For other providers with network errors
         return { 
           success: false, 
           message: 'Network error. Check your internet connection or endpoint URL.',
