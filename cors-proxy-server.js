@@ -81,6 +81,11 @@ const server = http.createServer((req, res) => {
 
   // Remove host header (it should be for target, not proxy)
   delete proxyOptions.headers.host;
+  
+  // Special handling for Anthropic API - add required header for browser requests
+  if (targetUrl.hostname && targetUrl.hostname.includes('anthropic.com')) {
+    proxyOptions.headers['anthropic-dangerous-direct-browser-access'] = 'true';
+  }
 
   // Make the proxied request
   const proxyReq = httpModule.request(proxyOptions, (proxyRes) => {
