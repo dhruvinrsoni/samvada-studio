@@ -6,7 +6,14 @@
  * by adding CORS headers to API responses.
  * 
  * Usage:
- *   node cors-proxy-server.js [port]
+ *   node cors-proxy-server.js [port] [--insecure]
+ * 
+ * Flags:
+ *   --insecure    Disable SSL certificate verification (for corporate networks)
+ * 
+ * Environment Variables:
+ *   PORT                        Port number (default: 8080)
+ *   NODE_TLS_REJECT_UNAUTHORIZED  Set to '0' to disable SSL verification
  * 
  * Default port: 8080
  * 
@@ -19,7 +26,20 @@ import https from 'https';
 import url from 'url';
 import os from 'os';
 
-const PORT = process.env.PORT || parseInt(process.argv[2]) || 8080;
+// Check for --insecure flag or environment variable
+const args = process.argv.slice(2);
+const insecureFlag = args.includes('--insecure');
+const insecureEnv = process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0';
+const isInsecure = insecureFlag || insecureEnv;
+
+// Disable SSL verification if requested (for corporate networks with SSL inspection)
+if (isInsecure) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
+// Parse port from arguments (excluding --insecure flag)
+const portArg = args.find(arg => !arg.startsWith('--') && !isNaN(parseInt(arg)));
+const PORT = process.env.PORT || (portArg ? parseInt(portArg) : 8080);
 
 const server = http.createServer((req, res) => {
   // Handle CORS preflight
@@ -99,6 +119,15 @@ server.listen(PORT, () => {
   console.log('');
   console.log(`  ✅ Proxy Server:  http://localhost:${PORT}`);
   console.log(`  🌍 Network:       http://${getLocalIP()}:${PORT}`);
+  
+  if (isInsecure) {
+    console.log('');
+    console.log('  ⚠️  SSL VERIFICATION DISABLED');
+    console.log('     This mode is for corporate networks with SSL inspection');
+    console.log('     (Zscaler, Palo Alto, etc.)');
+    console.log('     ⚡ Recommended for development only');
+  }
+  
   console.log('');
   console.log('  ⚠️  IMPORTANT: This is the PROXY, not the app!');
   console.log('     Open a NEW terminal and run: npm run dev');
@@ -114,6 +143,13 @@ server.listen(PORT, () => {
   console.log('  Example:');
   console.log(`     http://localhost:${PORT}/https://api.openai.com/v1/chat/completions`);
   console.log('');
+  
+  if (!isInsecure) {
+    console.log('  💡 Corporate network issues?');
+    console.log('     Run with: node cors-proxy-server.js --insecure');
+    console.log('');
+  }
+  
   console.log('  Press Ctrl+C to stop');
   console.log('');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');

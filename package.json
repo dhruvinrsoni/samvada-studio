@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "proxy": "node cors-proxy-server.js",
+    "proxy:insecure": "node cors-proxy-server.js --insecure",
     "proxy:custom": "node cors-proxy-server.js"
   },
   "dependencies": {

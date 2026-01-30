@@ -32,6 +32,12 @@ npm run proxy
 ```
 This runs on `http://localhost:8080` (does NOT open the app)
 
+**For corporate networks with SSL inspection (Zscaler, Palo Alto, etc.):**
+```bash
+npm run proxy:insecure
+```
+This disables SSL certificate verification (recommended for development only)
+
 **Terminal 2 - Samvada Studio App:**
 ```bash
 npm run dev
@@ -95,6 +101,22 @@ If you don't want to run a local server, deploy a Cloudflare Worker instead:
 - For production apps, use a proper backend API
 
 ## Troubleshooting
+
+### "unable to get local issuer certificate"
+
+**Problem:** Your company uses SSL inspection (Zscaler, Palo Alto, etc.) which replaces SSL certificates.
+
+**Solution:** Use the insecure mode:
+```bash
+npm run proxy:insecure
+```
+
+Or manually:
+```bash
+node cors-proxy-server.js --insecure
+```
+
+This disables SSL certificate verification. ⚠️ **Use only on trusted corporate networks.**
 
 ### Port already in use
 ```bash
