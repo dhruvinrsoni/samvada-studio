@@ -86,6 +86,15 @@ const server = http.createServer((req, res) => {
   const proxyReq = httpModule.request(proxyOptions, (proxyRes) => {
     // Add CORS headers to response
     const headers = { ...proxyRes.headers };
+    
+    // Remove existing CORS headers to avoid duplicates
+    delete headers['access-control-allow-origin'];
+    delete headers['access-control-allow-methods'];
+    delete headers['access-control-allow-headers'];
+    delete headers['access-control-allow-credentials'];
+    delete headers['access-control-max-age'];
+    
+    // Add our CORS headers
     headers['Access-Control-Allow-Origin'] = '*';
     headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
     headers['Access-Control-Allow-Headers'] = '*';

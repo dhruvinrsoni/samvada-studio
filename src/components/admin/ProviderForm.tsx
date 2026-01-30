@@ -413,6 +413,33 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
             required
           />
           
+          {/* Incomplete Endpoint Warning for OpenAI */}
+          {formData.type === 'openai' && formData.apiEndpoint && 
+           !formData.apiEndpoint.includes('/v1/') && 
+           !formData.apiEndpoint.endsWith('/v1') && (
+            <div className={`mt-2 p-2 rounded-lg border text-xs ${
+              isDark 
+                ? 'bg-red-900/20 border-red-800 text-red-300' 
+                : 'bg-red-50 border-red-300 text-red-800'
+            }`}>
+              <div className="flex items-start gap-2">
+                <span className="flex-shrink-0">❌</span>
+                <div>
+                  <p className="font-semibold mb-1">Incomplete Endpoint</p>
+                  <p className="mb-1">
+                    OpenAI endpoint should include the full API path.
+                  </p>
+                  <p className="font-mono text-xs">
+                    Current: {formData.apiEndpoint}
+                  </p>
+                  <p className="font-mono text-xs text-green-400 mt-1">
+                    Should be: {formData.apiEndpoint}/v1/chat/completions
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Custom OpenAI Endpoint Warning */}
           {formData.type === 'openai' && formData.apiEndpoint && !formData.apiEndpoint.includes('api.openai.com') && (
             <div className={`mt-2 p-2 rounded-lg border text-xs ${
