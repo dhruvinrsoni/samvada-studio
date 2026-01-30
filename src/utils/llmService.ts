@@ -245,21 +245,36 @@ export const callLLMProvider = async (
 
     switch (provider.type) {
       case 'openai':
+        // Newer OpenAI models (gpt-4o, gpt-5, etc.) use max_completion_tokens
+        // Older models (gpt-4, gpt-3.5-turbo) use max_tokens
+        const usesNewTokenParam = provider.model.includes('gpt-4o') || 
+                                   provider.model.includes('gpt-5') ||
+                                   provider.model.includes('o1') ||
+                                   provider.model.includes('o3');
+        
+        const requestBody: Record<string, unknown> = {
+          model: provider.model,
+          messages: [
+            ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+            { role: 'user', content: prompt },
+          ],
+          temperature: provider.settings.temperature,
+        };
+        
+        // Use the correct token parameter based on model
+        if (usesNewTokenParam) {
+          requestBody.max_completion_tokens = provider.settings.maxTokens;
+        } else {
+          requestBody.max_tokens = provider.settings.maxTokens;
+        }
+        
         response = await proxiedFetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${provider.apiKey}`,
           },
-          body: JSON.stringify({
-            model: provider.model,
-            messages: [
-              ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-              { role: 'user', content: prompt },
-            ],
-            temperature: provider.settings.temperature,
-            max_tokens: provider.settings.maxTokens,
-          }),
+          body: JSON.stringify(requestBody),
         }, provider.corsProxy);
 
         if (!response.ok) {
