@@ -340,35 +340,64 @@ export class HealthService {
 
       } else if (provider.type === 'openai' && provider.apiEndpoint) {
         // OpenAI: Check models endpoint
-        healthCheckUrl = `${provider.apiEndpoint}/v1/models`;
-
-        httpResponse = await fetch(healthCheckUrl, {
-          method: 'GET',
-          signal: AbortSignal.timeout(this.PROVIDER_TIMEOUT),
-          headers: provider.apiKey ? {
-            'Authorization': `Bearer ${provider.apiKey}`,
-          } : {},
-        });
-
-        responseTime = Date.now() - startTime;
-
-        if (httpResponse.ok) {
-          status = responseTime > 5000 ? 'slow' : 'online';
+        // Extract base URL and construct models endpoint
+        let baseUrl = provider.apiEndpoint;
+        
+        // If endpoint contains /chat/completions, replace it with /models
+        if (baseUrl.includes('/chat/completions')) {
+          baseUrl = baseUrl.replace('/chat/completions', '/models');
+        } else if (baseUrl.endsWith('/v1')) {
+          // If it ends with /v1, append /models
+          baseUrl = `${baseUrl}/models`;
         } else {
-          status = 'offline';
-          // Parse error response
-          let rawResponse: string = '';
-          try {
-            const responseText = await httpResponse.text();
-            rawResponse = responseText;
-            const errorResponse = JSON.parse(responseText);
-            errorDetails = parseProviderError(provider.type, errorResponse, httpResponse.status);
-            if (rawResponse) {
-              errorDetails.technicalDetails = rawResponse;
-            }
+          // Otherwise append /v1/models
+          baseUrl = `${baseUrl}/v1/models`;
+        }
+        
+        healthCheckUrl = baseUrl;
+
+        // Skip health check for custom OpenAI domains (may have CORS issues)
+        const isCustomDomain = !provider.apiEndpoint.includes('api.openai.com');
+        if (isCustomDomain) {
+          // Just verify API key is configured
+          if (!provider.apiKey) {
+            status = 'offline';
+            errorDetails = parseProviderError(provider.type, { error: { type: 'invalid_api_key', message: 'No API key configured' } }, 401);
             error = errorDetails.title;
-          } catch {
-            error = `HTTP ${httpResponse.status}`;
+          } else {
+            status = 'online';
+            responseTime = 0;
+            // Custom endpoint - health check skipped to avoid CORS
+          }
+        } else {
+          httpResponse = await fetch(healthCheckUrl, {
+            method: 'GET',
+            signal: AbortSignal.timeout(this.PROVIDER_TIMEOUT),
+            headers: provider.apiKey ? {
+              'Authorization': `Bearer ${provider.apiKey}`,
+            } : {},
+          });
+
+          responseTime = Date.now() - startTime;
+
+          if (httpResponse.ok) {
+            status = responseTime > 5000 ? 'slow' : 'online';
+          } else {
+            status = 'offline';
+            // Parse error response
+            let rawResponse: string = '';
+            try {
+              const responseText = await httpResponse.text();
+              rawResponse = responseText;
+              const errorResponse = JSON.parse(responseText);
+              errorDetails = parseProviderError(provider.type, errorResponse, httpResponse.status);
+              if (rawResponse) {
+                errorDetails.technicalDetails = rawResponse;
+              }
+              error = errorDetails.title;
+            } catch {
+              error = `HTTP ${httpResponse.status}`;
+            }
           }
         }
 

@@ -388,6 +388,26 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
             placeholder="https://api.example.com/v1/chat"
             required
           />
+          
+          {/* Custom OpenAI Endpoint Warning */}
+          {formData.type === 'openai' && formData.apiEndpoint && !formData.apiEndpoint.includes('api.openai.com') && (
+            <div className={`mt-2 p-2 rounded-lg border text-xs ${
+              isDark 
+                ? 'bg-yellow-900/20 border-yellow-800 text-yellow-300' 
+                : 'bg-yellow-50 border-yellow-300 text-yellow-800'
+            }`}>
+              <div className="flex items-start gap-2">
+                <span className="flex-shrink-0">⚠️</span>
+                <div>
+                  <p className="font-semibold mb-1">Custom OpenAI Endpoint</p>
+                  <p>
+                    Custom OpenAI endpoints may have CORS restrictions when called from browsers. 
+                    If you encounter CORS errors, consider using a CORS proxy extension or backend proxy.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Model Parameters */}
