@@ -252,14 +252,23 @@ export const callLLMProvider = async (
                                    provider.model.includes('o1') ||
                                    provider.model.includes('o3');
         
+        // Reasoning models (o1, o3, gpt-5) don't support custom temperature
+        const isReasoningModel = provider.model.includes('o1') ||
+                                 provider.model.includes('o3') ||
+                                 provider.model.includes('gpt-5');
+        
         const requestBody: Record<string, unknown> = {
           model: provider.model,
           messages: [
             ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
             { role: 'user', content: prompt },
           ],
-          temperature: provider.settings.temperature,
         };
+        
+        // Only add temperature for non-reasoning models
+        if (!isReasoningModel) {
+          requestBody.temperature = provider.settings.temperature;
+        }
         
         // Use the correct token parameter based on model
         if (usesNewTokenParam) {
