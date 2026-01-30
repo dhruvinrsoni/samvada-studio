@@ -383,15 +383,18 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
           {formData.type === 'openai' && (
             <div className={`mt-3 p-3 rounded-lg border ${
               isDark 
-                ? 'bg-blue-900/20 border-blue-800 text-blue-300' 
-                : 'bg-blue-50 border-blue-300 text-blue-800'
+                ? 'bg-yellow-900/20 border-yellow-800 text-yellow-300' 
+                : 'bg-yellow-50 border-yellow-300 text-yellow-800'
             }`}>
               <div className="flex items-start gap-2">
-                <span className="text-lg flex-shrink-0">ℹ️</span>
+                <span className="text-lg flex-shrink-0">⚠️</span>
                 <div className="text-xs">
-                  <p className="font-semibold mb-1">Browser CORS Requirement</p>
-                  <p>
-                    OpenAI's API blocks direct browser requests for security. Configure a CORS Proxy URL in <strong>Advanced Settings</strong> below to use OpenAI from this browser app.
+                  <p className="font-semibold mb-1">CORS Limitation</p>
+                  <p className="mb-2">
+                    OpenAI's API blocks direct browser requests for security. You need to configure a CORS Proxy URL in <strong>Advanced Settings</strong> below.
+                  </p>
+                  <p className="text-xs opacity-80">
+                    Alternatively, use Google Gemini or Ollama which work directly in browsers.
                   </p>
                 </div>
               </div>
@@ -472,7 +475,17 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
                 {/* CORS Proxy Setup Instructions */}
                 <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-dark-200' : 'bg-light-300'}`}>
                   <p className={`text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    🚀 Quick Setup: Deploy a Cloudflare Worker
+                    🚀 Option 1: Local Proxy (Recommended for Development)
+                  </p>
+                  <div className={`text-xs space-y-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <p>1. Open a <strong>NEW terminal</strong> (keep this app running!)</p>
+                    <p>2. Run: <code className="px-1 py-0.5 rounded bg-opacity-50 bg-primary-500">npm run proxy</code></p>
+                    <p>3. Enter: <code className="px-1 py-0.5 rounded bg-opacity-50 bg-primary-500">http://localhost:8080</code> in the field above</p>
+                    <p className="text-xs opacity-75">⚠️ Keep BOTH terminals running • ✓ Zero latency</p>
+                  </div>
+                  
+                  <p className={`text-sm font-medium mt-4 mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    ☁️ Option 2: Cloudflare Worker (Recommended for Production)
                   </p>
                   <div className={`text-xs space-y-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                     <p>1. Go to <a href="https://workers.cloudflare.com" target="_blank" rel="noopener noreferrer" className="text-primary-500 underline">workers.cloudflare.com</a> and create a free account</p>

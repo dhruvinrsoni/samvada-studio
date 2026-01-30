@@ -263,6 +263,13 @@ Connect to **6 providers** with unified interface:
 - Set defaults per chat
 - Run multiple providers simultaneously
 
+**🔧 CORS Proxy Support (NEW!):**
+- OpenAI & Anthropic require CORS proxy for browser use
+- Built-in local proxy server: `npm run proxy`
+- Cloudflare Worker support for production
+- Automatic proxy routing when configured
+- **📖 [Setup Guide](docs/CORS_PROXY.md)**
+
 **🌐 Local Network Access (NEW!):**
 - One-click permission management for local LLM servers
 - Full control over localhost access (no browser settings needed)

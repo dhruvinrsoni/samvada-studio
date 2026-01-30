@@ -8,7 +8,9 @@
     "debug": "vite --host",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "proxy": "node cors-proxy-server.js",
+    "proxy:custom": "node cors-proxy-server.js"
   },
   "dependencies": {
     "react": "^18.3.1",
