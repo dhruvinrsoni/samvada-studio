@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useChat } from '../../context/ChatContext';
 import type { LLMProviderConfig } from '../../types';
 import { formatDate } from '../../utils/helpers';
@@ -25,6 +26,7 @@ export default function ProviderCard({
 }: ProviderCardProps) {
   const { state } = useChat();
   const isDark = state.theme === 'dark';
+  const [showTestDetails, setShowTestDetails] = useState(false);
 
   // Health status is passed from parent (AdminPanel) to avoid duplicate API calls
 
@@ -95,10 +97,93 @@ export default function ProviderCard({
                 Last tested: {formatDate(provider.lastTested)}
               </p>
             )}
+            
+            {/* Test Result Error Message */}
             {provider.testMessage && provider.testStatus === 'failed' && (
-              <p className="text-xs mt-1 text-red-400 break-words">
-                Error: {provider.testMessage}
-              </p>
+              <div className="mt-2">
+                <p className="text-xs text-red-400 break-words">
+                  Error: {provider.testMessage}
+                </p>
+                
+                {/* Show Technical Details Button if available */}
+                {(provider.testErrorDetails || provider.testRawResponse) && (
+                  <button
+                    onClick={() => setShowTestDetails(!showTestDetails)}
+                    className={`mt-1 text-xs font-medium transition-colors ${
+                      isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                    }`}
+                  >
+                    {showTestDetails ? '▼' : '▶'} Show Technical Details
+                  </button>
+                )}
+                
+                {/* Collapsible Technical Details */}
+                {showTestDetails && (provider.testErrorDetails || provider.testRawResponse) && (
+                  <div className={`mt-2 p-3 rounded-lg border text-xs overflow-x-auto max-w-full ${
+                    isDark 
+                      ? 'bg-dark-100 border-dark-50' 
+                      : 'bg-gray-50 border-gray-300'
+                  }`}>
+                    {/* Error Category and User Action */}
+                    {provider.testErrorDetails && (
+                      <div className="mb-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`font-semibold ${
+                            isDark ? 'text-red-300' : 'text-red-600'
+                          }`}>
+                            {provider.testErrorDetails.title}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded text-xs ${
+                            isDark 
+                              ? 'bg-orange-900/30 text-orange-300' 
+                              : 'bg-orange-100 text-orange-700'
+                          }`}>
+                            {provider.testErrorDetails.category}
+                          </span>
+                        </div>
+                        {provider.testErrorDetails.message && (
+                          <p className={`break-words ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                            {provider.testErrorDetails.message}
+                          </p>
+                        )}
+                        {provider.testErrorDetails.userAction && (
+                          <p className={`mt-2 break-words ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>
+                            💡 {provider.testErrorDetails.userAction}
+                          </p>
+                        )}
+                        {provider.testErrorDetails.documentationUrl && (
+                          <a
+                            href={provider.testErrorDetails.documentationUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`mt-1 inline-block ${
+                              isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                            }`}
+                          >
+                            📚 View Documentation
+                          </a>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Raw API Response */}
+                    {provider.testRawResponse && (
+                      <div>
+                        <p className={`font-semibold mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Raw API Response
+                        </p>
+                        <pre className={`p-2 rounded overflow-x-auto text-xs max-w-full whitespace-pre-wrap break-words ${
+                          isDark 
+                            ? 'bg-dark-300 text-gray-300' 
+                            : 'bg-white text-gray-800'
+                        }`}>
+                          {provider.testRawResponse}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
             
             {/* Anthropic CORS Warning */}

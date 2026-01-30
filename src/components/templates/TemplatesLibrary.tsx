@@ -170,7 +170,7 @@ export default function TemplatesLibrary({ onSelectTemplate }: TemplatesLibraryP
             )}
 
             {/* Templates Grid */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filteredTemplates.map(template => (
                   <div

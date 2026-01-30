@@ -124,7 +124,7 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
         {/* Content */}
         <div className="flex-1 overflow-hidden flex">
           {/* Settings Panel */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
 
             {/* APPEARANCE TAB */}
             {activeTab === 'appearance' && (
@@ -349,7 +349,7 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
           </div>
 
           {/* Live Preview Panel - Right Side */}
-          <div className={`w-96 border-l p-6 overflow-y-auto ${
+          <div className={`w-96 border-l p-6 overflow-y-auto overflow-x-hidden ${
             isDark ? 'border-gray-700 bg-gray-850' : 'border-gray-200 bg-gray-50'
           }`}>
             <h3 className={`text-xl font-bold mb-6 ${

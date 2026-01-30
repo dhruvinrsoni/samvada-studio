@@ -138,7 +138,7 @@ export default function GlobalSearch() {
         </div>
 
         {/* Results */}
-        <div className="max-h-[70vh] overflow-y-auto">
+        <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
           {globalSearch.isSearching ? (
             <div className={`p-12 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
               <div className="animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full mx-auto mb-3"></div>

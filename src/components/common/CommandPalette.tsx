@@ -133,7 +133,7 @@ export default function CommandPalette() {
         </div>
 
         {/* Commands List */}
-        <div className="max-h-96 overflow-y-auto py-2">
+        <div className="max-h-96 overflow-y-auto overflow-x-hidden py-2">
           {filteredCommands.length === 0 ? (
             <div className={`px-4 py-8 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
               No commands found

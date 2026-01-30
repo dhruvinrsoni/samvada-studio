@@ -152,7 +152,7 @@ export default function ChatSettings({ chat, onClose, pwaStatus }: ChatSettingsP
   const labelClass = `block text-sm font-medium mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`;
 
   return (
-    <div className={`border-b p-4 max-h-[60vh] overflow-y-auto ${
+    <div className={`border-b p-4 max-h-[60vh] overflow-y-auto overflow-x-hidden ${
       isDark ? 'bg-dark-100 border-dark-300' : 'bg-light-100 border-light-400'
     }`}>
       <div className="flex items-center justify-between mb-4">

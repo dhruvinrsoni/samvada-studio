@@ -486,7 +486,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
 
       {/* Expanded Details */}
       {hasProviders && isExpanded && (
-        <div className={`border-t max-h-[60vh] overflow-y-auto ${
+        <div className={`border-t max-h-[60vh] overflow-y-auto overflow-x-hidden ${
           state.theme === 'dark' ? 'border-dark-300' : 'border-light-400'
         }`}>
           <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -668,7 +668,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
                         </svg>
                         Raw API Response
                       </div>
-                      <pre className={`text-xs font-mono overflow-x-auto p-2 rounded ${
+                      <pre className={`text-xs font-mono overflow-x-auto p-2 rounded max-w-full whitespace-pre-wrap break-words ${
                         state.theme === 'dark' ? 'bg-black text-green-400' : 'bg-white text-gray-800'
                       }`}>
                         <code>{formatJsonWithColors(health.errorDetails.technicalDetails, state.theme)}</code>

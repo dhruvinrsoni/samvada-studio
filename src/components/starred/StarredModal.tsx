@@ -53,7 +53,7 @@ export default function StarredModal({ onClose }: StarredModalProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto max-h-96">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden max-h-96">
           {starredMessages.length === 0 ? (
             <div className="p-8 text-center">
               <svg className="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

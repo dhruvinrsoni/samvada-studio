@@ -108,7 +108,7 @@ export default function KeyboardShortcuts() {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(80vh-80px)]">
+        <div className="p-6 overflow-y-auto overflow-x-hidden max-h-[calc(80vh-80px)]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {SHORTCUTS.map((group) => (
               <div key={group.category}>

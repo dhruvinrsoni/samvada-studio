@@ -447,6 +447,8 @@ function chatReducer(state: AppState, action: ChatAction): AppState {
                 ...p,
                 testStatus: action.payload.status,
                 testMessage: action.payload.message,
+                testErrorDetails: action.payload.errorDetails,
+                testRawResponse: action.payload.rawResponse,
                 lastTested: new Date(),
               }
             : p

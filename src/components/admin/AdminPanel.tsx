@@ -64,7 +64,11 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
       if (result.success) {
         dispatch({ 
           type: 'TEST_PROVIDER', 
-          payload: { id: provider.id, status: 'success', message: result.message } 
+          payload: { 
+            id: provider.id, 
+            status: 'success', 
+            message: result.message 
+          } 
         });
       } else {
         dispatch({ 
@@ -72,7 +76,9 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
           payload: { 
             id: provider.id, 
             status: 'failed', 
-            message: result.message 
+            message: result.message,
+            errorDetails: result.errorDetails,
+            rawResponse: result.rawResponse
           } 
         });
       }
@@ -171,7 +177,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+        <div className="p-6 overflow-y-auto overflow-x-hidden max-h-[calc(90vh-80px)]">
           {activeTab === 'providers' && (
             <div className="space-y-6">
               {/* Add Provider Button */}

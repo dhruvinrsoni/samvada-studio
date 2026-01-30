@@ -2,10 +2,26 @@
 import { generateId } from './helpers';
 import type { Message, Draft, LLMProviderConfig, ChatSettings } from '../types';
 import { logDebug, logError, logWarning } from './debug';
+import { parseProviderError, type ProviderError } from './providerErrors';
 
 export interface LLMResponse {
   message: Message;
   processingTime: number;
+}
+
+/**
+ * Custom error class that includes raw API response
+ */
+export class LLMError extends Error {
+  public rawResponse?: string;
+  public statusCode?: number;
+  
+  constructor(message: string, rawResponse?: string, statusCode?: number) {
+    super(message);
+    this.name = 'LLMError';
+    this.rawResponse = rawResponse;
+    this.statusCode = statusCode;
+  }
 }
 
 /**
@@ -208,7 +224,8 @@ export const callLLMProvider = async (
         });
 
         if (!response.ok) {
-          throw new Error(`OpenAI API error: ${response.status}`);
+          const errorText = await response.text();
+          throw new LLMError(`OpenAI API error: ${response.status}`, errorText, response.status);
         }
 
         const openaiData = await response.json();
@@ -245,13 +262,7 @@ export const callLLMProvider = async (
             errorBody: errorText,
           });
           
-          if (response.status === 401) {
-            throw new Error('Invalid Azure API key. Check your credentials.');
-          } else if (response.status === 404) {
-            throw new Error('Azure deployment not found. Check your endpoint URL and deployment name.');
-          } else {
-            throw new Error(`Azure API error: ${response.status} - ${errorText}`);
-          }
+          throw new LLMError(`Azure API error: ${response.status}`, errorText, response.status);
         }
 
         const azureData = await response.json();
@@ -276,7 +287,8 @@ export const callLLMProvider = async (
           });
 
           if (!response.ok) {
-            throw new Error(`Anthropic API error: ${response.status}`);
+            const errorText = await response.text();
+            throw new LLMError(`Anthropic API error: ${response.status}`, errorText, response.status);
           }
 
           const anthropicData = await response.json();
@@ -329,15 +341,7 @@ export const callLLMProvider = async (
             endpoint: geminiEndpoint,
           });
           
-          if (response.status === 400) {
-            throw new Error(`Invalid request to Google API. Check model name and API key.`);
-          } else if (response.status === 403) {
-            throw new Error(`Google API access denied. Check your API key permissions.`);
-          } else if (response.status === 404) {
-            throw new Error(`Model "${provider.model}" not found. Please check the model name.`);
-          } else {
-            throw new Error(`Google API error: ${response.status} - ${errorText}`);
-          }
+          throw new LLMError(`Google API error: ${response.status}`, errorText, response.status);
         }
 
         const googleData = await response.json();
@@ -570,7 +574,7 @@ export const regenerateResponse = async (
 // Test provider connection
 export const testProviderConnection = async (
   provider: LLMProviderConfig
-): Promise<{ success: boolean; message: string }> => {
+): Promise<{ success: boolean; message: string; errorDetails?: ProviderError; rawResponse?: string }> => {
   const startTime = Date.now();
   
   // Pre-flight checks
@@ -684,54 +688,133 @@ export const testProviderConnection = async (
   } catch (error) {
     const duration = Date.now() - startTime;
     
+    // Extract raw response and error details
+    let rawResponse: string | undefined;
+    let errorDetails: ProviderError | undefined;
+    
+    // Check if error is LLMError with raw response
+    if (error instanceof LLMError && error.rawResponse) {
+      rawResponse = error.rawResponse;
+      try {
+        const errorObj = JSON.parse(error.rawResponse);
+        rawResponse = JSON.stringify(errorObj, null, 2);
+        errorDetails = parseProviderError(provider.type, errorObj, error.statusCode);
+      } catch {
+        // Keep raw response as-is if not JSON
+      }
+    }
+    
     // Parse error messages for better user feedback
     if (error instanceof Error) {
       const msg = error.message;
       
       // OpenAI/Azure errors
       if (msg.includes('401') || msg.includes('Unauthorized')) {
-        return { success: false, message: 'Invalid API key. Please check your credentials.' };
+        return { 
+          success: false, 
+          message: 'Invalid API key. Please check your credentials.',
+          errorDetails,
+          rawResponse
+        };
       }
       if (msg.includes('429') || msg.includes('rate limit')) {
-        return { success: false, message: 'Rate limit exceeded. Please try again later.' };
+        return { 
+          success: false, 
+          message: 'Rate limit exceeded. Please try again later.',
+          errorDetails,
+          rawResponse
+        };
       }
       if (msg.includes('404')) {
-        return { success: false, message: `Model "${provider.model}" not found or endpoint incorrect.` };
+        return { 
+          success: false, 
+          message: `Model "${provider.model}" not found or endpoint incorrect.`,
+          errorDetails,
+          rawResponse
+        };
       }
       if (msg.includes('403') || msg.includes('Forbidden')) {
-        return { success: false, message: 'API key does not have permission for this model.' };
+        return { 
+          success: false, 
+          message: 'API key does not have permission for this model.',
+          errorDetails,
+          rawResponse
+        };
       }
       if (msg.includes('500') || msg.includes('502') || msg.includes('503')) {
-        return { success: false, message: 'Provider service is unavailable. Try again later.' };
+        return { 
+          success: false, 
+          message: 'Provider service is unavailable. Try again later.',
+          errorDetails,
+          rawResponse
+        };
       }
       
       // Network errors
       if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+        // Create error details for network issues
+        if (!errorDetails) {
+          errorDetails = parseProviderError(provider.type, { error: { type: 'network_error', message: 'Failed to connect to API endpoint' } });
+        }
+        
         // Special handling for Anthropic CORS issues
         if (provider.type === 'anthropic') {
           return {
             success: false,
-            message: 'CORS Error: Anthropic API blocks browser requests. Solutions: 1) Install a CORS proxy extension (e.g., "CORS Unblock"), 2) Use a backend proxy server, or 3) Try a different provider. ⚠️ Browser extensions may pose security risks.'
+            message: 'CORS Error: Anthropic API blocks browser requests. Solutions: 1) Install a CORS proxy extension (e.g., "CORS Unblock"), 2) Use a backend proxy server, or 3) Try a different provider. ⚠️ Browser extensions may pose security risks.',
+            errorDetails,
+            rawResponse: rawResponse || JSON.stringify({ 
+              error: 'CORS policy blocked the request',
+              provider: provider.type,
+              endpoint: provider.apiEndpoint,
+              details: 'Browser security prevents direct API calls to Anthropic from web applications'
+            }, null, 2)
           };
         }
+        
+        // For custom OpenAI endpoints or other network errors
         return { 
           success: false, 
-          message: 'Network error. Check your internet connection or endpoint URL.' 
+          message: 'Network error. Check your internet connection or endpoint URL.',
+          errorDetails,
+          rawResponse: rawResponse || JSON.stringify({
+            error: 'Network request failed',
+            provider: provider.type,
+            endpoint: provider.apiEndpoint,
+            possibleCauses: [
+              'CORS policy blocking the request',
+              'Invalid or unreachable endpoint URL',
+              'Network connectivity issues',
+              'Firewall or proxy blocking the request'
+            ],
+            suggestion: provider.apiEndpoint?.includes('api.openai.com') 
+              ? 'If using a custom OpenAI endpoint, ensure it supports CORS or use a proxy'
+              : 'Check if the endpoint URL is correct and reachable'
+          }, null, 2)
         };
       }
       if (msg.includes('timeout')) {
-        return { success: false, message: `Request timed out after ${duration}ms. Service may be slow or down.` };
+        return { 
+          success: false, 
+          message: `Request timed out after ${duration}ms. Service may be slow or down.`,
+          errorDetails,
+          rawResponse
+        };
       }
       
       return { 
         success: false, 
-        message: msg 
+        message: msg,
+        errorDetails,
+        rawResponse 
       };
     }
     
     return { 
       success: false, 
-      message: 'Connection test failed. Please check your configuration.' 
+      message: 'Connection test failed. Please check your configuration.',
+      errorDetails,
+      rawResponse 
     };
   }
 };
