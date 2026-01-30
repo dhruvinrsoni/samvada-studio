@@ -75,11 +75,14 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
         chat.settings // Pass chat settings for formatting profile
       );
 
+      const now = new Date();
       const updatedPnR = {
         ...promptResponse,
         responses: [...promptResponse.responses, message],
         activeResponseIndex: promptResponse.responses.length,
         processingTime,
+        createdAt: now, // Update timestamp to reflect regeneration time
+        updatedAt: now,
       };
 
       dispatch({
