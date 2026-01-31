@@ -228,7 +228,7 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
         {/* Provider Type */}
         <div>
           <label className={labelClass}>Provider Type</label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {PROVIDER_TYPES.map(({ type, label, icon }) => (
               <button
                 key={type}
@@ -250,7 +250,7 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
         </div>
 
         {/* Basic Settings */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
             <label className={labelClass}>Display Name</label>
             <input
@@ -615,7 +615,7 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
           <h4 className={`font-medium mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
             Model Parameters
           </h4>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className={labelClass}>
                 Temperature: {formData.temperature}
@@ -696,11 +696,11 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
         )}
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4">
           <button
             type="button"
             onClick={onCancel}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
               isDark 
                 ? 'bg-dark-100 text-gray-300 hover:bg-dark-50' 
                 : 'bg-light-300 text-gray-700 hover:bg-light-400'
@@ -710,7 +710,7 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-theme-primary text-white rounded-lg font-medium hover:bg-theme-primary-hover"
+            className="px-4 py-2 bg-theme-primary text-white rounded-lg font-medium hover:bg-theme-primary-hover whitespace-nowrap"
           >
             {isEditing ? 'Save Changes' : 'Add Provider'}
           </button>

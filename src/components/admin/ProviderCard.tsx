@@ -55,41 +55,41 @@ export default function ProviderCard({
   };
 
   return (
-    <div className={`p-4 rounded-lg border transition-colors ${
+    <div className={`p-3 sm:p-4 rounded-lg border transition-colors ${
       isDefault 
         ? 'border-theme-primary bg-theme-primary/10' 
         : isDark 
           ? 'border-dark-100 bg-dark-300 hover:border-dark-50' 
           : 'border-light-400 bg-light-200 hover:border-light-500'
     }`}>
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-3">
-          <span className="text-2xl">{getProviderIcon(provider.type)}</span>
-          <div>
-            <div className="flex items-center gap-2">
-              <h4 className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+          <span className="text-xl sm:text-2xl flex-shrink-0">{getProviderIcon(provider.type)}</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col xs:flex-row xs:items-center gap-1.5 xs:gap-2 flex-wrap">
+              <h4 className={`font-medium truncate ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
                 {provider.name}
               </h4>
               {isDefault && (
-                <span className="px-2 py-0.5 text-xs bg-theme-primary text-white rounded-full">
+                <span className="px-2 py-0.5 text-xs bg-theme-primary text-white rounded-full whitespace-nowrap self-start">
                   Default
                 </span>
               )}
-              {getStatusBadge()}
+              <div className="self-start">
+                {getStatusBadge()}
+              </div>
             </div>
-            <p className={`text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Model: <code className={`px-1 py-0.5 rounded ${isDark ? 'bg-dark-100' : 'bg-light-400'}`}>
+            <p className={`text-sm mt-1.5 break-words ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              <span className="text-xs">Model:</span> <code className={`px-1 py-0.5 rounded text-xs break-all ${isDark ? 'bg-dark-100' : 'bg-light-400'}`}>
                 {provider.model}
-                {provider.type === 'ollama' && (
-                  <span className="ml-1 opacity-75 text-gray-700">
-                    ({providerHealth?.modelSize 
-                      ? HealthService.formatBytes(providerHealth.modelSize)
-                      : 'size unknown'})
+                {provider.type === 'ollama' && providerHealth?.modelSize && (
+                  <span className="ml-1 opacity-75 whitespace-nowrap">
+                    ({HealthService.formatBytes(providerHealth.modelSize)})
                   </span>
                 )}
               </code>
             </p>
-            <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+            <p className={`text-xs mt-1 break-all ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
               Endpoint: {provider.apiEndpoint || 'Not configured'}
             </p>
             {provider.lastTested && (
@@ -207,11 +207,11 @@ export default function ProviderCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 sm:flex-shrink-0">
           <button
             onClick={onTest}
             disabled={provider.testStatus === 'pending'}
-            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
               provider.testStatus === 'pending'
                 ? 'bg-gray-500 cursor-not-allowed'
                 : 'bg-theme-primary hover:bg-theme-primary-hover'
@@ -222,7 +222,7 @@ export default function ProviderCard({
           {!isDefault && (
             <button
               onClick={onSetDefault}
-              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 isDark 
                   ? 'bg-dark-100 hover:bg-dark-50 text-gray-300' 
                   : 'bg-light-300 hover:bg-light-400 text-gray-700'
@@ -233,7 +233,7 @@ export default function ProviderCard({
           )}
           <button
             onClick={onEdit}
-            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+            className={`px-2.5 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
               isDark 
                 ? 'bg-dark-100 hover:bg-dark-50 text-gray-300' 
                 : 'bg-light-300 hover:bg-light-400 text-gray-700'
@@ -243,7 +243,7 @@ export default function ProviderCard({
           </button>
           <button
             onClick={onDelete}
-            className="px-3 py-1.5 rounded text-sm font-medium bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
+            className="px-2.5 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-colors"
           >
             🗑️
           </button>
@@ -251,13 +251,13 @@ export default function ProviderCard({
       </div>
 
       {/* Settings Summary */}
-      <div className={`mt-3 pt-3 border-t flex flex-wrap gap-4 text-xs ${
+      <div className={`mt-3 pt-3 border-t flex flex-wrap gap-2 sm:gap-4 text-xs ${
         isDark ? 'border-dark-100 text-gray-500' : 'border-light-400 text-gray-500'
       }`}>
-        <span>Temperature: {provider.settings.temperature}</span>
-        <span>Max Tokens: {provider.settings.maxTokens}</span>
-        {provider.settings.topP && <span>Top P: {provider.settings.topP}</span>}
-        <span>API Key: {provider.apiKey ? '••••••••' : 'Not set'}</span>
+        <span className="whitespace-nowrap">Temperature: {provider.settings.temperature}</span>
+        <span className="whitespace-nowrap">Max Tokens: {provider.settings.maxTokens}</span>
+        {provider.settings.topP && <span className="whitespace-nowrap">Top P: {provider.settings.topP}</span>}
+        <span className="whitespace-nowrap">API Key: {provider.apiKey ? '••••••••' : 'Not set'}</span>
       </div>
     </div>
   );
