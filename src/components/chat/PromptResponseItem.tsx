@@ -22,6 +22,8 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
   const [editedResponse, setEditedResponse] = useState(
     promptResponse.responses[promptResponse.activeResponseIndex]?.content || ''
   );
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(promptResponse.name || '');
 
   const isDark = state.theme === 'dark';
   const activeResponse = promptResponse.responses[promptResponse.activeResponseIndex];
@@ -131,6 +133,18 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
     setIsEditingResponse(false);
   };
 
+  const handleSaveNameEdit = () => {
+    const updatedPnR = {
+      ...promptResponse,
+      name: editedName.trim() || undefined, // Remove name if empty
+    };
+    dispatch({
+      type: 'UPDATE_PROMPT_RESPONSE',
+      payload: { chatId, promptResponse: updatedPnR },
+    });
+    setIsEditingName(false);
+  };
+
   const handleSelectDraft = (index: number) => {
     const updatedPnR = {
       ...promptResponse,
@@ -181,9 +195,63 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
           >
             #{promptResponse.id.slice(0, 8)}
           </button>
-          <span className={`text-sm truncate max-w-xs ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-            {getFirstWords(promptResponse.prompt.content, 6)}
-          </span>
+          {isEditingName ? (
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <input
+                type="text"
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveNameEdit();
+                  } else if (e.key === 'Escape') {
+                    setIsEditingName(false);
+                    setEditedName(promptResponse.name || '');
+                  }
+                }}
+                className={`text-sm px-2 py-1 border rounded max-w-xs ${isDark ? 'bg-dark-100 border-dark-300 text-gray-200' : 'bg-white border-light-400 text-gray-800'}`}
+                placeholder="Enter custom name..."
+                autoFocus
+              />
+              <button
+                onClick={handleSaveNameEdit}
+                className="text-green-600 hover:text-green-700 text-sm"
+                title="Save name"
+              >
+                ✓
+              </button>
+              <button
+                onClick={() => {
+                  setIsEditingName(false);
+                  setEditedName(promptResponse.name || '');
+                }}
+                className="text-red-600 hover:text-red-700 text-sm"
+                title="Cancel"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-sm truncate max-w-xs ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
+                title={promptResponse.name || getFirstWords(promptResponse.prompt.content, 10)}
+              >
+                {promptResponse.name || getFirstWords(promptResponse.prompt.content, 6)}
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditingName(true);
+                  setEditedName(promptResponse.name || '');
+                }}
+                className={`opacity-0 group-hover:opacity-100 text-xs p-1 rounded transition-all ${isDark ? 'hover:bg-dark-100 text-gray-500 hover:text-gray-300' : 'hover:bg-light-300 text-gray-500 hover:text-gray-700'}`}
+                title="Edit PnR name"
+              >
+                ✏️
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {promptResponse.processingTime && (

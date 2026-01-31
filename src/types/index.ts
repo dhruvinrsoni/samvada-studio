@@ -265,6 +265,7 @@ export interface Draft {
 
 export interface PromptResponse {
   id: string; // PnR ID - unique identifier
+  name?: string; // Custom name for the PnR (optional)
   prompt: Message;
   responses: Message[];
   drafts: Draft[];

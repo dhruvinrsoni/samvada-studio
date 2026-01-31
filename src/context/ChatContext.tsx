@@ -816,6 +816,25 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           });
         }
 
+        // Search in PnR name
+        if (pnr.name) {
+          const nameContent = pnr.name.toLowerCase();
+          matchIndex = nameContent.indexOf(lowerQuery);
+          if (matchIndex !== -1) {
+            results.push({
+              chatId: chat.id,
+              chatTitle: chat.title,
+              pnrId: pnr.id,
+              messageId: pnr.prompt.id,
+              messageType: 'prompt',
+              content: pnr.prompt.content,
+              matchedText: `PnR Name: ${pnr.name}`,
+              matchIndex,
+              timestamp: pnr.prompt.timestamp,
+            });
+          }
+        }
+
         // Search in responses
         pnr.responses.forEach(response => {
           const responseContent = response.content.toLowerCase();
