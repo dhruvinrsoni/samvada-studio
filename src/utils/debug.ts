@@ -205,7 +205,7 @@ export const installDebug = () => {
 
 // Auto-install if running in browser
 if (typeof window !== 'undefined') {
-  try { 
+  try {
     installDebug();
     // Log app initialization
     logInfo('App', 'Samvada Studio initialized', {
@@ -213,7 +213,198 @@ if (typeof window !== 'undefined') {
       env: import.meta.env.MODE,
       debug: debugEnabled,
     });
-  } catch (e) { 
+  } catch (e) {
     console.error('Failed to install debug utilities:', e);
   }
+}
+
+// =====================================================================================
+// SILENT FAILURE PREVENTION SYSTEM
+// Catches silent failures before they ship and makes debugging LLM-friendly
+// =====================================================================================
+
+export const validateCSS = {
+  isValidHsl: (hsl: string): boolean => {
+    // Modern HSL format: "217 91% 67%" (space-separated)
+    const hslRegex = /^\d{1,3} \d{1,3}% \d{1,3}%$/;
+    return hslRegex.test(hsl);
+  },
+
+  isValidColor: (color: string): boolean => {
+    if (typeof document === 'undefined') return true; // SSR safe
+    const testEl = document.createElement('div');
+    testEl.style.color = color;
+    return testEl.style.color !== '';
+  },
+
+  getThemeStatus: (): { [key: string]: string } => {
+    if (typeof document === 'undefined') return {};
+
+    const root = document.documentElement;
+    const properties = [
+      '--theme-primary',
+      '--theme-primary-hover',
+      '--theme-primary-light',
+      '--theme-primary-dark',
+      '--theme-secondary',
+      '--theme-accent'
+    ];
+
+    const status: { [key: string]: string } = {};
+    properties.forEach(prop => {
+      const value = getComputedStyle(root).getPropertyValue(prop).trim();
+      status[prop] = value || 'NOT SET';
+    });
+
+    return status;
+  },
+
+  checkThemeHealth: (): { isHealthy: boolean; issues: string[] } => {
+    const issues: string[] = [];
+    const themeStatus = validateCSS.getThemeStatus();
+
+    // Check if theme properties are set
+    if (!themeStatus['--theme-primary']) {
+      issues.push('Theme primary color not set');
+    }
+
+    // Check HSL format (should be space-separated, not comma-separated)
+    Object.entries(themeStatus).forEach(([prop, value]) => {
+      if (value && value.includes(',')) {
+        issues.push(`${prop} uses old comma-separated HSL format: ${value}`);
+      }
+      if (value && !validateCSS.isValidHsl(value)) {
+        issues.push(`${prop} has invalid HSL format: ${value}`);
+      }
+    });
+
+    // Check if theme classes actually work
+    if (typeof document !== 'undefined') {
+      const testEl = document.createElement('div');
+      testEl.className = 'bg-theme-primary';
+      testEl.style.position = 'absolute';
+      testEl.style.left = '-9999px';
+      document.body.appendChild(testEl);
+
+      const bgColor = getComputedStyle(testEl).backgroundColor;
+      document.body.removeChild(testEl);
+
+      if (bgColor === 'rgba(0, 0, 0, 0)' || bgColor === 'transparent') {
+        issues.push('Theme classes not rendering colors (CSS may be invalid)');
+      }
+    }
+
+    return {
+      isHealthy: issues.length === 0,
+      issues
+    };
+  }
+};
+
+export const createLLMReport = {
+  themeIssue: (customIssues?: string[]) => {
+    const health = validateCSS.checkThemeHealth();
+    const themeStatus = validateCSS.getThemeStatus();
+
+    return {
+      timestamp: new Date().toISOString(),
+      issue: 'Theme system silent failure',
+      symptoms: [
+        'Buttons appear white/invisible',
+        'Text not showing theme colors',
+        'Theme switching not working',
+        'UI elements not colored',
+        ...(customIssues || [])
+      ],
+      technical: {
+        themeStatus,
+        healthCheck: health,
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'SSR',
+        viewport: typeof window !== 'undefined' ? `${window.innerWidth}x${window.innerHeight}` : 'SSR',
+        tailwindVersion: '3.x+ (requires space-separated HSL)',
+        cssFormat: 'Must be: "217 91% 67%" not "217, 91%, 67%"'
+      },
+      files: [
+        'src/utils/theme.ts - convertHsl() function (critical)',
+        'src/index.css - CSS custom properties',
+        'tailwind.config.js - hsl() syntax',
+        'src/context/ChatContext.tsx - theme application'
+      ],
+      lastWorking: 'Before HSL format changes',
+      attemptedFixes: [],
+      prevention: 'Check validateCSS.checkThemeHealth() in dev mode'
+    };
+  },
+
+  toMarkdown: (report: any) => {
+    return `# 🎯 LLM-Ready Theme Bug Report
+
+**Timestamp:** ${report.timestamp}
+**Issue:** ${report.issue}
+
+## 🚨 Symptoms
+${report.symptoms.map((s: string) => `- ${s}`).join('\n')}
+
+## 🔧 Technical Details
+\`\`\`json
+${JSON.stringify(report.technical, null, 2)}
+\`\`\`
+
+## 📁 Files to Check
+${report.files.map((f: string) => `- ${f}`).join('\n')}
+
+## 📋 Context
+- **Last working:** ${report.lastWorking}
+- **Attempted fixes:** ${report.attemptedFixes.join(', ') || 'None'}
+- **Prevention:** ${report.prevention}
+
+## 🛠️ Quick Debug Commands
+\`\`\`javascript
+// Check theme status
+console.log(validateCSS.getThemeStatus());
+
+// Check health
+console.log(validateCSS.checkThemeHealth());
+
+// Generate this report
+console.log(createLLMReport.toMarkdown(createLLMReport.themeIssue()));
+\`\`\`
+
+## 🎯 Most Likely Fix
+The \`convertHsl()\` function in \`theme.ts\` is probably outputting comma-separated HSL format instead of space-separated. Change:
+\`\`\`typescript
+// WRONG
+return \`\${parts[0]}, \${parts[1]}%, \${parts[2]}%\`;
+
+// CORRECT
+return \`\${parts[0]} \${parts[1]}% \${parts[2]}%\`;
+\`\`\`
+`;
+  },
+
+  copyToClipboard: (report: any) => {
+    const markdown = createLLMReport.toMarkdown(report);
+    if (typeof navigator !== 'undefined') {
+      navigator.clipboard.writeText(markdown);
+    }
+    return markdown;
+  }
+};
+
+// Global access for LLMs and debugging
+if (typeof window !== 'undefined') {
+  (window as any).validateCSS = validateCSS;
+  (window as any).createLLMReport = createLLMReport;
+  (window as any).llmDebug = {
+    themeStatus: () => console.log('🎨 Theme Status:', validateCSS.getThemeStatus()),
+    themeHealth: () => console.log('🏥 Theme Health:', validateCSS.checkThemeHealth()),
+    bugReport: () => {
+      const report = createLLMReport.themeIssue();
+      const markdown = createLLMReport.toMarkdown(report);
+      console.log('🐛 Bug Report Generated:');
+      console.log(markdown);
+      createLLMReport.copyToClipboard(report);
+      console.log('📋 Copied to clipboard!');
+    }
+  };
 }

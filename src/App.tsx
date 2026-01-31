@@ -12,10 +12,8 @@ import KeyboardShortcuts from './components/common/KeyboardShortcuts';
 import TemplatesLibrary from './components/templates/TemplatesLibrary';
 import ExportModal from './components/export/ExportModal';
 import StarredModal from './components/starred/StarredModal';
-import ThemeSettingsModal from './components/common/ThemeSettingsModal';
-import ConnectionStatus from './components/common/ConnectionStatus';
-import StatusBar from './components/common/StatusBar';
-import ToastContainer from './components/toast/ToastContainer';
+import ThemeHealthIndicator from './components/common/ThemeHealthIndicator';
+import DebugMode from './components/common/DebugMode';
 import { PWAInstallPrompt, PWAUpdateNotification, PWAOfflineIndicator } from './components/pwa';
 import { usePWA } from './hooks/usePWA';
 import { useState, useEffect } from 'react';
@@ -351,6 +349,12 @@ function AppContent() {
         minimizedOllamaWarnings={minimizedOllamaWarnings}
         onShowOllamaWarnings={showOllamaWarnings}
       />
+
+      {/* Silent Failure Prevention - Theme Health Indicator */}
+      <ThemeHealthIndicator />
+
+      {/* Debug Mode - Ctrl+Shift+D */}
+      <DebugMode />
     </div>
     </>
   );

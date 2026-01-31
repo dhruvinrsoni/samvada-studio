@@ -1,8 +1,4 @@
-import { useState } from 'react';
-import { useChat } from '../../context/ChatContext';
-import type { ThemeMode, CustomTheme } from '../../types';
-import { getAllThemePresets, getThemePreset } from '../../utils/theme';
-import ColorPicker from './ColorPicker';
+import { createLLMReport } from '../../utils/debug';
 
 interface ThemeSettingsModalProps {
   onClose: () => void;
@@ -439,7 +435,24 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 sm:gap-3 p-3 sm:p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <div className="flex justify-between items-center gap-2 sm:gap-3 p-3 sm:p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+          {/* Bug Report Button - Only in dev mode */}
+          {import.meta.env.DEV && (
+            <button
+              onClick={() => {
+                const report = createLLMReport.themeIssue();
+                const markdown = createLLMReport.toMarkdown(report);
+                createLLMReport.copyToClipboard(report);
+                console.log('🐛 Theme Bug Report Generated and Copied!');
+                console.log(markdown);
+                alert('Bug report copied to clipboard! Check console for full details.');
+              }}
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base min-h-[36px] sm:min-h-[40px] flex items-center gap-2"
+            >
+              🐛 Bug Report
+            </button>
+          )}
+
           <button
             onClick={onClose}
             className="px-3 sm:px-4 py-1.5 sm:py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-xs sm:text-sm md:text-base min-h-[36px] sm:min-h-[40px]"
