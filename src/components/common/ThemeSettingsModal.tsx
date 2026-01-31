@@ -444,11 +444,12 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
           </div>
         </div>
 
-        {/* Dev-only Bug Report Button - Floating */}
+        {/* Dev-only Bug Report Button - Floating Bottom Right */}
         {import.meta.env.DEV && (
-          <div className="absolute bottom-4 left-4">
+          <div className="absolute bottom-4 right-4 z-10">
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 const report = createLLMReport.themeIssue();
                 const markdown = createLLMReport.toMarkdown(report);
                 createLLMReport.copyToClipboard(report);
@@ -456,10 +457,10 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                 console.log(markdown);
                 alert('Bug report copied to clipboard! Check console for full details.');
               }}
-              title="Generate theme bug report"
-              className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs flex items-center gap-1 shadow-lg"
+              title="Generate theme bug report (Dev only)"
+              className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-medium flex items-center gap-2 shadow-xl hover:shadow-2xl transition-all"
             >
-              🐛 Bug Report
+              🐛 <span className="hidden sm:inline">Bug Report</span>
             </button>
           </div>
         )}
