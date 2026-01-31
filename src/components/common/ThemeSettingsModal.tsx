@@ -54,7 +54,7 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
     });
   };
 
-  const handleFontSizeChange = (fontSize: 'small' | 'medium' | 'large') => {
+  const handleFontSizeChange = (fontSize: 'xs' | 'small' | 'medium' | 'large' | 'xl') => {
     dispatch({
       type: 'UPDATE_THEME_SETTINGS',
       payload: { ...state.themeSettings, fontSize }
@@ -168,16 +168,19 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                   <h3 className={`text-base sm:text-lg md:text-xl font-semibold mb-2 sm:mb-3 md:mb-4 ${
                     isDark ? 'text-gray-100' : 'text-gray-900'
                   }`}>Font Size</h3>
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                     {[
-                      { size: 'small' as const, label: 'Small', preview: 'Aa' },
-                      { size: 'medium' as const, label: 'Medium', preview: 'Aa' },
-                      { size: 'large' as const, label: 'Large', preview: 'Aa' }
-                    ].map(({ size, label, preview }) => (
+                      { size: 'xs' as const, label: 'XS', preview: 'Aa', desc: 'Extra Small' },
+                      { size: 'small' as const, label: 'S', preview: 'Aa', desc: 'Small' },
+                      { size: 'medium' as const, label: 'M', preview: 'Aa', desc: 'Medium' },
+                      { size: 'large' as const, label: 'L', preview: 'Aa', desc: 'Large' },
+                      { size: 'xl' as const, label: 'XL', preview: 'Aa', desc: 'Extra Large' }
+                    ].map(({ size, label, preview, desc }) => (
                       <button
                         key={size}
                         onClick={() => handleFontSizeChange(size)}
-                        className={`p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border-2 transition-all hover:scale-105 ${
+                        title={desc}
+                        className={`p-2 sm:p-3 rounded-lg border-2 transition-all hover:scale-105 ${
                           state.themeSettings.fontSize === size
                             ? 'border-theme-primary bg-theme-primary/10'
                             : isDark
@@ -185,10 +188,14 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                               : 'border-gray-200 hover:border-gray-300 bg-white'
                         }`}
                       >
-                        <div className={`mb-1 sm:mb-2 ${
-                          size === 'small' ? 'text-lg sm:text-xl' : size === 'medium' ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'
+                        <div className={`mb-1 ${
+                          size === 'xs' ? 'text-base' : 
+                          size === 'small' ? 'text-lg' : 
+                          size === 'medium' ? 'text-xl' : 
+                          size === 'large' ? 'text-2xl' : 
+                          'text-3xl'
                         }`}>{preview}</div>
-                        <div className={`font-semibold capitalize text-xs sm:text-sm md:text-base ${
+                        <div className={`font-semibold text-xs sm:text-sm ${
                           state.themeSettings.fontSize === size ? 'text-theme-primary' : ''
                         }`}>{label}</div>
                       </button>
@@ -437,10 +444,9 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-between items-center gap-2 sm:gap-3 p-3 sm:p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
-          {/* Bug Report Button - Only in dev mode */}
-          {import.meta.env.DEV && (
+        {/* Dev-only Bug Report Button - Floating */}
+        {import.meta.env.DEV && (
+          <div className="absolute bottom-4 left-4">
             <button
               onClick={() => {
                 const report = createLLMReport.themeIssue();
@@ -450,19 +456,13 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                 console.log(markdown);
                 alert('Bug report copied to clipboard! Check console for full details.');
               }}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base min-h-[36px] sm:min-h-[40px] flex items-center gap-2"
+              title="Generate theme bug report"
+              className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs flex items-center gap-1 shadow-lg"
             >
               🐛 Bug Report
             </button>
-          )}
-
-          <button
-            onClick={onClose}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-xs sm:text-sm md:text-base min-h-[36px] sm:min-h-[40px]"
-          >
-            Close
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

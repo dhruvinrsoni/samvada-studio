@@ -180,21 +180,33 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
         }`}
         onClick={handleToggleCollapse}
       >
-        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
-          <button className={`flex-shrink-0 text-xs sm:text-sm ${isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}>
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <button 
+            className={`flex-shrink-0 text-sm sm:text-base ${
+              isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+            }`}
+            title={promptResponse.isCollapsed ? 'Expand' : 'Collapse'}
+          >
             {promptResponse.isCollapsed ? '▶' : '▼'}
           </button>
+          
+          {/* PnR ID Badge - Compact */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               navigator.clipboard.writeText(promptResponse.id);
-              addToast('success', 'Copied!', `PnR ID ${promptResponse.id.slice(0, 8)} copied to clipboard`);
+              addToast('success', 'Copied!', `PnR ID copied to clipboard`);
             }}
-            className={`text-[10px] sm:text-xs font-mono hover:underline cursor-pointer transition-colors flex-shrink-0 ${isDark ? 'text-gray-500 hover:text-theme-primary' : 'text-gray-500 hover:text-theme-primary'}`}
-            title="Click to copy full PnR ID"
+            className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded border flex-shrink-0 ${
+              isDark 
+                ? 'border-gray-700 text-gray-500 hover:border-theme-primary hover:text-theme-primary' 
+                : 'border-gray-300 text-gray-600 hover:border-theme-primary hover:text-theme-primary'
+            }`}
+            title={`PnR ID: ${promptResponse.id} (click to copy)`}
           >
-            #{promptResponse.id.slice(0, 6)}<span className="hidden sm:inline">{promptResponse.id.slice(6, 8)}</span>
+            #{promptResponse.id.slice(0, 4)}
           </button>
+          
           {isEditingName ? (
             <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1" onClick={(e) => e.stopPropagation()}>
               <input

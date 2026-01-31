@@ -55,6 +55,7 @@ export default function ContextPanel() {
           <button
             onClick={() => dispatch({ type: 'TOGGLE_CONTEXT_PANEL_MODE' })}
             className={`p-2 rounded-lg ${isDark ? 'text-gray-400 hover:bg-dark-100' : 'text-gray-600 hover:bg-light-300'}`}
+            title="Close context panel"
           >
             ✕
           </button>
@@ -74,6 +75,7 @@ export default function ContextPanel() {
             <button
               onClick={handleAddPanel}
               className="px-3 py-2 bg-theme-primary text-white rounded hover:bg-theme-primary-hover"
+              title="Add new context panel"
             >
               +
             </button>
@@ -105,12 +107,14 @@ export default function ContextPanel() {
                           ? 'bg-dark-100 text-gray-400' 
                           : 'bg-light-400 text-gray-600'
                     }`}
+                    title={panel.isActive ? 'Deactivate panel' : 'Activate panel'}
                   >
                     {panel.isActive ? 'Active' : 'Inactive'}
                   </button>
                   <button
                     onClick={() => handleDeletePanel(panel.id)}
                     className="text-red-500 hover:text-red-400"
+                    title="Delete this panel"
                   >
                     ✕
                   </button>
@@ -147,6 +151,7 @@ export default function ContextPanel() {
           <button
             onClick={handleAddPanel}
             className="px-3 py-2 bg-theme-primary text-white rounded hover:bg-theme-primary-hover"
+            title="Add new context panel"
           >
             +
           </button>
@@ -177,12 +182,14 @@ export default function ContextPanel() {
                         ? 'bg-dark-100 text-gray-400' 
                         : 'bg-light-400 text-gray-600'
                   }`}
+                  title={panel.isActive ? 'Deactivate panel' : 'Activate panel'}
                 >
                   {panel.isActive ? 'Active' : 'Inactive'}
                 </button>
                 <button
                   onClick={() => handleDeletePanel(panel.id)}
                   className="text-red-500 hover:text-red-400"
+                  title="Delete this panel"
                 >
                   ✕
                 </button>

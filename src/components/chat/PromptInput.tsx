@@ -479,6 +479,24 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
           rows={1}
         />
         <div className="absolute right-1.5 sm:right-2 md:right-3 bottom-1.5 sm:bottom-2 md:bottom-3 flex items-center gap-1 sm:gap-1.5 md:gap-2">
+          {/* Clear Button - Show when has content */}
+          {value && (
+            <button
+              type="button"
+              onClick={() => onChange?.('')}
+              className={`p-1.5 sm:p-2 rounded-lg transition-all min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center ${
+                isDark
+                  ? 'hover:bg-red-500/20 text-gray-400 hover:text-red-400'
+                  : 'hover:bg-red-100 text-gray-600 hover:text-red-600'
+              }`}
+              title="Clear prompt input (Esc)"
+            >
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+          
           <button
             type="button"
             onClick={() => setShowToolbar(!showToolbar)}

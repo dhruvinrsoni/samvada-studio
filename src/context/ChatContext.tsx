@@ -759,9 +759,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     // Apply font size
     const fontSizes = {
+      xs: '13px',
       small: '14px',
       medium: '16px',
       large: '18px',
+      xl: '20px'
     };
     root.style.setProperty('--font-size-base', fontSizes[state.themeSettings.fontSize]);
 

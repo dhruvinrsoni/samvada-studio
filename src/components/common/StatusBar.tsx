@@ -313,8 +313,8 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
             }`}></span>
           </span>
 
-          {/* Status Text */}
-          <span className="uppercase tracking-wider">
+          {/* Status Text - Hidden on mobile */}
+          <span className="uppercase tracking-wider hidden sm:inline">
             {overallHealth === 'healthy' ? 'System Healthy' :
              overallHealth === 'slow' ? 'System Slow' :
              overallHealth === 'degraded' ? 'System Degraded' : 'Checking...'}

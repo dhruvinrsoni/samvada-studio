@@ -421,7 +421,7 @@ export interface ThemeSettings {
   mode: ThemeMode;
   preset: string; // Theme preset ID or 'custom'
   customColors: CustomTheme | null;
-  fontSize: 'small' | 'medium' | 'large';
+  fontSize: 'xs' | 'small' | 'medium' | 'large' | 'xl';
   compactMode: boolean;
   promptNavigationEnabled: boolean; // Enable/disable prompt navigation with arrow keys
 }
