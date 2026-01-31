@@ -41,12 +41,12 @@ export default function TokenCounter({ text, showCost = false }: TokenCounterPro
   if (tokenCount === 0) return null;
 
   return (
-    <div className={`flex items-center gap-2 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-      <span className={getTokenColor()}>
-        ~{tokenCount.toLocaleString()} tokens
+    <div className={`flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+      <span className={`whitespace-nowrap ${getTokenColor()}`}>
+        ~{tokenCount.toLocaleString()} <span className="hidden sm:inline">tokens</span><span className="sm:hidden">tk</span>
       </span>
       {showCost && estimatedCost > 0 && (
-        <span className="opacity-75">
+        <span className="opacity-75 hidden sm:inline">
           (~${estimatedCost.toFixed(4)})
         </span>
       )}

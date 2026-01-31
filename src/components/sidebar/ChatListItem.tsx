@@ -39,7 +39,7 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
 
   return (
     <div
-      className={`group relative flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-colors mb-1 ${
+      className={`group relative flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-lg cursor-pointer transition-colors mb-1 ${
         isActive
           ? 'bg-primary-600/20 border border-primary-600/50'
           : isSelected
@@ -60,7 +60,7 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
           e.stopPropagation();
           dispatch({ type: 'TOGGLE_SELECT_CHAT', payload: chat.id });
         }}
-        className={`w-4 h-4 rounded text-primary-500 focus:ring-primary-500 ${isDark ? 'border-gray-600 bg-dark-300' : 'border-gray-400 bg-white'}`}
+        className={`w-4 h-4 sm:w-4 sm:h-4 rounded text-primary-500 focus:ring-primary-500 flex-shrink-0 ${isDark ? 'border-gray-600 bg-dark-300' : 'border-gray-400 bg-white'}`}
       />
 
       {/* Chat Info */}
@@ -106,14 +106,14 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
       </div>
 
       {/* Actions */}
-      <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+      <div className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex gap-0.5 sm:gap-1">
         <button
           onClick={(e) => {
             e.stopPropagation();
             setIsRenaming(true);
             setNewTitle(chat.title);
           }}
-          className={`p-1 rounded text-gray-500 ${isDark ? 'hover:bg-dark-300' : 'hover:bg-light-400'}`}
+          className={`p-1 sm:p-1.5 rounded text-gray-500 min-w-[24px] min-h-[24px] sm:min-w-[28px] sm:min-h-[28px] flex items-center justify-center text-xs sm:text-sm ${isDark ? 'hover:bg-dark-300' : 'hover:bg-light-400'}`}
           title={isRenaming ? 'Save' : 'Rename chat'}
         >
           {isRenaming ? '💾' : '✏️'}
@@ -123,7 +123,7 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
             e.stopPropagation();
             dispatch({ type: 'UPDATE_CHAT', payload: { ...chat, isPinned: !chat.isPinned } });
           }}
-          className={`p-1 rounded ${isDark ? 'hover:bg-dark-300' : 'hover:bg-light-400'} ${chat.isPinned ? 'text-yellow-500' : 'text-gray-500'}`}
+          className={`p-1 sm:p-1.5 rounded min-w-[24px] min-h-[24px] sm:min-w-[28px] sm:min-h-[28px] flex items-center justify-center text-xs sm:text-sm ${isDark ? 'hover:bg-dark-300' : 'hover:bg-light-400'} ${chat.isPinned ? 'text-yellow-500' : 'text-gray-500'}`}
           title={chat.isPinned ? 'Unpin chat' : 'Pin chat'}
         >
           {chat.isPinned ? '📌' : '📍'}
@@ -137,10 +137,10 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
               dispatch({ type: 'ARCHIVE_CHAT', payload: chat.id });
             }
           }}
-          className={`p-1 rounded text-gray-500 ${isDark ? 'hover:bg-dark-300' : 'hover:bg-light-400'}`}
+          className={`p-1 sm:p-1.5 rounded text-gray-500 min-w-[24px] min-h-[24px] sm:min-w-[28px] sm:min-h-[28px] flex items-center justify-center text-xs sm:text-sm hidden xs:flex ${isDark ? 'hover:bg-dark-300' : 'hover:bg-light-400'}`}
           title={chat.isArchived ? 'Unarchive chat' : 'Archive chat'}
         >
-          {chat.isArchived ? '�' : '📦'}
+          {chat.isArchived ? '📤' : '📦'}
         </button>
         <button
           onClick={(e) => {
@@ -151,7 +151,7 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
           }}
           onMouseEnter={() => setIsDeleteHover(true)}
           onMouseLeave={() => setIsDeleteHover(false)}
-          className={`p-1 rounded text-red-500 ${isDark ? 'hover:bg-dark-300' : 'hover:bg-light-400'}`}
+          className={`p-1 sm:p-1.5 rounded text-red-500 min-w-[24px] min-h-[24px] sm:min-w-[28px] sm:min-h-[28px] flex items-center justify-center text-xs sm:text-sm ${isDark ? 'hover:bg-dark-300' : 'hover:bg-light-400'}`}
           title="Delete"
         >
           {isDeleteHover ? '❌' : '🗑️'}

@@ -88,7 +88,7 @@ export default function FoldersSection({ renderChatItem }: FoldersSectionProps) 
             </span>
             <button
               onClick={(e) => { e.stopPropagation(); setEditingFolder(folder); }}
-              className={`opacity-0 group-hover:opacity-100 p-1 rounded ${isDark ? 'hover:bg-dark-400' : 'hover:bg-gray-200'}`}
+              className={`opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1 sm:p-1.5 rounded min-w-[24px] min-h-[24px] sm:min-w-[28px] sm:min-h-[28px] flex items-center justify-center text-xs sm:text-sm ${isDark ? 'hover:bg-dark-400' : 'hover:bg-gray-200'}`}
             >
               ✏️
             </button>
@@ -122,7 +122,7 @@ export default function FoldersSection({ renderChatItem }: FoldersSectionProps) 
       {/* Create Folder Button */}
       <button
         onClick={() => setIsCreatingFolder(true)}
-        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+        className={`w-full flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition-colors min-h-[36px] sm:min-h-[40px] ${
           isDark ? 'text-gray-400 hover:bg-dark-300 hover:text-white' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
         }`}
       >
@@ -197,16 +197,16 @@ function FolderForm({ folder, onSave, onDelete, onCancel, isDark }: FolderFormPr
   const [icon, setIcon] = useState(folder?.icon || FOLDER_ICONS[0]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
-      <div className={`relative w-full max-w-sm rounded-xl shadow-xl p-6 ${isDark ? 'bg-dark-200' : 'bg-white'}`}>
-        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+      <div className={`relative w-full max-w-[95vw] sm:max-w-sm rounded-lg sm:rounded-xl shadow-xl p-4 sm:p-6 max-h-[90vh] overflow-y-auto scroll-touch ${isDark ? 'bg-dark-200' : 'bg-white'}`}>
+        <h3 className={`text-base sm:text-lg font-semibold mb-3 sm:mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
           {folder ? 'Edit Folder' : 'New Folder'}
         </h3>
         
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <div>
-            <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+            <label className={`block text-xs sm:text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
               Folder Name
             </label>
             <input
@@ -214,22 +214,22 @@ function FolderForm({ folder, onSave, onDelete, onCancel, isDark }: FolderFormPr
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Work Projects"
-              className={`w-full px-3 py-2 rounded-lg border ${isDark ? 'bg-dark-300 border-dark-400 text-white' : 'bg-white border-gray-300'}`}
+              className={`w-full px-3 py-2 rounded-lg border text-sm sm:text-base min-h-[36px] sm:min-h-[40px] ${isDark ? 'bg-dark-300 border-dark-400 text-white' : 'bg-white border-gray-300'}`}
               autoFocus
             />
           </div>
 
           <div>
-            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+            <label className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
               Icon
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {FOLDER_ICONS.map(i => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => setIcon(i)}
-                  className={`w-10 h-10 rounded-lg text-xl flex items-center justify-center transition-colors ${
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg text-base sm:text-xl flex items-center justify-center transition-colors ${
                     icon === i
                       ? 'bg-primary-600 text-white'
                       : isDark ? 'bg-dark-300 hover:bg-dark-400' : 'bg-gray-100 hover:bg-gray-200'
@@ -242,16 +242,16 @@ function FolderForm({ folder, onSave, onDelete, onCancel, isDark }: FolderFormPr
           </div>
 
           <div>
-            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+            <label className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
               Color
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {FOLDER_COLORS.map(c => (
                 <button
                   key={c.value}
                   type="button"
                   onClick={() => setColor(c.value)}
-                  className={`w-8 h-8 rounded-full transition-transform ${
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full transition-transform ${
                     color === c.value ? 'scale-125 ring-2 ring-white ring-offset-2' : ''
                   }`}
                   style={{ backgroundColor: c.value }}
@@ -262,11 +262,11 @@ function FolderForm({ folder, onSave, onDelete, onCancel, isDark }: FolderFormPr
           </div>
         </div>
 
-        <div className="flex justify-between mt-6">
+        <div className="flex flex-col-reverse xs:flex-row justify-between mt-4 sm:mt-6 gap-2">
           {onDelete && (
             <button
               onClick={onDelete}
-              className="px-3 py-2 text-red-500 hover:bg-red-500/10 rounded-lg text-sm font-medium"
+              className="px-2 sm:px-3 py-1.5 sm:py-2 text-red-500 hover:bg-red-500/10 rounded-lg text-xs sm:text-sm font-medium min-h-[36px]"
             >
               Delete Folder
             </button>
@@ -274,14 +274,14 @@ function FolderForm({ folder, onSave, onDelete, onCancel, isDark }: FolderFormPr
           <div className={`flex gap-2 ${!onDelete ? 'ml-auto' : ''}`}>
             <button
               onClick={onCancel}
-              className={`px-4 py-2 rounded-lg font-medium ${isDark ? 'text-gray-400 hover:bg-dark-300' : 'text-gray-600 hover:bg-gray-100'}`}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium text-xs sm:text-sm min-h-[36px] ${isDark ? 'text-gray-400 hover:bg-dark-300' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               Cancel
             </button>
             <button
               onClick={() => name.trim() && onSave(name.trim(), color, icon)}
               disabled={!name.trim()}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 text-xs sm:text-sm min-h-[36px]"
             >
               Save
             </button>

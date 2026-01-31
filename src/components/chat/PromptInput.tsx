@@ -301,20 +301,20 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
   };
 
   return (
-    <div className={`border-t p-4 ${isDark ? 'border-dark-100 bg-dark-200' : 'border-light-400 bg-light-100'}`}>
-      {/* Collapsible Formatting Toolbar */}
+    <div className={`border-t p-2 sm:p-3 md:p-4 flex-shrink-0 ${isDark ? 'border-dark-100 bg-dark-200' : 'border-light-400 bg-light-100'}`}>
+      {/* Collapsible Formatting Toolbar - responsive */}
       <div 
         className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          showToolbar ? 'max-h-32 opacity-100 mb-2' : 'max-h-0 opacity-0 mb-0'
+          showToolbar ? 'max-h-48 sm:max-h-32 opacity-100 mb-2' : 'max-h-0 opacity-0 mb-0'
         }`}
       >
-        <div className={`flex flex-wrap items-center gap-1 pb-2 border-b ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
+        <div className={`flex flex-wrap items-center gap-0.5 sm:gap-1 pb-2 border-b ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
           {/* Text Formatting */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             <button
               type="button"
               onClick={() => applyFormatting('bold')}
-              className={`p-1.5 rounded font-bold text-sm transition-colors ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+              className={`p-1 sm:p-1.5 rounded font-bold text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
               title="Bold (Ctrl+B)"
             >
               B
@@ -322,7 +322,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             <button
               type="button"
               onClick={() => applyFormatting('italic')}
-              className={`p-1.5 rounded italic text-sm transition-colors ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+              className={`p-1 sm:p-1.5 rounded italic text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
               title="Italic (Ctrl+I)"
             >
               I
@@ -330,7 +330,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             <button
               type="button"
               onClick={() => applyFormatting('strikethrough')}
-              className={`p-1.5 rounded text-sm line-through transition-colors ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm line-through transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
               title="Strikethrough"
             >
               S
@@ -338,21 +338,21 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             <button
               type="button"
               onClick={() => applyFormatting('code')}
-              className={`p-1.5 rounded font-mono text-sm transition-colors ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+              className={`p-1 sm:p-1.5 rounded font-mono text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
               title="Inline Code"
             >
               {'</>'}
             </button>
           </div>
 
-          <div className={`w-px h-4 mx-1 ${isDark ? 'bg-dark-100' : 'bg-light-400'}`} />
+          <div className={`w-px h-4 mx-0.5 sm:mx-1 ${isDark ? 'bg-dark-100' : 'bg-light-400'}`} />
 
           {/* Structure */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             <button
               type="button"
               onClick={() => applyFormatting('heading')}
-              className={`p-1.5 rounded text-sm font-bold transition-colors ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm font-bold transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
               title="Heading"
             >
               H
@@ -360,7 +360,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             <button
               type="button"
               onClick={() => applyFormatting('quote')}
-              className={`p-1.5 rounded text-sm transition-colors ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
               title="Quote"
             >
               &ldquo;
@@ -368,17 +368,17 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             <button
               type="button"
               onClick={() => applyFormatting('link')}
-              className={`p-1.5 rounded text-sm transition-colors ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
               title="Link"
             >
               🔗
             </button>
           </div>
 
-          <div className={`w-px h-4 mx-1 ${isDark ? 'bg-dark-100' : 'bg-light-400'}`} />
+          <div className={`w-px h-4 mx-0.5 sm:mx-1 ${isDark ? 'bg-dark-100' : 'bg-light-400'}`} />
 
           {/* Lists */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             <button
               type="button"
               onClick={() => {
@@ -387,7 +387,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
                   setListMode({ active: true, type: 'numbered', currentNumber: 1 });
                 }
               }}
-              className={`p-1.5 rounded text-sm transition-colors ${
+              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${
                 listMode.active && listMode.type === 'numbered'
                   ? 'bg-primary-600/20 text-primary-400'
                   : isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
@@ -404,7 +404,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
                   setListMode({ active: true, type: 'bullet', currentNumber: 0 });
                 }
               }}
-              className={`p-1.5 rounded text-sm transition-colors ${
+              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${
                 listMode.active && listMode.type === 'bullet'
                   ? 'bg-primary-600/20 text-primary-400'
                   : isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
@@ -415,41 +415,41 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             </button>
           </div>
 
-          <div className={`w-px h-4 mx-1 ${isDark ? 'bg-dark-100' : 'bg-light-400'}`} />
+          <div className={`w-px h-4 mx-0.5 sm:mx-1 ${isDark ? 'bg-dark-100' : 'bg-light-400'}`} />
 
           {/* Clear Formatting */}
           <button
             type="button"
             onClick={() => applyFormatting('clear')}
-            className={`p-1.5 rounded text-sm transition-colors ${isDark ? 'hover:bg-dark-100 text-red-400' : 'hover:bg-light-300 text-red-600'}`}
+            className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-red-400' : 'hover:bg-light-300 text-red-600'}`}
             title="Clear Formatting (remove markdown)"
           >
             ✕
           </button>
 
-          {/* Status Indicators */}
-          <div className="flex-1 flex items-center gap-2 ml-2">
+          {/* Status Indicators - hide on mobile, compact on tablet */}
+          <div className="hidden sm:flex flex-1 items-center gap-1 sm:gap-2 ml-1 sm:ml-2 flex-wrap">
             {listMode.active && (
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
+              <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap ${
                 isDark ? 'bg-primary-600/20 text-primary-400' : 'bg-primary-100 text-primary-700'
               }`}>
-                📝 List Mode (Enter for next, empty line to exit)
+                📝 <span className="hidden md:inline">List Mode</span>
               </span>
             )}
             
             {isNavigating && state.themeSettings.promptNavigationEnabled && (
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
+              <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap ${
                 isDark ? 'bg-purple-600/20 text-purple-400' : 'bg-purple-100 text-purple-700'
               }`}>
-                🧭 History (↑↓)
+                🧭 <span className="hidden md:inline">History</span>
               </span>
             )}
             
             {multiLineMode && (
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
+              <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap ${
                 isDark ? 'bg-blue-600/20 text-blue-400' : 'bg-blue-100 text-blue-700'
               }`}>
-                📄 Multi-line
+                📄 <span className="hidden md:inline">Multi-line</span>
               </span>
             )}
           </div>
@@ -466,23 +466,23 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
           disabled={disabled}
           placeholder={
             !hasProvider
-              ? "Please select and configure an LLM provider in Admin Settings to start chatting"
+              ? "Select a provider in Admin Settings to start"
               : multiLineMode
-                ? "Multi-line mode: Enter for newline, Shift+Enter to send"
-                : "Type your message... (Enter to send, Shift+Enter for newline)"
+                ? "Multi-line: Enter for newline, Shift+Enter to send"
+                : "Type message... (Enter to send)"
           }
-          className={`w-full p-4 pr-24 border rounded-lg focus:outline-none focus:border-primary-500 resize-none min-h-[60px] max-h-[300px] font-mono text-sm ${
+          className={`w-full p-2 sm:p-3 md:p-4 pr-20 sm:pr-24 md:pr-28 border rounded-lg focus:outline-none focus:border-primary-500 resize-none min-h-[48px] sm:min-h-[56px] md:min-h-[60px] max-h-[200px] sm:max-h-[250px] md:max-h-[300px] font-mono text-xs sm:text-sm ${
             isDark 
               ? 'bg-dark-100 border-dark-300 text-gray-200 placeholder-gray-500' 
               : 'bg-white border-light-400 text-gray-800 placeholder-gray-400'
           }`}
           rows={1}
         />
-        <div className="absolute right-3 bottom-3 flex items-center gap-2">
+        <div className="absolute right-1.5 sm:right-2 md:right-3 bottom-1.5 sm:bottom-2 md:bottom-3 flex items-center gap-1 sm:gap-1.5 md:gap-2">
           <button
             type="button"
             onClick={() => setShowToolbar(!showToolbar)}
-            className={`p-2 rounded-lg transition-all ${
+            className={`p-1.5 sm:p-2 rounded-lg transition-all min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center ${
               showToolbar
                 ? 'bg-primary-600 text-white'
                 : isDark
@@ -491,7 +491,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             }`}
             title={showToolbar ? 'Hide formatting toolbar' : 'Show formatting toolbar'}
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24">
               <text x="12" y="18" textAnchor="middle" fontSize="18" fontWeight="bold" fontFamily="Arial, sans-serif" fill="currentColor">A</text>
             </svg>
           </button>
@@ -502,27 +502,26 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
           <button
             onClick={handleSend}
             disabled={disabled || !value.trim()}
-            className="p-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+            className="p-1.5 sm:p-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center"
             title="Send (Ctrl+Enter or Shift+Enter)"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
           </button>
         </div>
       </div>
-      <div className={`flex items-center justify-between mt-2 text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-        <div className="flex items-center gap-4">
-          <span>
-            <kbd className={`px-1 py-0.5 rounded ${isDark ? 'bg-dark-300' : 'bg-light-400'}`}>Ctrl</kbd>+
-            <kbd className={`px-1 py-0.5 rounded ${isDark ? 'bg-dark-300' : 'bg-light-400'}`}>Enter</kbd> or
-            <kbd className={`px-1 py-0.5 rounded ml-1 ${isDark ? 'bg-dark-300' : 'bg-light-400'}`}>Shift</kbd>+
-            <kbd className={`px-1 py-0.5 rounded ${isDark ? 'bg-dark-300' : 'bg-light-400'}`}>Enter</kbd> to send
+      {/* Footer hints - responsive, hidden on very small screens */}
+      <div className={`hidden xs:flex items-center justify-between mt-1.5 sm:mt-2 text-[10px] sm:text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+        <div className="hidden sm:flex items-center gap-2 sm:gap-4">
+          <span className="hidden md:inline">
+            <kbd className={`px-1 py-0.5 rounded text-[10px] sm:text-xs ${isDark ? 'bg-dark-300' : 'bg-light-400'}`}>Ctrl</kbd>+
+            <kbd className={`px-1 py-0.5 rounded text-[10px] sm:text-xs ${isDark ? 'bg-dark-300' : 'bg-light-400'}`}>Enter</kbd> to send
           </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 ml-auto">
           <TokenCounter text={value} />
-          <span>{value.length} chars</span>
+          <span className="whitespace-nowrap">{value.length} <span className="hidden sm:inline">chars</span></span>
         </div>
       </div>
     </div>

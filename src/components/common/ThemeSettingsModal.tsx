@@ -70,22 +70,22 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="w-full max-w-6xl h-[90vh] mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-1 xs:p-2 sm:p-4">
+      <div className="w-full max-w-[99vw] sm:max-w-2xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl h-[95vh] sm:h-[90vh] mx-auto bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl shadow-2xl overflow-hidden flex flex-col">
         {/* Header with Theme Gradient */}
-        <div className="relative bg-gradient-to-r from-theme-primary via-theme-accent to-theme-secondary p-6">
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <h2 className="text-2xl font-bold text-white drop-shadow-lg">
-                🎨 Theme Customization
+        <div className="relative bg-gradient-to-r from-theme-primary via-theme-accent to-theme-secondary p-3 sm:p-4 md:p-6 flex-shrink-0">
+          <div className="flex items-center justify-between relative z-10 gap-2">
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-xl md:text-2xl font-bold text-white drop-shadow-lg truncate">
+                <span className="hidden xs:inline">🎨 </span>Theme<span className="hidden sm:inline"> Customization</span>
               </h2>
-              <p className="text-white/90 text-sm mt-1">Personalize your workspace with live preview</p>
+              <p className="text-white/90 text-[10px] sm:text-xs md:text-sm mt-0.5 sm:mt-1 hidden xs:block">Personalize your workspace<span className="hidden md:inline"> with live preview</span></p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white transition-all"
+              className="p-1.5 sm:p-2 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white transition-all min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center flex-shrink-0"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -93,48 +93,49 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
         </div>
 
         {/* Tab Navigation */}
-        <div className={`flex border-b ${
+        <div className={`flex border-b overflow-x-auto scroll-touch flex-shrink-0 ${
           isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'
         }`}>
           {[
-            { id: 'appearance', label: 'Appearance', icon: '🌓' },
-            { id: 'colors', label: 'Colors', icon: '🎨' },
-            { id: 'advanced', label: 'Advanced', icon: '⚙️' }
+            { id: 'appearance', label: 'Appearance', icon: '🌓', shortLabel: 'Look' },
+            { id: 'colors', label: 'Colors', icon: '🎨', shortLabel: 'Color' },
+            { id: 'advanced', label: 'Advanced', icon: '⚙️', shortLabel: 'More' }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 px-6 py-4 font-medium transition-all relative ${
+              className={`flex-1 min-w-0 px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 font-medium transition-all relative text-xs sm:text-sm md:text-base whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'text-theme-primary'
                   : isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <span className="flex items-center justify-center gap-2">
-                <span className="text-xl">{tab.icon}</span>
-                {tab.label}
+              <span className="flex items-center justify-center gap-1 sm:gap-2">
+                <span className="text-base sm:text-lg md:text-xl">{tab.icon}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.shortLabel}</span>
               </span>
               {activeTab === tab.id && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-theme-primary to-theme-accent"></div>
               )}
             </button>
-          ))}
+          ))})
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-hidden flex">
+        <div className="flex-1 overflow-hidden flex min-h-0">
           {/* Settings Panel */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden scroll-touch p-3 sm:p-4 md:p-6">
 
             {/* APPEARANCE TAB */}
             {activeTab === 'appearance' && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Theme Mode */}
                 <div>
-                  <h3 className={`text-xl font-semibold mb-4 ${
+                  <h3 className={`text-base sm:text-lg md:text-xl font-semibold mb-2 sm:mb-3 md:mb-4 ${
                     isDark ? 'text-gray-100' : 'text-gray-900'
                   }`}>Display Mode</h3>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {[
                       { mode: 'light' as ThemeMode, icon: '☀️', label: 'Light', desc: 'Bright theme' },
                       { mode: 'dark' as ThemeMode, icon: '🌙', label: 'Dark', desc: 'Easy on eyes' },
@@ -143,7 +144,7 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                       <button
                         key={mode}
                         onClick={() => handleModeChange(mode)}
-                        className={`p-4 rounded-xl border-2 transition-all hover:scale-105 ${
+                        className={`p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border-2 transition-all hover:scale-105 ${
                           state.themeSettings.mode === mode
                             ? 'border-theme-primary bg-theme-primary/10 shadow-lg'
                             : isDark
@@ -151,11 +152,11 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                               : 'border-gray-200 hover:border-gray-300 bg-white'
                         }`}
                       >
-                        <div className="text-3xl mb-2">{icon}</div>
-                        <div className={`font-semibold ${
+                        <div className="text-xl sm:text-2xl md:text-3xl mb-1 sm:mb-2">{icon}</div>
+                        <div className={`font-semibold text-xs sm:text-sm md:text-base ${
                           state.themeSettings.mode === mode ? 'text-theme-primary' : ''
                         }`}>{label}</div>
-                        <div className={`text-xs mt-1 ${
+                        <div className={`text-[10px] sm:text-xs mt-0.5 sm:mt-1 hidden xs:block ${
                           isDark ? 'text-gray-400' : 'text-gray-500'
                         }`}>{desc}</div>
                       </button>
@@ -165,10 +166,10 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
 
                 {/* Font Size */}
                 <div>
-                  <h3 className={`text-xl font-semibold mb-4 ${
+                  <h3 className={`text-base sm:text-lg md:text-xl font-semibold mb-2 sm:mb-3 md:mb-4 ${
                     isDark ? 'text-gray-100' : 'text-gray-900'
                   }`}>Font Size</h3>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {[
                       { size: 'small' as const, label: 'Small', preview: 'Aa' },
                       { size: 'medium' as const, label: 'Medium', preview: 'Aa' },
@@ -177,7 +178,7 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                       <button
                         key={size}
                         onClick={() => handleFontSizeChange(size)}
-                        className={`p-4 rounded-xl border-2 transition-all hover:scale-105 ${
+                        className={`p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border-2 transition-all hover:scale-105 ${
                           state.themeSettings.fontSize === size
                             ? 'border-theme-primary bg-theme-primary/10'
                             : isDark
@@ -185,10 +186,10 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                               : 'border-gray-200 hover:border-gray-300 bg-white'
                         }`}
                       >
-                        <div className={`mb-2 ${
-                          size === 'small' ? 'text-xl' : size === 'medium' ? 'text-2xl' : 'text-3xl'
+                        <div className={`mb-1 sm:mb-2 ${
+                          size === 'small' ? 'text-lg sm:text-xl' : size === 'medium' ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'
                         }`}>{preview}</div>
-                        <div className={`font-semibold capitalize ${
+                        <div className={`font-semibold capitalize text-xs sm:text-sm md:text-base ${
                           state.themeSettings.fontSize === size ? 'text-theme-primary' : ''
                         }`}>{label}</div>
                       </button>
@@ -197,7 +198,7 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                 </div>
 
                 {/* Toggles */}
-                <div className="space-y-4">
+                <div className="space-y-2 sm:space-y-3 md:space-y-4">
                   {[
                     {
                       id: 'compact',
@@ -219,28 +220,28 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                       })
                     }
                   ].map(item => (
-                    <div key={item.id} className={`p-4 rounded-xl flex items-center justify-between ${
+                    <div key={item.id} className={`p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl flex items-center justify-between gap-2 sm:gap-3 ${
                       isDark ? 'bg-gray-800' : 'bg-gray-50'
                     }`}>
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{item.icon}</span>
-                        <div>
-                          <h4 className={`font-semibold ${
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <span className="text-lg sm:text-xl md:text-2xl flex-shrink-0">{item.icon}</span>
+                        <div className="min-w-0">
+                          <h4 className={`font-semibold text-xs sm:text-sm md:text-base truncate ${
                             isDark ? 'text-gray-100' : 'text-gray-900'
                           }`}>{item.title}</h4>
-                          <p className={`text-sm ${
+                          <p className={`text-[10px] sm:text-xs md:text-sm hidden xs:block truncate ${
                             isDark ? 'text-gray-400' : 'text-gray-600'
                           }`}>{item.desc}</p>
                         </div>
                       </div>
                       <button
                         onClick={item.toggle}
-                        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                        className={`relative inline-flex h-6 sm:h-7 w-10 sm:w-12 items-center rounded-full transition-colors flex-shrink-0 ${
                           item.enabled ? 'bg-theme-primary' : isDark ? 'bg-gray-700' : 'bg-gray-300'
                         }`}
                       >
-                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
-                          item.enabled ? 'translate-x-6' : 'translate-x-1'
+                        <span className={`inline-block h-4 sm:h-5 w-4 sm:w-5 transform rounded-full bg-white shadow-lg transition-transform ${
+                          item.enabled ? 'translate-x-5 sm:translate-x-6' : 'translate-x-1'
                         }`} />
                       </button>
                     </div>
@@ -251,18 +252,18 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
 
             {/* COLORS TAB */}
             {activeTab === 'colors' && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Color Theme Presets */}
                 <div>
-                  <h3 className={`text-xl font-semibold mb-4 ${
+                  <h3 className={`text-base sm:text-lg md:text-xl font-semibold mb-2 sm:mb-3 md:mb-4 ${
                     isDark ? 'text-gray-100' : 'text-gray-900'
                   }`}>🎨 Theme Presets</h3>
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
                     {themePresets.map((preset) => (
                       <button
                         key={preset.id}
                         onClick={() => handlePresetSelect(preset.id)}
-                        className={`p-4 rounded-xl border-2 transition-all hover:scale-105 text-left ${
+                        className={`p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border-2 transition-all hover:scale-105 text-left ${
                           state.themeSettings.preset === preset.id
                             ? 'border-theme-primary bg-theme-primary/10 shadow-lg'
                             : isDark
@@ -270,22 +271,22 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                               : 'border-gray-200 hover:border-gray-300 bg-white'
                         }`}
                       >
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="flex gap-1.5">
+                        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 mb-1.5 sm:mb-2 md:mb-3">
+                          <div className="flex gap-1 sm:gap-1.5">
                             <div
-                              className="w-8 h-8 rounded-full shadow-md"
+                              className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 rounded-full shadow-md"
                               style={{ backgroundColor: preset.preview.primary }}
                             />
                             <div
-                              className="w-8 h-8 rounded-full shadow-md"
+                              className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 rounded-full shadow-md"
                               style={{ backgroundColor: preset.preview.secondary }}
                             />
                           </div>
                         </div>
-                        <h4 className={`font-bold mb-1 ${
+                        <h4 className={`font-bold text-xs sm:text-sm mb-0.5 sm:mb-1 truncate ${
                           state.themeSettings.preset === preset.id ? 'text-theme-primary' : ''
                         }`}>{preset.name}</h4>
-                        <p className={`text-xs ${
+                        <p className={`text-[10px] sm:text-xs hidden xs:block line-clamp-2 ${
                           isDark ? 'text-gray-400' : 'text-gray-600'
                         }`}>{preset.description}</p>
                       </button>
@@ -295,10 +296,10 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
 
                 {/* Custom Colors */}
                 <div>
-                  <h3 className={`text-xl font-semibold mb-4 ${
+                  <h3 className={`text-base sm:text-lg md:text-xl font-semibold mb-2 sm:mb-3 md:mb-4 ${
                     isDark ? 'text-gray-100' : 'text-gray-900'
                   }`}>🖌️ Custom Colors</h3>
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     <ColorPicker
                       label="Primary Color"
                       value={customColors.primary}
@@ -321,22 +322,22 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
 
             {/* ADVANCED TAB */}
             {activeTab === 'advanced' && (
-              <div className="space-y-6">
-                <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-                    <span className="text-xl">⚙️</span>
+              <div className="space-y-4 sm:space-y-6">
+                <div className="p-3 sm:p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                  <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-2 sm:mb-3 flex items-center gap-2">
+                    <span className="text-base sm:text-lg md:text-xl">⚙️</span>
                     Advanced Theme Options
                   </h3>
                   
-                  <div className="space-y-4">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="space-y-3 sm:space-y-4">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                       Advanced theme customization options will appear here.
                     </p>
-                    <div className={`p-3 rounded-lg ${isDark ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                    <div className={`p-2 sm:p-3 rounded-lg ${isDark ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
+                      <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
                         <strong>👉 Looking for PWA settings?</strong>
                       </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                      <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
                         Progressive Web App installation and management has been moved to:
                         <br />
                         <strong>Admin Settings (⚙️) → PWA Tab (📱)</strong>
@@ -348,100 +349,100 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
             )}
           </div>
 
-          {/* Live Preview Panel - Right Side */}
-          <div className={`w-96 border-l p-6 overflow-y-auto overflow-x-hidden ${
+          {/* Live Preview Panel - Right Side - Hidden on mobile */}
+          <div className={`hidden lg:block w-64 xl:w-80 2xl:w-96 border-l p-4 xl:p-6 overflow-y-auto overflow-x-hidden scroll-touch flex-shrink-0 ${
             isDark ? 'border-gray-700 bg-gray-850' : 'border-gray-200 bg-gray-50'
           }`}>
-            <h3 className={`text-xl font-bold mb-6 ${
+            <h3 className={`text-base xl:text-lg 2xl:text-xl font-bold mb-4 xl:mb-6 ${
               isDark ? 'text-gray-100' : 'text-gray-900'
             }`}>✨ Live Preview</h3>
             
             {/* Current Theme Name */}
-            <div className="mb-4">
-              <p className={`text-sm font-medium ${
+            <div className="mb-3 xl:mb-4">
+              <p className={`text-[10px] xl:text-xs 2xl:text-sm font-medium ${
                 isDark ? 'text-gray-400' : 'text-gray-600'
               }`}>Current Theme</p>
-              <p className="text-lg font-bold text-theme-primary">
+              <p className="text-sm xl:text-base 2xl:text-lg font-bold text-theme-primary truncate">
                 {getThemePreset(state.themeSettings.preset)?.name || 'Custom Theme'}
               </p>
             </div>
 
             {/* Color Circles */}
-            <div className="flex gap-3 mb-6">
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-16 h-16 rounded-full bg-theme-primary shadow-lg border-4 border-white dark:border-gray-700"></div>
-                <span className="text-xs font-mono text-gray-500 dark:text-gray-400">Primary</span>
+            <div className="flex gap-2 xl:gap-3 mb-4 xl:mb-6">
+              <div className="flex flex-col items-center gap-1 xl:gap-2">
+                <div className="w-10 h-10 xl:w-12 xl:h-12 2xl:w-16 2xl:h-16 rounded-full bg-theme-primary shadow-lg border-2 xl:border-4 border-white dark:border-gray-700"></div>
+                <span className="text-[8px] xl:text-[10px] 2xl:text-xs font-mono text-gray-500 dark:text-gray-400">Primary</span>
               </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-16 h-16 rounded-full bg-theme-secondary shadow-lg border-4 border-white dark:border-gray-700"></div>
-                <span className="text-xs font-mono text-gray-500 dark:text-gray-400">Secondary</span>
+              <div className="flex flex-col items-center gap-1 xl:gap-2">
+                <div className="w-10 h-10 xl:w-12 xl:h-12 2xl:w-16 2xl:h-16 rounded-full bg-theme-secondary shadow-lg border-2 xl:border-4 border-white dark:border-gray-700"></div>
+                <span className="text-[8px] xl:text-[10px] 2xl:text-xs font-mono text-gray-500 dark:text-gray-400">Secondary</span>
               </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-16 h-16 rounded-full bg-theme-accent shadow-lg border-4 border-white dark:border-gray-700"></div>
-                <span className="text-xs font-mono text-gray-500 dark:text-gray-400">Accent</span>
+              <div className="flex flex-col items-center gap-1 xl:gap-2">
+                <div className="w-10 h-10 xl:w-12 xl:h-12 2xl:w-16 2xl:h-16 rounded-full bg-theme-accent shadow-lg border-2 xl:border-4 border-white dark:border-gray-700"></div>
+                <span className="text-[8px] xl:text-[10px] 2xl:text-xs font-mono text-gray-500 dark:text-gray-400">Accent</span>
               </div>
             </div>
 
             {/* Buttons Preview */}
-            <div className="space-y-3 mb-6">
-              <button className="w-full px-4 py-3 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg">
+            <div className="space-y-2 xl:space-y-3 mb-4 xl:mb-6">
+              <button className="w-full px-3 xl:px-4 py-2 xl:py-3 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg text-xs xl:text-sm 2xl:text-base">
                 Primary Button
               </button>
-              <button className="w-full px-4 py-3 border-2 border-theme-primary text-theme-primary hover:bg-theme-primary hover:text-white rounded-lg font-medium transition-all">
+              <button className="w-full px-3 xl:px-4 py-2 xl:py-3 border-2 border-theme-primary text-theme-primary hover:bg-theme-primary hover:text-white rounded-lg font-medium transition-all text-xs xl:text-sm 2xl:text-base">
                 Outline Button
               </button>
-              <button className="w-full px-4 py-3 bg-theme-secondary hover:bg-theme-accent text-white rounded-lg font-medium transition-all">
+              <button className="w-full px-3 xl:px-4 py-2 xl:py-3 bg-theme-secondary hover:bg-theme-accent text-white rounded-lg font-medium transition-all text-xs xl:text-sm 2xl:text-base">
                 Secondary Button
               </button>
             </div>
 
             {/* Mini UI Preview */}
-            <div className={`p-4 rounded-xl ${
+            <div className={`p-3 xl:p-4 rounded-lg xl:rounded-xl ${
               isDark ? 'bg-gray-800' : 'bg-white'
             } shadow-lg`}>
-              <div className="h-2 w-full bg-gradient-to-r from-theme-primary via-theme-accent to-theme-secondary rounded-full mb-4"></div>
-              <div className="space-y-3">
-                <div className={`h-3 rounded ${
+              <div className="h-1.5 xl:h-2 w-full bg-gradient-to-r from-theme-primary via-theme-accent to-theme-secondary rounded-full mb-3 xl:mb-4"></div>
+              <div className="space-y-2 xl:space-y-3">
+                <div className={`h-2 xl:h-3 rounded ${
                   isDark ? 'bg-gray-700' : 'bg-gray-200'
                 } w-3/4`}></div>
-                <div className={`h-3 rounded ${
+                <div className={`h-2 xl:h-3 rounded ${
                   isDark ? 'bg-gray-700' : 'bg-gray-200'
                 } w-full`}></div>
-                <div className={`h-3 rounded ${
+                <div className={`h-2 xl:h-3 rounded ${
                   isDark ? 'bg-gray-700' : 'bg-gray-200'
                 } w-5/6`}></div>
-                <div className="flex gap-2 mt-4">
-                  <div className="h-8 w-8 rounded bg-theme-primary"></div>
-                  <div className="h-8 flex-1 rounded bg-theme-primary/20"></div>
+                <div className="flex gap-1.5 xl:gap-2 mt-3 xl:mt-4">
+                  <div className="h-6 xl:h-8 w-6 xl:w-8 rounded bg-theme-primary"></div>
+                  <div className="h-6 xl:h-8 flex-1 rounded bg-theme-primary/20"></div>
                 </div>
               </div>
             </div>
 
             {/* Theme Info */}
-            <div className={`mt-6 p-3 rounded-lg text-xs ${
+            <div className={`mt-4 xl:mt-6 p-2 xl:p-3 rounded-lg text-[10px] xl:text-xs ${
               isDark ? 'bg-gray-800' : 'bg-white'
             }`}>
-              <p className={`font-semibold mb-2 ${
+              <p className={`font-semibold mb-1 xl:mb-2 ${
                 isDark ? 'text-gray-300' : 'text-gray-700'
               }`}>Applied To:</p>
-              <ul className={`space-y-1 ${
+              <ul className={`space-y-0.5 xl:space-y-1 ${
                 isDark ? 'text-gray-400' : 'text-gray-600'
               }`}>
                 <li>• Top bar accent strip</li>
                 <li>• App branding</li>
                 <li>• Buttons & links</li>
-                <li>• Selection highlights</li>
-                <li>• Active states</li>
+                <li className="hidden xl:list-item">• Selection highlights</li>
+                <li className="hidden xl:list-item">• Active states</li>
               </ul>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex justify-end gap-2 sm:gap-3 p-3 sm:p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-xs sm:text-sm md:text-base min-h-[36px] sm:min-h-[40px]"
           >
             Close
           </button>

@@ -176,80 +176,88 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={() => dispatch({ type: 'TOGGLE_ADMIN_PANEL' })}
       />
       
-      {/* Panel */}
-      <div className={`relative w-full max-w-4xl max-h-[90vh] mx-4 rounded-xl shadow-2xl overflow-hidden ${
+      {/* Panel - responsive width and height */}
+      <div className={`relative w-full max-w-[98vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[95vh] sm:max-h-[90vh] mx-0 sm:mx-4 rounded-xl shadow-2xl overflow-hidden flex flex-col ${
         isDark ? 'bg-dark-200' : 'bg-white'
       }`}>
-        {/* Header */}
-        <div className={`flex items-center justify-between p-4 border-b ${
+        {/* Header - responsive with vertical tabs on mobile */}
+        <div className={`flex flex-col sm:flex-row sm:items-center justify-between p-2 sm:p-3 md:p-4 border-b gap-2 sm:gap-4 flex-shrink-0 ${
           isDark ? 'border-dark-100' : 'border-light-400'
         }`}>
-          <div className="flex items-center gap-4">
-            <h2 className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-              ⚙️ Admin Settings
+          <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-4">
+            <h2 className={`text-base sm:text-lg md:text-xl font-bold flex items-center gap-1 sm:gap-2 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+              ⚙️ <span className="hidden xs:inline">Admin Settings</span><span className="xs:hidden">Settings</span>
             </h2>
-            {/* Tabs */}
-            <div className="flex gap-1">
-              <button
-                onClick={() => setActiveTab('providers')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'providers'
-                    ? 'bg-primary-600 text-white'
-                    : isDark 
-                      ? 'text-gray-400 hover:bg-dark-100' 
-                      : 'text-gray-600 hover:bg-light-300'
-                }`}
-              >
-                🤖 Providers
-              </button>
-              <button
-                onClick={() => setActiveTab('settings')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'settings'
-                    ? 'bg-primary-600 text-white'
-                    : isDark 
-                      ? 'text-gray-400 hover:bg-dark-100' 
-                      : 'text-gray-600 hover:bg-light-300'
-                }`}
-              >
-                🔧 General
-              </button>
-              <button
-                onClick={() => setActiveTab('pwa')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'pwa'
-                    ? 'bg-primary-600 text-white'
-                    : isDark 
-                      ? 'text-gray-400 hover:bg-dark-100' 
-                      : 'text-gray-600 hover:bg-light-300'
-                }`}
-              >
-                📱 PWA
-              </button>
-              <button
-                onClick={() => setActiveTab('developer')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'developer'
-                    ? 'bg-primary-600 text-white'
-                    : isDark 
-                      ? 'text-gray-400 hover:bg-dark-100' 
-                      : 'text-gray-600 hover:bg-light-300'
-                }`}
-              >
-                🛠️ Developer
-              </button>
-            </div>
+            <button
+              onClick={() => dispatch({ type: 'TOGGLE_ADMIN_PANEL' })}
+              className={`p-1.5 sm:p-2 rounded-lg transition-colors sm:hidden min-w-[32px] min-h-[32px] flex items-center justify-center ${
+                isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
+              }`}
+            >
+              ✕
+            </button>
+          </div>
+          {/* Tabs - horizontal scroll on mobile */}
+          <div className="flex gap-1 overflow-x-auto scroll-touch pb-1 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0">
+            <button
+              onClick={() => setActiveTab('providers')}
+              className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                activeTab === 'providers'
+                  ? 'bg-primary-600 text-white'
+                  : isDark 
+                    ? 'text-gray-400 hover:bg-dark-100' 
+                    : 'text-gray-600 hover:bg-light-300'
+              }`}
+            >
+              🤖 <span className="hidden sm:inline">Providers</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                activeTab === 'settings'
+                  ? 'bg-primary-600 text-white'
+                  : isDark 
+                    ? 'text-gray-400 hover:bg-dark-100' 
+                    : 'text-gray-600 hover:bg-light-300'
+              }`}
+            >
+              🔧 <span className="hidden sm:inline">General</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('pwa')}
+              className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                activeTab === 'pwa'
+                  ? 'bg-primary-600 text-white'
+                  : isDark 
+                    ? 'text-gray-400 hover:bg-dark-100' 
+                    : 'text-gray-600 hover:bg-light-300'
+              }`}
+            >
+              📱 <span className="hidden sm:inline">PWA</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('developer')}
+              className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                activeTab === 'developer'
+                  ? 'bg-primary-600 text-white'
+                  : isDark 
+                    ? 'text-gray-400 hover:bg-dark-100' 
+                    : 'text-gray-600 hover:bg-light-300'
+              }`}
+            >
+              🛠️ <span className="hidden sm:inline">Developer</span>
+            </button>
           </div>
           <button
             onClick={() => dispatch({ type: 'TOGGLE_ADMIN_PANEL' })}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`hidden sm:flex p-1.5 sm:p-2 rounded-lg transition-colors min-w-[32px] min-h-[32px] items-center justify-center flex-shrink-0 ${
               isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
             }`}
           >
@@ -257,18 +265,18 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto overflow-x-hidden max-h-[calc(90vh-80px)]">
+        {/* Content - scrollable */}
+        <div className="p-2 sm:p-4 md:p-6 overflow-y-auto overflow-x-hidden flex-1 scroll-touch">
           {activeTab === 'providers' && (
-            <div className="space-y-6">
-              {/* Add Provider Button */}
-              <div className="flex justify-between items-center">
-                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Configure your LLM backends. Add API keys and test connections.
+            <div className="space-y-4 sm:space-y-6">
+              {/* Add Provider Button - responsive layout */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
+                <p className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Configure your LLM backends.
                 </p>
                 <button
                   onClick={handleAddNewProvider}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-xs sm:text-sm font-medium whitespace-nowrap"
                 >
                   + Add Provider
                 </button>
@@ -286,26 +294,26 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                 </div>
               )}
 
-              {/* Unsaved Changes Confirmation Dialog */}
+              {/* Unsaved Changes Confirmation Dialog - responsive */}
               {pendingEditProvider !== null && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
                   <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCancelSwitch} />
-                  <div className={`relative p-6 rounded-xl shadow-2xl max-w-md mx-4 ${
+                  <div className={`relative p-4 sm:p-6 rounded-xl shadow-2xl w-full max-w-[95vw] sm:max-w-md ${
                     isDark ? 'bg-dark-200' : 'bg-white'
                   }`}>
-                    <h3 className={`text-lg font-bold mb-3 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                    <h3 className={`text-base sm:text-lg font-bold mb-2 sm:mb-3 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
                       ⚠️ Unsaved Changes
                     </h3>
-                    <p className={`text-sm mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                      You have unsaved changes in the current form. Do you want to discard them and continue?
+                    <p className={`text-xs sm:text-sm mb-3 sm:mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      You have unsaved changes. Discard them?
                     </p>
-                    <div className="flex gap-3 justify-end">
+                    <div className="flex gap-2 sm:gap-3 justify-end">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleCancelSwitch();
                         }}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                        className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium ${
                           isDark 
                             ? 'bg-dark-100 text-gray-400 hover:bg-dark-50' 
                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -318,31 +326,31 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                           e.stopPropagation();
                           handleConfirmSwitch();
                         }}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+                        className="px-3 sm:px-4 py-1.5 sm:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs sm:text-sm font-medium"
                       >
-                        Discard Changes
+                        Discard
                       </button>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Provider List */}
+              {/* Provider List - responsive empty state */}
               {state.providers.length === 0 && !isAddingProvider ? (
-                <div className={`text-center py-12 rounded-lg border-2 border-dashed ${
+                <div className={`text-center py-8 sm:py-12 rounded-lg border-2 border-dashed ${
                   isDark ? 'border-dark-100 text-gray-500' : 'border-light-400 text-gray-400'
                 }`}>
-                  <p className="text-lg mb-2">No LLM providers configured</p>
-                  <p className="text-sm mb-4">Add providers like OpenAI, Claude, Gemini, or Ollama</p>
+                  <p className="text-sm sm:text-lg mb-1 sm:mb-2">No LLM providers configured</p>
+                  <p className="text-xs sm:text-sm mb-3 sm:mb-4">Add OpenAI, Claude, Gemini, or Ollama</p>
                   <button
                     onClick={handleAddNewProvider}
-                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-xs sm:text-sm"
                   >
                     Add Your First Provider
                   </button>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {state.providers.map(provider => {
                     const health = healthStatus.find(h => h.providerId === provider.id);
                     const isEditingThis = editingProvider?.id === provider.id;

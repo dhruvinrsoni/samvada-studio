@@ -97,20 +97,20 @@ export default function GlobalSearch() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-20 px-2 sm:px-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-4 sm:pt-12 md:pt-20 px-2 sm:px-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
       />
       
-      {/* Search Panel */}
-      <div className={`relative w-full max-w-3xl mx-auto rounded-xl shadow-2xl overflow-hidden ${
+      {/* Search Panel - responsive width and padding */}
+      <div className={`relative w-full max-w-[95vw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto rounded-xl shadow-2xl overflow-hidden ${
         isDark ? 'bg-dark-200' : 'bg-white'
       }`}>
-        {/* Search Input */}
-        <div className={`flex items-center gap-3 p-6 border-b ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
-          <svg className={`w-5 h-5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Search Input - responsive padding and font size */}
+        <div className={`flex items-center gap-2 sm:gap-3 p-3 sm:p-4 md:p-6 border-b ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
+          <svg className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
@@ -119,46 +119,46 @@ export default function GlobalSearch() {
             value={globalSearch.query}
             onChange={(e) => dispatch({ type: 'SET_GLOBAL_SEARCH_QUERY', payload: e.target.value })}
             onKeyDown={handleKeyNavigation}
-            placeholder="Search all chats, prompts, and responses..."
-            className={`flex-1 bg-transparent outline-none text-lg ${
+            placeholder="Search chats..."
+            className={`flex-1 bg-transparent outline-none text-sm sm:text-base md:text-lg min-w-0 ${
               isDark ? 'text-gray-200 placeholder-gray-500' : 'text-gray-800 placeholder-gray-400'
             }`}
           />
           {globalSearch.query && (
             <button
               onClick={() => dispatch({ type: 'SET_GLOBAL_SEARCH_QUERY', payload: '' })}
-              className={`p-1 rounded ${isDark ? 'hover:bg-dark-100 text-gray-500' : 'hover:bg-light-300 text-gray-400'}`}
+              className={`p-1 rounded min-w-[28px] min-h-[28px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-gray-500' : 'hover:bg-light-300 text-gray-400'}`}
             >
               ✕
             </button>
           )}
-          <kbd className={`px-2 py-1 text-xs rounded ${isDark ? 'bg-dark-300 text-gray-500' : 'bg-light-300 text-gray-500'}`}>
+          <kbd className={`hidden sm:block px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded ${isDark ? 'bg-dark-300 text-gray-500' : 'bg-light-300 text-gray-500'}`}>
             ESC
           </kbd>
         </div>
 
-        {/* Results */}
-        <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
+        {/* Results - responsive height and padding */}
+        <div className="max-h-[60vh] sm:max-h-[65vh] md:max-h-[70vh] overflow-y-auto overflow-x-hidden scroll-touch">
           {globalSearch.isSearching ? (
-            <div className={`p-12 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-              <div className="animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full mx-auto mb-3"></div>
-              Searching...
+            <div className={`p-6 sm:p-8 md:p-12 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              <div className="animate-spin w-6 h-6 sm:w-8 sm:h-8 border-2 border-primary-500 border-t-transparent rounded-full mx-auto mb-2 sm:mb-3"></div>
+              <span className="text-xs sm:text-sm">Searching...</span>
             </div>
           ) : globalSearch.results.length === 0 && globalSearch.query.length >= 2 ? (
-            <div className={`p-12 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-              <p className="text-lg mb-1">No results found</p>
-              <p className="text-sm">Try a different search term</p>
+            <div className={`p-6 sm:p-8 md:p-12 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              <p className="text-sm sm:text-lg mb-1">No results found</p>
+              <p className="text-xs sm:text-sm">Try a different search term</p>
             </div>
           ) : globalSearch.results.length > 0 ? (
             <div>
-              <div className={`px-6 py-3 text-xs ${isDark ? 'text-gray-500 bg-dark-300' : 'text-gray-500 bg-light-200'}`}>
-                {globalSearch.results.length} result{globalSearch.results.length !== 1 ? 's' : ''} found
+              <div className={`px-3 sm:px-4 md:px-6 py-2 sm:py-3 text-[10px] sm:text-xs ${isDark ? 'text-gray-500 bg-dark-300' : 'text-gray-500 bg-light-200'}`}>
+                {globalSearch.results.length} result{globalSearch.results.length !== 1 ? 's' : ''}
               </div>
               {globalSearch.results.map((result, index) => (
                 <button
                   key={`${result.chatId}-${result.pnrId}-${result.messageId}`}
                   onClick={() => handleResultClick(result)}
-                  className={`w-full text-left p-6 border-b transition-colors ${
+                  className={`w-full text-left p-3 sm:p-4 md:p-6 border-b transition-colors ${
                     index === globalSearch.selectedResultIndex
                       ? 'bg-primary-500/20'
                       : isDark 
@@ -166,36 +166,36 @@ export default function GlobalSearch() {
                         : 'border-light-400 hover:bg-light-200'
                   }`}
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-xs px-2 py-0.5 rounded ${
+                  <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
+                    <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded ${
                       result.messageType === 'prompt'
                         ? 'bg-blue-500/20 text-blue-400'
                         : 'bg-green-500/20 text-green-400'
                     }`}>
-                      {result.messageType === 'prompt' ? '📤 Prompt' : '📥 Response'}
+                      {result.messageType === 'prompt' ? '📤' : '📥'}<span className="hidden sm:inline"> {result.messageType === 'prompt' ? 'Prompt' : 'Response'}</span>
                     </span>
-                    <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <span className={`text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-[200px] md:max-w-xs ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                       {result.chatTitle}
                     </span>
-                    <span className={`text-xs ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
+                    <span className={`text-[10px] sm:text-xs hidden xs:inline ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
                       {formatDate(result.timestamp)}
                     </span>
                   </div>
-                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <p className={`text-xs sm:text-sm break-words ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                     ...{highlightMatch(result.matchedText, globalSearch.query)}...
                   </p>
                 </button>
               ))}
             </div>
           ) : globalSearch.query.length > 0 && globalSearch.query.length < 2 ? (
-            <div className={`p-8 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-              Type at least 2 characters to search
+            <div className={`p-4 sm:p-6 md:p-8 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              <span className="text-xs sm:text-sm">Type at least 2 characters to search</span>
             </div>
           ) : (
-            <div className={`p-8 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-              <p className="text-lg mb-2">🔍 Global Search</p>
-              <p className="text-sm mb-4">Search across all your chats, prompts, and responses</p>
-              <div className="flex justify-center gap-4 text-xs">
+            <div className={`p-4 sm:p-6 md:p-8 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              <p className="text-sm sm:text-lg mb-1 sm:mb-2">🔍 Global Search</p>
+              <p className="text-xs sm:text-sm mb-2 sm:mb-4">Search across all your chats</p>
+              <div className="hidden sm:flex justify-center gap-4 text-xs">
                 <span>
                   <kbd className={`px-1 py-0.5 rounded ${isDark ? 'bg-dark-300' : 'bg-light-300'}`}>↑</kbd>
                   <kbd className={`px-1 py-0.5 rounded ml-1 ${isDark ? 'bg-dark-300' : 'bg-light-300'}`}>↓</kbd>

@@ -118,7 +118,7 @@ export default function VoiceInput({ onTranscript, disabled }: VoiceInputProps) 
         type="button"
         onClick={toggleListening}
         disabled={disabled}
-        className={`p-2 rounded-lg transition-all ${
+        className={`p-1.5 sm:p-2 rounded-lg transition-all min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center ${
           isListening
             ? 'bg-red-500 text-white animate-pulse'
             : isDark
@@ -128,30 +128,30 @@ export default function VoiceInput({ onTranscript, disabled }: VoiceInputProps) 
         title={isListening ? 'Stop listening (Ctrl+M)' : 'Voice input (Ctrl+M)'}
       >
         {isListening ? (
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
           </svg>
         ) : (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
           </svg>
         )}
       </button>
 
-      {/* Interim transcript tooltip */}
+      {/* Interim transcript tooltip - responsive */}
       {isListening && interimTranscript && (
-        <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap max-w-xs truncate ${
+        <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm whitespace-nowrap max-w-[200px] sm:max-w-xs truncate ${
           isDark ? 'bg-dark-100 text-gray-300' : 'bg-gray-800 text-white'
         }`}>
           {interimTranscript}...
         </div>
       )}
 
-      {/* Listening indicator */}
+      {/* Listening indicator - smaller on mobile */}
       {isListening && (
-        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+        <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 flex h-2 w-2 sm:h-3 sm:w-3">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 sm:h-3 sm:w-3 bg-red-500"></span>
         </span>
       )}
     </div>

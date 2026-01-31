@@ -166,22 +166,22 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
   };
 
   return (
-    <div className={`rounded-lg border transition-colors mb-3 ${
+    <div className={`rounded-lg border transition-colors mb-2 sm:mb-3 max-w-full overflow-hidden ${
       promptResponse.isPinned 
         ? 'border-yellow-500/50 bg-yellow-500/5' 
         : isDark 
           ? 'border-dark-100 bg-dark-200'
           : 'border-light-400 bg-light-100'
     }`}>
-      {/* Header - Always visible */}
+      {/* Header - Always visible, responsive */}
       <div
-        className={`flex items-center justify-between p-3 cursor-pointer rounded-t-lg ${
+        className={`flex items-center justify-between p-2 sm:p-3 cursor-pointer rounded-t-lg gap-1 sm:gap-2 ${
           isDark ? 'hover:bg-dark-100/50' : 'hover:bg-light-300/50'
         }`}
         onClick={handleToggleCollapse}
       >
-        <div className="flex items-center gap-3">
-          <button className={isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}>
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
+          <button className={`flex-shrink-0 text-xs sm:text-sm ${isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}>
             {promptResponse.isCollapsed ? '▶' : '▼'}
           </button>
           <button
@@ -190,13 +190,13 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
               navigator.clipboard.writeText(promptResponse.id);
               addToast('success', 'Copied!', `PnR ID ${promptResponse.id.slice(0, 8)} copied to clipboard`);
             }}
-            className={`text-xs font-mono hover:underline cursor-pointer transition-colors ${isDark ? 'text-gray-500 hover:text-primary-400' : 'text-gray-500 hover:text-primary-600'}`}
+            className={`text-[10px] sm:text-xs font-mono hover:underline cursor-pointer transition-colors flex-shrink-0 ${isDark ? 'text-gray-500 hover:text-primary-400' : 'text-gray-500 hover:text-primary-600'}`}
             title="Click to copy full PnR ID"
           >
-            #{promptResponse.id.slice(0, 8)}
+            #{promptResponse.id.slice(0, 6)}<span className="hidden sm:inline">{promptResponse.id.slice(6, 8)}</span>
           </button>
           {isEditingName ? (
-            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1" onClick={(e) => e.stopPropagation()}>
               <input
                 type="text"
                 value={editedName}
@@ -209,13 +209,13 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                     setEditedName(promptResponse.name || '');
                   }
                 }}
-                className={`text-sm px-2 py-1 border rounded max-w-xs ${isDark ? 'bg-dark-100 border-dark-300 text-gray-200' : 'bg-white border-light-400 text-gray-800'}`}
-                placeholder="Enter custom name..."
+                className={`text-xs sm:text-sm px-1.5 sm:px-2 py-0.5 sm:py-1 border rounded w-full max-w-[120px] sm:max-w-[200px] md:max-w-xs ${isDark ? 'bg-dark-100 border-dark-300 text-gray-200' : 'bg-white border-light-400 text-gray-800'}`}
+                placeholder="Enter name..."
                 autoFocus
               />
               <button
                 onClick={handleSaveNameEdit}
-                className="text-green-600 hover:text-green-700 text-sm"
+                className="text-green-600 hover:text-green-700 text-xs sm:text-sm p-1 min-w-[24px] min-h-[24px] flex items-center justify-center"
                 title="Save name"
               >
                 ✓
@@ -225,19 +225,19 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                   setIsEditingName(false);
                   setEditedName(promptResponse.name || '');
                 }}
-                className="text-red-600 hover:text-red-700 text-sm"
+                className="text-red-600 hover:text-red-700 text-xs sm:text-sm p-1 min-w-[24px] min-h-[24px] flex items-center justify-center"
                 title="Cancel"
               >
                 ✕
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1 group/name">
               <span
-                className={`text-sm truncate max-w-xs ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
+                className={`text-xs sm:text-sm truncate max-w-[100px] sm:max-w-[150px] md:max-w-xs ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
                 title={promptResponse.name || getFirstWords(promptResponse.prompt.content, 10)}
               >
-                {promptResponse.name || getFirstWords(promptResponse.prompt.content, 6)}
+                {promptResponse.name || getFirstWords(promptResponse.prompt.content, 4)}
               </span>
               <button
                 onClick={(e) => {
@@ -245,7 +245,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                   setIsEditingName(true);
                   setEditedName(promptResponse.name || '');
                 }}
-                className={`opacity-0 group-hover:opacity-100 text-xs p-1 rounded transition-all ${isDark ? 'hover:bg-dark-100 text-gray-500 hover:text-gray-300' : 'hover:bg-light-300 text-gray-500 hover:text-gray-700'}`}
+                className={`opacity-0 group-hover/name:opacity-100 text-xs p-0.5 sm:p-1 rounded transition-all flex-shrink-0 ${isDark ? 'hover:bg-dark-100 text-gray-500 hover:text-gray-300' : 'hover:bg-light-300 text-gray-500 hover:text-gray-700'}`}
                 title="Edit PnR name"
               >
                 ✏️
@@ -253,18 +253,18 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-0.5 sm:gap-2 flex-shrink-0">
           {promptResponse.processingTime && (
-            <span className="text-xs text-gray-500" title="Processing time">
+            <span className="text-[10px] sm:text-xs text-gray-500 hidden sm:inline" title="Processing time">
               ⏱️ {formatDuration(promptResponse.processingTime)}
             </span>
           )}
-          <span className="text-xs text-gray-500">
+          <span className="text-[10px] sm:text-xs text-gray-500 hidden xs:inline">
             {formatTimestamp(promptResponse.createdAt)}
           </span>
           <button
             onClick={(e) => { e.stopPropagation(); handleStarPnR(); }}
-            className={`p-1 rounded transition-all duration-200 ${
+            className={`p-0.5 sm:p-1 rounded transition-all duration-200 min-w-[24px] min-h-[24px] flex items-center justify-center ${
               promptResponse.isStarred
                 ? 'text-yellow-500 scale-110'
                 : isDark
@@ -272,40 +272,38 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                 : 'text-gray-400 hover:text-yellow-400 hover:scale-105'
             }`}
             title={promptResponse.isStarred ? 'Unstar conversation' : 'Star entire conversation'}
-            style={{ fontSize: promptResponse.isStarred ? '1rem' : '1.1rem' }}
           >
-            {promptResponse.isStarred ? '⭐' : '☆'}
+            <span className="text-sm sm:text-base">{promptResponse.isStarred ? '⭐' : '☆'}</span>
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleTogglePin(); }}
-            className={`p-1 rounded ${promptResponse.isPinned ? 'text-yellow-500' : isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`p-0.5 sm:p-1 rounded min-w-[24px] min-h-[24px] flex items-center justify-center ${promptResponse.isPinned ? 'text-yellow-500' : isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
             title={promptResponse.isPinned ? 'Unpin' : 'Pin'}
           >
-            {promptResponse.isPinned ? '🔒' : '🔓'}
+            <span className="text-sm sm:text-base">{promptResponse.isPinned ? '🔒' : '🔓'}</span>
           </button>
         </div>
       </div>
 
-      {/* Content - Collapsible */}
+      {/* Content - Collapsible, responsive */}
       {!promptResponse.isCollapsed && (
-        <div className="px-4 pb-4 space-y-4 max-w-full overflow-hidden">
+        <div className="px-2 sm:px-3 md:px-4 pb-2 sm:pb-3 md:pb-4 space-y-2 sm:space-y-3 md:space-y-4 max-w-full overflow-hidden">
           {/* User Prompt */}
           <div className="relative group">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-medium">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs sm:text-sm font-medium flex-shrink-0">
                 U
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>You</span>
-                  <span className="text-xs text-gray-500">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1 sm:gap-2 mb-1 flex-wrap">
+                  <span className={`text-xs sm:text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>You</span>
+                  <span className="text-[10px] sm:text-xs text-gray-500">
                     {formatTimestamp(promptResponse.prompt.timestamp)}
                   </span>
                   <button
                     onClick={handleStarPrompt}
-                    className={`text-base transition-all duration-200 ${promptResponse.prompt.isStarred ? 'text-yellow-500 scale-110' : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:text-yellow-400 hover:scale-105'}`}
+                    className={`text-sm sm:text-base transition-all duration-200 ${promptResponse.prompt.isStarred ? 'text-yellow-500 scale-110' : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:text-yellow-400 hover:scale-105'}`}
                     title={promptResponse.prompt.isStarred ? 'Unstar message' : 'Star message'}
-                    style={{ fontSize: promptResponse.prompt.isStarred ? '1rem' : '1.1rem' }}
                   >
                     {promptResponse.prompt.isStarred ? '⭐' : '☆'}
                   </button>
@@ -315,23 +313,23 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                     <textarea
                       value={editedPrompt}
                       onChange={(e) => setEditedPrompt(e.target.value)}
-                      className={`w-full p-2 border rounded resize-none ${
+                      className={`w-full p-2 border rounded resize-none text-xs sm:text-sm ${
                         isDark 
                           ? 'bg-dark-300 border-dark-100 text-gray-200' 
                           : 'bg-white border-light-400 text-gray-800'
                       }`}
                       rows={3}
                     />
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5 sm:gap-2">
                       <button
                         onClick={handleSavePromptEdit}
-                        className="px-3 py-1 bg-primary-600 text-white rounded text-sm"
+                        className="px-2 sm:px-3 py-1 bg-primary-600 text-white rounded text-xs sm:text-sm"
                       >
                         Save
                       </button>
                       <button
                         onClick={() => { setIsEditingPrompt(false); setEditedPrompt(promptResponse.prompt.content); }}
-                        className={`px-3 py-1 rounded text-sm ${isDark ? 'bg-dark-100 text-gray-300' : 'bg-light-300 text-gray-700'}`}
+                        className={`px-2 sm:px-3 py-1 rounded text-xs sm:text-sm ${isDark ? 'bg-dark-100 text-gray-300' : 'bg-light-300 text-gray-700'}`}
                       >
                         Cancel
                       </button>
@@ -342,7 +340,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                     <MessageContent content={promptResponse.prompt.content} />
                     <button
                       onClick={() => setIsEditingPrompt(true)}
-                      className={`absolute top-0 right-0 opacity-0 group-hover:opacity-100 p-1 rounded ${
+                      className={`absolute top-0 right-0 opacity-0 group-hover:opacity-100 p-1 rounded text-xs sm:text-sm ${
                         isDark ? 'text-gray-500 hover:bg-dark-100' : 'text-gray-500 hover:bg-light-300'
                       }`}
                       title="Edit prompt"
@@ -358,35 +356,34 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
           {/* AI Response */}
           {activeResponse && (
             <div className="relative group">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-sm font-medium">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-[10px] sm:text-sm font-medium flex-shrink-0">
                   AI
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Assistant</span>
-                    <span className="text-xs text-gray-500">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1 sm:gap-2 mb-1 flex-wrap">
+                    <span className={`text-xs sm:text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Assistant</span>
+                    <span className="text-[10px] sm:text-xs text-gray-500">
                       {formatTimestamp(activeResponse.timestamp)}
                     </span>
                     <button
                       onClick={handleStarResponse}
-                      className={`text-base transition-all duration-200 ${activeResponse.isStarred ? 'text-yellow-500 scale-110' : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:text-yellow-400 hover:scale-105'}`}
+                      className={`text-sm sm:text-base transition-all duration-200 ${activeResponse.isStarred ? 'text-yellow-500 scale-110' : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:text-yellow-400 hover:scale-105'}`}
                       title={activeResponse.isStarred ? 'Unstar response' : 'Star response'}
-                      style={{ fontSize: activeResponse.isStarred ? '1rem' : '1.1rem' }}
                     >
                       {activeResponse.isStarred ? '⭐' : '☆'}
                     </button>
                   </div>
 
-                  {/* Draft Navigation */}
+                  {/* Draft Navigation - responsive */}
                   {promptResponse.responses.length > 1 && (
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs text-gray-500">Draft</span>
+                    <div className="flex items-center gap-1 sm:gap-2 mb-2 flex-wrap">
+                      <span className="text-[10px] sm:text-xs text-gray-500">Draft</span>
                       {promptResponse.responses.map((_, index) => (
                         <button
                           key={index}
                           onClick={() => handleSelectDraft(index)}
-                          className={`w-6 h-6 rounded text-xs ${
+                          className={`w-5 h-5 sm:w-6 sm:h-6 rounded text-[10px] sm:text-xs flex items-center justify-center ${
                             index === promptResponse.activeResponseIndex
                               ? 'bg-primary-600 text-white'
                               : isDark 
@@ -405,23 +402,23 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                       <textarea
                         value={editedResponse}
                         onChange={(e) => setEditedResponse(e.target.value)}
-                        className={`w-full p-2 border rounded resize-none ${
+                        className={`w-full p-2 border rounded resize-none text-xs sm:text-sm ${
                           isDark 
                             ? 'bg-dark-300 border-dark-100 text-gray-200' 
                             : 'bg-white border-light-400 text-gray-800'
                         }`}
                         rows={5}
                       />
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5 sm:gap-2">
                         <button
                           onClick={handleSaveResponseEdit}
-                          className="px-3 py-1 bg-primary-600 text-white rounded text-sm"
+                          className="px-2 sm:px-3 py-1 bg-primary-600 text-white rounded text-xs sm:text-sm"
                         >
                           Save
                         </button>
                         <button
                           onClick={() => { setIsEditingResponse(false); setEditedResponse(activeResponse.content); }}
-                          className={`px-3 py-1 rounded text-sm ${isDark ? 'bg-dark-100 text-gray-300' : 'bg-light-300 text-gray-700'}`}
+                          className={`px-2 sm:px-3 py-1 rounded text-xs sm:text-sm ${isDark ? 'bg-dark-100 text-gray-300' : 'bg-light-300 text-gray-700'}`}
                         >
                           Cancel
                         </button>
@@ -432,7 +429,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                       <MessageContent content={activeResponse.content} />
                       <button
                         onClick={() => setIsEditingResponse(true)}
-                        className={`absolute top-0 right-0 opacity-0 group-hover:opacity-100 p-1 rounded ${
+                        className={`absolute top-0 right-0 opacity-0 group-hover:opacity-100 p-1 rounded text-xs sm:text-sm ${
                           isDark ? 'text-gray-500 hover:bg-dark-100' : 'text-gray-500 hover:bg-light-300'
                         }`}
                         title="Edit response (Gemini-style inline edit)"
@@ -446,13 +443,13 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
             </div>
           )}
 
-          {/* Actions */}
-          <div className={`flex items-center justify-between pt-2 border-t ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
-            <div className="flex items-center gap-2">
+          {/* Actions - responsive with flex-wrap */}
+          <div className={`flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pt-2 border-t ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
+            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
               <button
                 onClick={handleRegenerate}
                 disabled={isRegenerating}
-                className={`flex items-center gap-1 px-3 py-1 text-sm rounded disabled:opacity-50 ${
+                className={`flex items-center gap-1 px-2 sm:px-3 py-1 text-xs sm:text-sm rounded disabled:opacity-50 min-h-[28px] sm:min-h-[32px] ${
                   isDark 
                     ? 'bg-dark-100 text-gray-300 hover:bg-dark-300' 
                     : 'bg-light-300 text-gray-700 hover:bg-light-400'
@@ -463,20 +460,20 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                 ) : (
                   <span>🔄</span>
                 )}
-                Regenerate
+                <span className="hidden xs:inline">Regenerate</span>
               </button>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(activeResponse?.content || '');
                   addToast('success', 'Copied!', 'Response copied to clipboard');
                 }}
-                className={`flex items-center gap-1 px-3 py-1 text-sm rounded ${
+                className={`flex items-center gap-1 px-2 sm:px-3 py-1 text-xs sm:text-sm rounded min-h-[28px] sm:min-h-[32px] ${
                   isDark 
                     ? 'bg-dark-100 text-gray-300 hover:bg-dark-300' 
                     : 'bg-light-300 text-gray-700 hover:bg-light-400'
                 }`}
               >
-                📋 Copy
+                📋 <span className="hidden xs:inline">Copy</span>
               </button>
               {onQuote && activeResponse && (
                 <button
@@ -484,22 +481,22 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                     onQuote(activeResponse.content);
                     addToast('success', 'Quoted!', 'Response added to your next prompt');
                   }}
-                  className={`flex items-center gap-1 px-3 py-1 text-sm rounded border-2 border-dashed ${
+                  className={`flex items-center gap-1 px-2 sm:px-3 py-1 text-xs sm:text-sm rounded border-2 border-dashed min-h-[28px] sm:min-h-[32px] ${
                     isDark 
                       ? 'border-primary-500/50 bg-primary-600/10 text-primary-400 hover:bg-primary-600/20 hover:border-primary-400' 
                       : 'border-primary-400/50 bg-primary-50 text-primary-600 hover:bg-primary-100 hover:border-primary-500'
                   }`}
                   title="Quote in next prompt (ChatGPT-style)"
                 >
-                  💬 Quote
+                  💬 <span className="hidden sm:inline">Quote</span>
                 </button>
               )}
             </div>
             <button
               onClick={handleDelete}
-              className="px-3 py-1 text-sm text-red-500 hover:bg-red-500/10 rounded"
+              className="px-2 sm:px-3 py-1 text-xs sm:text-sm text-red-500 hover:bg-red-500/10 rounded min-h-[28px] sm:min-h-[32px]"
             >
-              🗑️ Delete
+              🗑️ <span className="hidden sm:inline">Delete</span>
             </button>
           </div>
         </div>

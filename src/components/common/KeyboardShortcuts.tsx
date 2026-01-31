@@ -90,44 +90,44 @@ export default function KeyboardShortcuts() {
         onClick={() => dispatch({ type: 'TOGGLE_SHORTCUTS_HELP' })}
       />
       
-      {/* Modal */}
-      <div className={`relative w-full max-w-2xl mx-auto max-h-[90vh] sm:max-h-[80vh] rounded-xl shadow-2xl border overflow-hidden ${
+      {/* Modal - responsive width */}
+      <div className={`relative w-full max-w-[95vw] sm:max-w-xl md:max-w-2xl mx-auto max-h-[90vh] sm:max-h-[80vh] rounded-xl shadow-2xl border overflow-hidden flex flex-col ${
         isDark ? 'bg-dark-200 border-dark-300' : 'bg-white border-gray-200'
       }`}>
-        {/* Header */}
-        <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? 'border-dark-300' : 'border-gray-200'}`}>
-          <h2 className={`text-xl font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            ⌨️ Keyboard Shortcuts
+        {/* Header - responsive padding */}
+        <div className={`flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b flex-shrink-0 ${isDark ? 'border-dark-300' : 'border-gray-200'}`}>
+          <h2 className={`text-base sm:text-lg md:text-xl font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            ⌨️ <span className="hidden xs:inline">Keyboard Shortcuts</span><span className="xs:hidden">Shortcuts</span>
           </h2>
           <button
             onClick={() => dispatch({ type: 'TOGGLE_SHORTCUTS_HELP' })}
-            className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-dark-300 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
+            className={`p-1.5 sm:p-2 rounded-lg transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-300 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
           >
             ✕
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto overflow-x-hidden max-h-[calc(80vh-80px)]">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Content - scrollable */}
+        <div className="p-3 sm:p-4 md:p-6 overflow-y-auto overflow-x-hidden flex-1 scroll-touch">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {SHORTCUTS.map((group) => (
               <div key={group.category}>
-                <h3 className={`text-sm font-semibold uppercase tracking-wide mb-3 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                <h3 className={`text-[10px] sm:text-xs md:text-sm font-semibold uppercase tracking-wide mb-2 sm:mb-3 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                   {group.category}
                 </h3>
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   {group.shortcuts.map((shortcut, index) => (
                     <div 
                       key={index}
-                      className={`flex items-center justify-between py-2 px-3 rounded-lg ${isDark ? 'bg-dark-300' : 'bg-gray-50'}`}
+                      className={`flex items-center justify-between py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg ${isDark ? 'bg-dark-300' : 'bg-gray-50'}`}
                     >
-                      <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <span className={`text-xs sm:text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                         {shortcut.description}
                       </span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0 ml-2">
                         {shortcut.keys.map((key, i) => (
-                          <span key={i}>
-                            <kbd className={`px-2 py-1 text-xs font-mono rounded border ${
+                          <span key={i} className="flex items-center">
+                            <kbd className={`px-1 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-mono rounded border ${
                               isDark 
                                 ? 'bg-dark-100 border-dark-300 text-gray-300' 
                                 : 'bg-white border-gray-300 text-gray-700'
@@ -135,7 +135,7 @@ export default function KeyboardShortcuts() {
                               {key}
                             </kbd>
                             {i < shortcut.keys.length - 1 && (
-                              <span className={`mx-1 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>+</span>
+                              <span className={`mx-0.5 sm:mx-1 text-[10px] sm:text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>+</span>
                             )}
                           </span>
                         ))}
@@ -148,9 +148,9 @@ export default function KeyboardShortcuts() {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className={`px-6 py-3 border-t text-center text-sm ${isDark ? 'border-dark-300 text-gray-500' : 'border-gray-200 text-gray-400'}`}>
-          Press <kbd className={`px-1.5 py-0.5 text-xs rounded ${isDark ? 'bg-dark-300' : 'bg-gray-100'}`}>?</kbd> anytime to toggle this panel
+        {/* Footer - responsive, simplified on mobile */}
+        <div className={`px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-t text-center text-[10px] sm:text-xs md:text-sm flex-shrink-0 ${isDark ? 'border-dark-300 text-gray-500' : 'border-gray-200 text-gray-400'}`}>
+          Press <kbd className={`px-1 sm:px-1.5 py-0.5 text-[10px] sm:text-xs rounded ${isDark ? 'bg-dark-300' : 'bg-gray-100'}`}>?</kbd> to toggle
         </div>
       </div>
     </div>
