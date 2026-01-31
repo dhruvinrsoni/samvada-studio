@@ -1,4 +1,7 @@
+import { useState } from 'react';
+import { useChat } from '../../context/ChatContext';
 import { createLLMReport } from '../../utils/debug';
+import { getAllThemePresets, getThemePreset, type CustomTheme, type ThemeMode } from '../../utils/theme';
 
 interface ThemeSettingsModalProps {
   onClose: () => void;
