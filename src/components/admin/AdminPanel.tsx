@@ -5,6 +5,7 @@ import { testProviderConnection } from '../../utils/llmService';
 import type { LLMProviderConfig } from '../../types';
 import ProviderCard from './ProviderCard';
 import ProviderForm from './ProviderForm';
+import { OllamaConfigPanel } from './OllamaConfigPanel';
 import DeveloperTools from './DeveloperTools';
 import LocalNetworkAccess from './LocalNetworkAccess';
 import PWAStatusPanel from './PWAStatusPanel';
@@ -18,7 +19,7 @@ interface AdminPanelProps {
 
 export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
   const { state, dispatch } = useChat();
-  const [activeTab, setActiveTab] = useState<'providers' | 'settings' | 'pwa' | 'developer'>('providers');
+  const [activeTab, setActiveTab] = useState<'providers' | 'settings' | 'pwa' | 'developer' | 'ollama'>('providers');
   const [editingProvider, setEditingProvider] = useState<LLMProviderConfig | null>(null);
   const [isAddingProvider, setIsAddingProvider] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -253,6 +254,18 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
               }`}
             >
               🛠️ <span className="hidden sm:inline">Developer</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('ollama')}
+              className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+                activeTab === 'ollama'
+                  ? 'bg-theme-primary text-white'
+                  : isDark 
+                    ? 'text-gray-400 hover:bg-dark-100' 
+                    : 'text-gray-600 hover:bg-light-300'
+              }`}
+            >
+              🦙 <span className="hidden sm:inline">Ollama</span>
             </button>
           </div>
           <button
@@ -576,6 +589,13 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
           {activeTab === 'developer' && (
             <div className="space-y-6">
               <DeveloperTools />
+            </div>
+          )}
+
+          {/* Ollama Configuration Tab */}
+          {activeTab === 'ollama' && (
+            <div className="space-y-6">
+              <OllamaConfigPanel />
             </div>
           )}
         </div>

@@ -197,6 +197,53 @@ export const builtInChecks = {
     }
   },
 
+  ollamaConnectivity: {
+    id: 'ollama-connectivity',
+    name: 'Ollama Connectivity',
+    category: 'api' as const,
+    priority: 'critical' as const,
+    enabled: true,
+    check: async (): Promise<HealthResult> => {
+      try {
+        const { ollamaDiscovery } = await import('../services/ollamaDiscovery.js');
+        const result = await ollamaDiscovery.discoverEndpoint();
+        
+        if (result && result.isHealthy) {
+          return {
+            isHealthy: true,
+            issues: [],
+            warnings: [],
+            metadata: {
+              endpoint: `${result.endpoint.protocol}://${result.endpoint.host}:${result.endpoint.port}`,
+              responseTime: `${result.responseTime}ms`,
+              version: result.version,
+              label: result.endpoint.label || 'Default',
+            },
+          };
+        } else {
+          const errorMsg = result?.error || 'No healthy endpoints found';
+          return {
+            isHealthy: false,
+            issues: [
+              'Ollama not accessible',
+              errorMsg,
+            ],
+            warnings: [
+              'Configure custom Ollama endpoint in Admin Panel > Ollama tab',
+              'For mobile/LAN access, add your PC\'s IP address (e.g., 192.168.1.100:11434)',
+            ],
+          };
+        }
+      } catch (error: any) {
+        return {
+          isHealthy: false,
+          issues: [`Ollama health check failed: ${error.message}`],
+          warnings: ['Check Ollama configuration in Admin Panel'],
+        };
+      }
+    }
+  },
+
   performanceMetrics: {
     id: 'performance-metrics',
     name: 'Performance Metrics',
