@@ -1,6 +1,6 @@
 // Ollama Configuration Panel - Spring-style manual configuration UI
 import React, { useState, useEffect } from 'react';
-import { ollamaDiscovery, OllamaEndpoint, OllamaConfiguration } from '../../services/ollamaDiscovery';
+import { ollamaDiscovery, OllamaConfiguration } from '../../services/ollamaDiscovery';
 
 export const OllamaConfigPanel: React.FC = () => {
   const [config, setConfig] = useState<OllamaConfiguration>(ollamaDiscovery.getConfiguration());
@@ -168,11 +168,26 @@ export const OllamaConfigPanel: React.FC = () => {
                       : 'bg-red-900/30 border border-red-700'
                   }`}
                 >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-mono text-xs text-gray-300">Base URL:</span>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(url)}
+                      className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-white"
+                      title="Copy URL"
+                    >
+                      📋 Copy
+                    </button>
+                  </div>
+                  <div className="font-mono text-sm text-white break-all mb-2">
+                    {url}
+                  </div>
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs">{url}</span>
                     <span className={result.isHealthy ? 'text-green-400' : 'text-red-400'}>
-                      {result.isHealthy ? '✅' : '❌'} {result.responseTime}ms
+                      {result.isHealthy ? '✅ Healthy' : '❌ Failed'} • {result.responseTime}ms
                     </span>
+                    {result.version && (
+                      <span className="text-xs text-gray-400">v{result.version}</span>
+                    )}
                   </div>
                   {result.error && (
                     <div className="text-xs text-red-400 mt-1">Error: {result.error}</div>
@@ -234,7 +249,15 @@ export const OllamaConfigPanel: React.FC = () => {
       {/* Custom Endpoints */}
       <div className="bg-gray-800 rounded-lg p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h4 className="font-semibold text-white">Custom Endpoints</h4>
+          <div>
+            <h4 className="font-semibold text-white mb-1">Custom Endpoints</h4>
+            <p className="text-sm text-gray-400">
+              Add specific Ollama servers (remote, Docker, custom ports, etc.)
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Multiple endpoints = automatic failover. Discovery tries all in priority order.
+            </p>
+          </div>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
             className="text-blue-400 hover:text-blue-300 text-sm font-medium"
@@ -245,6 +268,9 @@ export const OllamaConfigPanel: React.FC = () => {
 
         {showAddForm && (
           <div className="bg-gray-900 rounded-lg p-4 space-y-3">
+            <div className="text-xs text-gray-400 mb-3">
+              <strong>How it works:</strong> Add Ollama servers by IP/hostname. Multiple endpoints provide automatic failover - if one fails, the next is tried automatically.
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Host/IP *</label>
@@ -324,24 +350,40 @@ export const OllamaConfigPanel: React.FC = () => {
 
         {config.endpoints.length > 0 ? (
           <div className="space-y-2">
-            {config.endpoints.map((endpoint, idx) => (
-              <div key={idx} className="bg-gray-900 rounded-lg p-3 flex items-center justify-between">
-                <div>
-                  <div className="font-mono text-sm text-white">
-                    {endpoint.protocol}://{endpoint.host}:{endpoint.port}{endpoint.basePath}
+            <p className="text-xs text-gray-500 mb-3">
+              Endpoints are tested in order. First healthy one is used.
+            </p>
+            {config.endpoints.map((endpoint, idx) => {
+              const fullUrl = `${endpoint.protocol}://${endpoint.host}:${endpoint.port}${endpoint.basePath || ''}`;
+              return (
+                <div key={idx} className="bg-gray-900 rounded-lg p-3 flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs text-gray-400">#{idx + 1}</span>
+                      <span className="font-mono text-sm text-white break-all">
+                        {fullUrl}
+                      </span>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(fullUrl)}
+                        className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-white flex-shrink-0"
+                        title="Copy URL"
+                      >
+                        📋
+                      </button>
+                    </div>
+                    {endpoint.label && (
+                      <div className="text-xs text-gray-400">{endpoint.label}</div>
+                    )}
                   </div>
-                  {endpoint.label && (
-                    <div className="text-xs text-gray-400 mt-1">{endpoint.label}</div>
-                  )}
+                  <button
+                    onClick={() => handleRemoveEndpoint(endpoint.host, endpoint.port)}
+                    className="text-red-400 hover:text-red-300 text-sm flex-shrink-0 ml-2"
+                  >
+                    Remove
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleRemoveEndpoint(endpoint.host, endpoint.port)}
-                  className="text-red-400 hover:text-red-300 text-sm"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="text-sm text-gray-500 text-center py-4">
@@ -350,8 +392,42 @@ export const OllamaConfigPanel: React.FC = () => {
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-3">
+      {/* Discovery Priority Order */}
+      <div className="bg-gray-800 rounded-lg p-4">
+        <h4 className="font-semibold text-white mb-3">🔄 Discovery Priority Order</h4>
+        <div className="text-sm text-gray-300 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-400 font-mono">1.</span>
+            <span>Cached successful endpoint (instant)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-blue-400 font-mono">2.</span>
+            <span>Custom endpoints (in order added)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-blue-400 font-mono">3.</span>
+            <span>Current hostname (DHCP-aware)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-blue-400 font-mono">4.</span>
+            <span>localhost:11434</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-blue-400 font-mono">5.</span>
+            <span>LAN scan (if enabled)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-blue-400 font-mono">6.</span>
+            <span>Port scan (if enabled)</span>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 mt-3">
+          First healthy endpoint found is used. Copy URLs from discovery results above.
+        </p>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-2 mt-4">
         <button
           onClick={handleExport}
           className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded font-medium"
