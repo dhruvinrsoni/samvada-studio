@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { generateId } from '../../utils/helpers';
 import { testProviderConnection } from '../../utils/llmService';
@@ -31,6 +31,46 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
     providers: state.providers,
     enabled: state.isAdminPanelOpen && activeTab === 'providers' && (state.healthMonitoringEnabled ?? true),
   });
+
+  // Auto-create Ollama provider when discovered
+  useEffect(() => {
+    const handleOllamaDiscovered = (event: CustomEvent) => {
+      const { baseUrl, models, endpoint } = event.detail;
+      
+      // Check if Ollama provider already exists with this endpoint
+      const existingProvider = state.providers.find(
+        p => p.type === 'ollama' && p.apiEndpoint === baseUrl
+      );
+      
+      if (existingProvider) {
+        console.log('Ollama provider already exists:', existingProvider.name);
+        return;
+      }
+      
+      // Auto-create Ollama provider
+      const newProvider: LLMProviderConfig = {
+        id: generateId(),
+        name: `Ollama (${endpoint.host})`,
+        type: 'ollama',
+        apiEndpoint: baseUrl,
+        model: models && models.length > 0 ? models[0] : 'llama2',
+        isEnabled: true,
+        isDefault: state.providers.length === 0, // Set as default if no other providers
+        settings: {
+          temperature: 0.7,
+          maxTokens: 4096,
+        },
+      };
+      
+      dispatch({ type: 'ADD_PROVIDER', payload: newProvider });
+      
+      // Show notification
+      console.log('Auto-created Ollama provider:', newProvider.name);
+    };
+    
+    window.addEventListener('ollama-discovered', handleOllamaDiscovered as EventListener);
+    return () => window.removeEventListener('ollama-discovered', handleOllamaDiscovered as EventListener);
+  }, [state.providers, dispatch]);
 
   if (!state.isAdminPanelOpen) return null;
 

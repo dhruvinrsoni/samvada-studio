@@ -1,8 +1,10 @@
 // Ollama Configuration Panel - Spring-style manual configuration UI
 import React, { useState, useEffect } from 'react';
 import { ollamaDiscovery, OllamaConfiguration } from '../../services/ollamaDiscovery';
+import { useToast } from '../../context/ToastContext';
 
 export const OllamaConfigPanel: React.FC = () => {
+  const { addToast } = useToast();
   const [config, setConfig] = useState<OllamaConfiguration>(ollamaDiscovery.getConfiguration());
   const [discoveryResults, setDiscoveryResults] = useState<Map<string, any>>(new Map());
   const [isDiscovering, setIsDiscovering] = useState(false);
@@ -27,12 +29,50 @@ export const OllamaConfigPanel: React.FC = () => {
       setDiscoveryResults(ollamaDiscovery.getDiscoveryResults());
       
       if (result && result.isHealthy) {
-        alert(`✅ Found healthy Ollama endpoint:\n${result.endpoint.protocol}://${result.endpoint.host}:${result.endpoint.port}\nResponse time: ${result.responseTime}ms`);
+        // Auto-add discovered endpoint to Ollama discovery service
+        const discoveredEndpoint = {
+          host: result.endpoint.host,
+          port: result.endpoint.port,
+          protocol: result.endpoint.protocol,
+          basePath: result.endpoint.basePath || '',
+          apiKey: '',
+          label: `Auto-discovered (${result.endpoint.host})`,
+        };
+        
+        // Check if this endpoint already exists (duplicate check)
+        const existingEndpoint = config.endpoints.find(
+          e => e.host === discoveredEndpoint.host && e.port === discoveredEndpoint.port
+        );
+        
+        if (!existingEndpoint) {
+          ollamaDiscovery.addEndpoint(discoveredEndpoint);
+          setConfig(ollamaDiscovery.getConfiguration());
+        }
+        
+        // Store discovered base URL for use when adding new Ollama providers
+        const baseUrl = `${result.endpoint.protocol}://${result.endpoint.host}:${result.endpoint.port}${result.endpoint.basePath || ''}`;
+        localStorage.setItem('ollama-discovered-base-url', baseUrl);
+        
+        // Trigger provider auto-configuration through event
+        window.dispatchEvent(new CustomEvent('ollama-discovered', {
+          detail: {
+            baseUrl,
+            version: result.version,
+            models: result.models || [],
+            endpoint: discoveredEndpoint
+          }
+        }));
+        
+        addToast(
+          'success',
+          '🎉 Ollama Auto-Configured!',
+          `Found Ollama at ${baseUrl}\n${existingEndpoint ? 'Already configured' : 'Auto-added endpoint & created LLM provider!'}`
+        );
       } else {
-        alert('❌ No healthy Ollama endpoints found. Try adding a custom endpoint.');
+        addToast('error', 'Discovery Failed', 'No healthy Ollama endpoints found. Try adding a custom endpoint.');
       }
     } catch (error: any) {
-      alert(`Discovery failed: ${error.message}`);
+      addToast('error', 'Discovery Error', error.message);
     } finally {
       setIsDiscovering(false);
     }
@@ -158,8 +198,10 @@ export const OllamaConfigPanel: React.FC = () => {
         {discoveryResults.size > 0 && (
           <div className="mt-4 space-y-2">
             <h5 className="text-sm font-semibold text-gray-300">Discovery Results:</h5>
-            <div className="max-h-48 overflow-y-auto space-y-2">
-              {Array.from(discoveryResults.entries()).map(([url, result]) => (
+            <p className="text-xs text-blue-400 mb-2">
+              💡 Discovered endpoints are automatically added to Custom Endpoints below and an LLM Provider is created!
+            </p>
+            <div className="max-h-48 overflow-y-auto space-y-2">{Array.from(discoveryResults.entries()).map(([url, result]) => (
                 <div
                   key={url}
                   className={`p-3 rounded text-sm ${

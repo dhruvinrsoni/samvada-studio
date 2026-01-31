@@ -122,6 +122,22 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
       return () => clearTimeout(timeoutId);
     }
   }, [formData.type, formData.apiEndpoint]);
+
+  // Auto-fill discovered Ollama base URL when switching to Ollama type (NEW PROVIDERS ONLY)
+  useEffect(() => {
+    if (formData.type === 'ollama' && !isEditing) {
+      const discoveredBaseUrl = localStorage.getItem('ollama-discovered-base-url');
+      if (discoveredBaseUrl && discoveredBaseUrl !== formData.apiEndpoint) {
+        // Only auto-fill if endpoint is still the default
+        if (formData.apiEndpoint === DEFAULT_ENDPOINTS.ollama || formData.apiEndpoint === DEFAULT_ENDPOINTS.openai) {
+          setFormData(prev => ({
+            ...prev,
+            apiEndpoint: discoveredBaseUrl
+          }));
+        }
+      }
+    }
+  }, [formData.type, isEditing]);
   
   // Fetch models dynamically when API key is added for supported providers
   useEffect(() => {
