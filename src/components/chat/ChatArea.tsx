@@ -27,6 +27,9 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
   const [showSettings, setShowSettings] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isProviderDropdownOpen, setIsProviderDropdownOpen] = useState(false);
+  const [isChatMenuOpen, setIsChatMenuOpen] = useState(false);
+  const [isRenamingChat, setIsRenamingChat] = useState(false);
+  const [chatTitleInput, setChatTitleInput] = useState('');
   const loadingRef = useRef<HTMLDivElement>(null);
   
   // Get available providers and selected provider
@@ -79,11 +82,14 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
       if (isProviderDropdownOpen && !(event.target as Element).closest('.provider-dropdown')) {
         setIsProviderDropdownOpen(false);
       }
+      if (isChatMenuOpen && !(event.target as Element).closest('.chat-menu-dropdown')) {
+        setIsChatMenuOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isProviderDropdownOpen]);
+  }, [isProviderDropdownOpen, isChatMenuOpen]);
 
   const handleSendPrompt = useCallback(async (content: string) => {
     if (!activeChat || !content.trim() || isLoading) return;
@@ -170,8 +176,201 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
       {/* pb-10 on mobile (~40px), pb-8 on desktop (~32px) to account for fixed StatusBar at bottom */}
       {/* Header */}
       <div className={`flex items-center justify-between p-2 sm:p-3 md:p-4 border-b gap-2 flex-shrink-0 ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
-        <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-1 min-w-0 overflow-hidden">
-          <h2 className={`text-sm sm:text-base md:text-lg font-semibold truncate ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>{activeChat.title}</h2>
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-1 min-w-0">
+          {/* Chat Title or Rename Input */}
+          {isRenamingChat ? (
+            <input
+              type="text"
+              value={chatTitleInput}
+              onChange={(e) => setChatTitleInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && chatTitleInput.trim()) {
+                  dispatch({ type: 'UPDATE_CHAT', payload: { ...activeChat, title: chatTitleInput.trim() } });
+                  setIsRenamingChat(false);
+                  addToast('success', 'Renamed', 'Chat title updated');
+                } else if (e.key === 'Escape') {
+                  setIsRenamingChat(false);
+                }
+              }}
+              onBlur={() => {
+                if (chatTitleInput.trim() && chatTitleInput !== activeChat.title) {
+                  dispatch({ type: 'UPDATE_CHAT', payload: { ...activeChat, title: chatTitleInput.trim() } });
+                  addToast('success', 'Renamed', 'Chat title updated');
+                }
+                setIsRenamingChat(false);
+              }}
+              autoFocus
+              className={`text-sm sm:text-base md:text-lg font-semibold px-2 py-1 rounded border flex-1 min-w-0 ${
+                isDark 
+                  ? 'bg-dark-100 border-dark-300 text-gray-200' 
+                  : 'bg-white border-light-400 text-gray-800'
+              }`}
+            />
+          ) : (
+            <>
+              <h2 className={`text-sm sm:text-base md:text-lg font-semibold truncate ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                {activeChat.title}
+              </h2>
+              
+              {/* Chat Actions Dropdown */}
+              <div className="relative chat-menu-dropdown flex-shrink-0 z-50">
+                <button
+                  onClick={() => setIsChatMenuOpen(!isChatMenuOpen)}
+                  className={`p-1 rounded-lg transition-colors min-w-[24px] min-h-[24px] flex items-center justify-center ${
+                    isChatMenuOpen
+                      ? 'bg-theme-primary text-white'
+                      : isDark
+                        ? 'text-gray-400 hover:bg-dark-100 hover:text-gray-300'
+                        : 'text-gray-600 hover:bg-light-300 hover:text-gray-700'
+                  }`}
+                  title="Chat actions"
+                >
+                  <svg className={`w-4 h-4 transition-transform ${isChatMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Dropdown Menu */}
+                {isChatMenuOpen && (
+                  <div 
+                    className={`absolute top-full left-0 mt-1 w-48 sm:w-56 rounded-lg border shadow-2xl py-1 ${
+                      isDark ? 'bg-dark-200 border-dark-300' : 'bg-white border-light-400'
+                    }`}
+                    style={{ zIndex: 9999 }}
+                  >
+                    {/* Rename */}
+                    <button
+                      onClick={() => {
+                        setChatTitleInput(activeChat.title);
+                        setIsRenamingChat(true);
+                        setIsChatMenuOpen(false);
+                      }}
+                      className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
+                        isDark ? 'hover:bg-dark-100 text-gray-300' : 'hover:bg-light-200 text-gray-700'
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Rename Chat
+                    </button>
+
+                    {/* Duplicate */}
+                    <button
+                      onClick={() => {
+                        const newChat = { ...activeChat, id: Date.now().toString(), title: `${activeChat.title} (Copy)`, createdAt: Date.now() };
+                        dispatch({ type: 'ADD_CHAT', payload: newChat });
+                        dispatch({ type: 'SET_ACTIVE_CHAT', payload: newChat.id });
+                        setIsChatMenuOpen(false);
+                        addToast('success', 'Duplicated', 'Chat copied successfully');
+                      }}
+                      className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
+                        isDark ? 'hover:bg-dark-100 text-gray-300' : 'hover:bg-light-200 text-gray-700'
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Duplicate Chat
+                    </button>
+
+                    {/* Pin/Unpin */}
+                    <button
+                      onClick={() => {
+                        dispatch({ type: 'TOGGLE_PIN_CHAT', payload: activeChat.id });
+                        setIsChatMenuOpen(false);
+                        addToast('success', activeChat.isPinned ? 'Unpinned' : 'Pinned', `Chat ${activeChat.isPinned ? 'unpinned' : 'pinned to top'}`);
+                      }}
+                      className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
+                        isDark ? 'hover:bg-dark-100 text-gray-300' : 'hover:bg-light-200 text-gray-700'
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                      </svg>
+                      {activeChat.isPinned ? 'Unpin Chat' : 'Pin to Top'}
+                    </button>
+
+                    {/* Archive */}
+                    <button
+                      onClick={() => {
+                        dispatch({ type: 'ARCHIVE_CHAT', payload: activeChat.id });
+                        setIsChatMenuOpen(false);
+                        addToast('success', 'Archived', 'Chat moved to archive');
+                      }}
+                      className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
+                        isDark ? 'hover:bg-dark-100 text-gray-300' : 'hover:bg-light-200 text-gray-700'
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                      </svg>
+                      Archive Chat
+                    </button>
+
+                    {/* Export */}
+                    <button
+                      onClick={() => {
+                        dispatch({ type: 'TOGGLE_EXPORT_MODAL' });
+                        setIsChatMenuOpen(false);
+                      }}
+                      className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
+                        isDark ? 'hover:bg-dark-100 text-gray-300' : 'hover:bg-light-200 text-gray-700'
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Export Chat
+                    </button>
+
+                    {/* Divider */}
+                    <div className={`my-1 h-px ${isDark ? 'bg-dark-100' : 'bg-light-300'}`} />
+
+                    {/* Share (Future Feature) */}
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/?chat=${activeChat.id}`);
+                        setIsChatMenuOpen(false);
+                        addToast('success', 'Link Copied', 'Share link copied to clipboard');
+                      }}
+                      className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
+                        isDark ? 'hover:bg-dark-100 text-blue-400' : 'hover:bg-light-200 text-blue-600'
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                      </svg>
+                      Copy Share Link
+                    </button>
+
+                    {/* Divider */}
+                    <div className={`my-1 h-px ${isDark ? 'bg-dark-100' : 'bg-light-300'}`} />
+
+                    {/* Delete */}
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Delete "${activeChat.title}"?\n\nThis will permanently delete this chat and all its messages.`)) {
+                          dispatch({ type: 'DELETE_CHAT', payload: activeChat.id });
+                          setIsChatMenuOpen(false);
+                          addToast('success', 'Deleted', 'Chat deleted successfully');
+                        }
+                      }}
+                      className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
+                        isDark ? 'hover:bg-red-500/20 text-red-400' : 'hover:bg-red-50 text-red-600'
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete Chat
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+          
           <span className="text-xs text-gray-500 hidden sm:inline flex-shrink-0">
             {activeChat.promptResponses.length} {isMobile ? '' : 'messages'}
           </span>
