@@ -20,6 +20,7 @@ export const DebugMode: React.FC<DebugModeProps> = ({ className = '' }) => {
   
   const [isVisible, setIsVisible] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [healthReport, setHealthReport] = useState<any>(null);
   const [position, setPosition] = useState({ x: isMobile ? 8 : 16, y: isMobile ? 8 : 16 });
   const [isDragging, setIsDragging] = useState(false);
@@ -115,8 +116,9 @@ export const DebugMode: React.FC<DebugModeProps> = ({ className = '' }) => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [isVisible, refreshData]);
 
-  // Don't render if not visible or not in dev mode
-  if (!isVisible || !import.meta.env.DEV) return null;
+  // Don't render debug panel if not visible or not in dev mode
+  // But still show mobile trigger button when appropriate
+  if (!import.meta.env.DEV) return null;
 
   const generateBugReport = async () => {
     const report = await healthMonitor.runAllChecks();
@@ -130,6 +132,30 @@ export const DebugMode: React.FC<DebugModeProps> = ({ className = '' }) => {
   };
 
   return (
+    <>
+      {/* Debug Panel - Minimized Corner View */}
+      {isVisible && isMinimized && (
+        <div
+          className={`fixed z-[100] ${
+            isDark ? 'bg-gray-900 border-gray-700 text-gray-200' : 'bg-white border-gray-300 text-gray-800'
+          } border-2 rounded-lg shadow-2xl cursor-pointer`}
+          style={{
+            left: `${position.x}px`,
+            top: `${position.y}px`,
+            width: '48px',
+            height: '48px'
+          }}
+          onClick={() => setIsMinimized(false)}
+          title="Click to restore"
+        >
+          <div className="flex items-center justify-center h-full text-2xl">
+            🔍
+          </div>
+        </div>
+      )}
+
+      {/* Debug Panel - Full View */}
+      {isVisible && !isMinimized && (
     <div
       ref={panelRef}
       className={`fixed z-[100] ${isMobile ? 'max-w-[calc(100vw-16px)]' : 'max-w-2xl'} ${
@@ -153,11 +179,26 @@ export const DebugMode: React.FC<DebugModeProps> = ({ className = '' }) => {
         <div className="flex items-center gap-2 flex-1">
           <span className="text-base sm:text-lg">🔍</span>
           <span className="font-bold text-xs sm:text-sm truncate">
-            Debug Mode {isMobile && '(Drag to move)'}
+            Debug Mode
           </span>
         </div>
         <div className="flex items-center gap-1 sm:gap-2">
-          {/* Expand/Collapse Button */}
+          {/* Minimize Button (Width Collapse) */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMinimized(true);
+            }}
+            className={`p-1 sm:p-1.5 rounded transition-colors ${
+              isDark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-200 text-gray-600'
+            }`}
+            title="Minimize to corner"
+          >
+            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+            </svg>
+          </button>
+          {/* Expand/Collapse Button (Height) */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -324,12 +365,15 @@ export const DebugMode: React.FC<DebugModeProps> = ({ className = '' }) => {
           <div className={`text-[10px] sm:text-xs text-center py-2 border-t ${
             isDark ? 'border-gray-700 text-gray-500' : 'border-gray-300 text-gray-500'
           }`}>
-            Press <kbd className={`px-1 py-0.5 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>Ctrl+Shift+D</kbd> to toggle • 
-            Drag header to move • Click buttons to interact
+            <kbd className={`px-1 py-0.5 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>Ctrl+Shift+D</kbd> to toggle • 
+            {isMobile ? 'Settings → Developer → Debug Mode • ' : ''}
+            Drag header to move • − Minimize • ↕ Collapse
           </div>
         </div>
       )}
     </div>
+      )}
+    </>
   );
 };
 

@@ -390,6 +390,29 @@ export default function DeveloperTools() {
           Quick Actions
         </h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {/* Debug Mode Button */}
+          <button
+            onClick={() => {
+              // Trigger Ctrl+Shift+D keyboard shortcut to open Debug Mode
+              const event = new KeyboardEvent('keydown', {
+                key: 'D',
+                ctrlKey: true,
+                shiftKey: true,
+                bubbles: true
+              });
+              window.dispatchEvent(event);
+              addToast('info', 'Debug Mode', 'Opening debug panel...');
+            }}
+            className={`px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 ${
+              isDark
+                ? 'bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/30'
+                : 'bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-300'
+            }`}
+          >
+            <span>🔍</span>
+            <span>Debug Mode</span>
+          </button>
+
           <button
             onClick={checkConnectivityOnly}
             disabled={isCheckingConnectivity}
@@ -443,6 +466,25 @@ export default function DeveloperTools() {
             <span>📜</span>
             <span>View Logs</span>
           </button>
+        </div>
+        
+        {/* Debug Mode Help Text */}
+        <div className={`mt-3 p-3 rounded-lg text-xs ${
+          isDark ? 'bg-purple-500/10 border border-purple-500/20' : 'bg-purple-50 border border-purple-200'
+        }`}>
+          <div className={`flex items-start gap-2 ${isDark ? 'text-purple-300' : 'text-purple-700'}`}>
+            <span className="text-base">💡</span>
+            <div>
+              <span className="font-semibold">Debug Mode:</span> Draggable developer panel with real-time health monitoring, 
+              performance metrics, and LLM debug tools. Use the button above or press{' '}
+              <kbd className={`px-1.5 py-0.5 rounded font-mono text-[10px] ${
+                isDark ? 'bg-purple-500/20 border border-purple-500/30' : 'bg-white border border-purple-300'
+              }`}>
+                Ctrl+Shift+D
+              </kbd>{' '}
+              to toggle.
+            </div>
+          </div>
         </div>
       </div>
 
