@@ -188,16 +188,61 @@ export class HealthService {
 
   /**
    * Check Ollama connectivity and get models (with caching)
+   * Now uses OllamaDiscoveryService for auto-detection (DHCP-aware, smart discovery)
    */
   static async checkOllamaConnectivity(
     customEndpoint?: string,
     forceRefresh: boolean = false
   ): Promise<OllamaConnectivityResult> {
-    const endpoint = customEndpoint || 'http://localhost:11434';
+    // Use Ollama Discovery Service for smart endpoint detection
+    if (!customEndpoint) {
+      try {
+        const { ollamaDiscovery } = await import('../services/ollamaDiscovery.js');
+        const discoveryResult = await ollamaDiscovery.discoverEndpoint();
+        
+        if (discoveryResult && discoveryResult.isHealthy) {
+          // Discovery found a healthy endpoint!
+          const endpoint = `${discoveryResult.endpoint.protocol}://${discoveryResult.endpoint.host}:${discoveryResult.endpoint.port}`;
+          logDebug('HealthService', {
+            message: 'Ollama discovered via auto-detection',
+            endpoint,
+            responseTime: discoveryResult.responseTime,
+            version: discoveryResult.version,
+          });
+          
+          // Get models from discovered endpoint
+          return await this.fetchOllamaModels(endpoint, forceRefresh);
+        } else {
+          // No healthy endpoint found
+          return {
+            available: false,
+            models: [],
+            error: discoveryResult?.error || 'No Ollama endpoints found. Configure in Admin Panel > Ollama.',
+          };
+        }
+      } catch (error: any) {
+        console.warn('Ollama discovery failed:', error);
+        // Fallback to localhost if discovery fails
+        return await this.fetchOllamaModels('http://localhost:11434', forceRefresh);
+      }
+    }
     
+    const endpoint = customEndpoint;
+    
+    // For custom endpoints, use the provided endpoint
+    return await this.fetchOllamaModels(endpoint, forceRefresh);
+  }
+
+  /**
+   * Fetch Ollama models from a specific endpoint (internal helper)
+   */
+  private static async fetchOllamaModels(
+    endpoint: string,
+    forceRefresh: boolean = false
+  ): Promise<OllamaConnectivityResult> {
     // Skip localhost checks when app is hosted remotely (GitHub Pages, etc.)
     // Browsers block access to localhost from remote origins for security
-    if (!isLocalhost() && !customEndpoint) {
+    if (!isLocalhost() && endpoint.includes('localhost')) {
       return {
         available: false,
         models: [],

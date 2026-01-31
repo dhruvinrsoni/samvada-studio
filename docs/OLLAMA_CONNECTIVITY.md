@@ -1,5 +1,9 @@
 # 🦙 Ollama Connectivity Guide
 
+## **Acronyms**
+
+**CHM** = Connection Health Monitor (the mini popup that shows connectivity status)
+
 ## **Production-Grade Connection Health Monitoring**
 
 This guide covers how Samvada Studio intelligently detects and connects to Ollama across all network scenarios.

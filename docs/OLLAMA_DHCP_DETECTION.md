@@ -1,5 +1,9 @@
 # Ollama DHCP-Aware Detection
 
+## Acronyms
+
+**CHM** = Connection Health Monitor (the mini popup that shows "Ollama Not Running")
+
 ## Problem
 
 On WiFi networks with DHCP, your PC's local IP address changes dynamically:
@@ -205,7 +209,9 @@ ipconfig
 
 ## Troubleshooting
 
-### "Ollama not found" on mobile
+### CHM shows "Ollama not found" on mobile
+
+**CHM (Connection Health Monitor)** is the mini popup in bottom-right corner.
 
 **Check:**
 1. Is Ollama running on PC? → `curl http://localhost:11434/api/version`

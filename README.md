@@ -361,6 +361,9 @@ When issues are detected, CHM shows:
 | [💎 FORMATTING_PROFILES_GUIDE.md](docs/FORMATTING_PROFILES_GUIDE.md) | Complete guide to formatting profiles |
 | [🔌 CORS_PROXY.md](docs/CORS_PROXY.md) | **IMPORTANT:** OpenAI & Anthropic setup with CORS proxy |
 | [🌐 LOCAL_NETWORK_ACCESS.md](docs/LOCAL_NETWORK_ACCESS.md) | Local network permission management for Ollama & local LLMs |
+| [🦙 OLLAMA_CONNECTIVITY.md](docs/OLLAMA_CONNECTIVITY.md) | **Production-grade** Ollama auto-discovery & configuration |
+| [🔄 OLLAMA_DHCP_DETECTION.md](docs/OLLAMA_DHCP_DETECTION.md) | DHCP-aware Ollama detection (mobile/LAN access) |
+| [🏥 CHM_CONNECTION_HEALTH_MONITOR.md](docs/CHM_CONNECTION_HEALTH_MONITOR.md) | **CHM** - Connection Health Monitor deep dive |
 | [📱 PWA_GUIDE.md](docs/PWA_GUIDE.md) | Progressive Web App installation & offline guide |
 | [💾 PERSISTENCE.md](docs/PERSISTENCE.md) | How data is saved and restored |
 | [🔒 CONTENT_SANITIZATION.md](docs/CONTENT_SANITIZATION.md) | Content security and validation |
