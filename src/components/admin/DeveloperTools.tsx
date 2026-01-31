@@ -8,6 +8,7 @@ import {
   clearLogs,
   LogEntry,
 } from '../../utils/debug';
+import { getErrorLogs, getErrorStats, clearErrorLogs, exportErrorReport, ErrorLog } from '../../utils/errorLogger';
 import { HealthService } from '../../utils/healthService';
 import { STORAGE_KEY, SENSITIVE_STORAGE_KEY } from '../../utils/storage';
 
@@ -83,6 +84,11 @@ export default function DeveloperTools() {
   const [logsVisible, setLogsVisible] = useState(false);
   const [recentLogs, setRecentLogs] = useState<LogEntry[]>([]);
   
+  // Error logs state
+  const [errorLogs, setErrorLogs] = useState<ErrorLog[]>([]);
+  const [showErrorLogs, setShowErrorLogs] = useState(false);
+  const [errorStats, setErrorStats] = useState<ReturnType<typeof getErrorStats> | null>(null);
+  
   // Full report
   const [report, setReport] = useState<DiagnosticsReport | null>(null);
   const [showRawLogs, setShowRawLogs] = useState(false);
@@ -151,6 +157,36 @@ export default function DeveloperTools() {
     setRecentLogs(logs);
     setLogsVisible(true);
     addToast('info', 'Logs Loaded', `${logs.length} log entries`);
+  }, [addToast]);
+
+  // View Error Logs
+  const viewErrorLogs = useCallback(() => {
+    const logs = getErrorLogs();
+    const stats = getErrorStats();
+    setErrorLogs(logs.slice().reverse()); // Most recent first
+    setErrorStats(stats);
+    setShowErrorLogs(true);
+    addToast('info', 'Error Logs', `Found ${stats.total} errors (${stats.last24Hours} in last 24h)`);
+  }, [addToast]);
+
+  // Clear Error Logs
+  const handleClearErrorLogs = useCallback(() => {
+    clearErrorLogs();
+    setErrorLogs([]);
+    setErrorStats(null);
+    setShowErrorLogs(false);
+    addToast('success', 'Cleared', 'Error logs have been cleared');
+  }, [addToast]);
+
+  // Export Error Report
+  const handleExportErrorReport = useCallback(async () => {
+    try {
+      const report = exportErrorReport();
+      await navigator.clipboard.writeText(report);
+      addToast('success', 'Exported', 'Error report copied to clipboard');
+    } catch (error) {
+      addToast('error', 'Export Failed', 'Could not copy error report');
+    }
   }, [addToast]);
 
   // Full diagnostics (all checks combined)
@@ -466,6 +502,18 @@ export default function DeveloperTools() {
             <span>📜</span>
             <span>View Logs</span>
           </button>
+
+          <button
+            onClick={viewErrorLogs}
+            className={`px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 ${
+              isDark
+                ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30'
+                : 'bg-red-100 hover:bg-red-200 text-red-700 border border-red-300'
+            }`}
+          >
+            <span>🚨</span>
+            <span>Error Logs</span>
+          </button>
         </div>
         
         {/* Debug Mode Help Text */}
@@ -594,6 +642,161 @@ export default function DeveloperTools() {
                     <p className="truncate">{log.message}</p>
                   </div>
                 </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Error Logs Section (shown when Error Logs clicked) */}
+      {showErrorLogs && (
+        <div className={`p-4 border-t ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h4 className={`text-sm font-semibold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                🚨 Error Logs {errorStats && `(${errorStats.total} total, ${errorStats.last24Hours} last 24h)`}
+              </h4>
+              {errorStats && errorStats.total > 0 && (
+                <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  These are errors caught by ErrorBoundary and global handlers
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {errorStats && errorStats.total > 0 && (
+                <>
+                  <button
+                    onClick={handleExportErrorReport}
+                    className={`text-xs px-2 py-1 rounded ${
+                      isDark 
+                        ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                    }`}
+                  >
+                    📋 Copy Report
+                  </button>
+                  <button
+                    onClick={handleClearErrorLogs}
+                    className={`text-xs px-2 py-1 rounded ${
+                      isDark 
+                        ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                        : 'bg-red-100 text-red-700 hover:bg-red-200'
+                    }`}
+                  >
+                    🗑️ Clear
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => setShowErrorLogs(false)}
+                className={`text-xs ${isDark ? 'text-gray-500 hover:text-gray-400' : 'text-gray-500 hover:text-gray-600'}`}
+              >
+                ✕ Close
+              </button>
+            </div>
+          </div>
+
+          {/* Error Statistics */}
+          {errorStats && errorStats.total > 0 && (
+            <div className={`p-3 rounded-lg mb-3 ${isDark ? 'bg-red-500/10 border border-red-500/20' : 'bg-red-50 border border-red-200'}`}>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                <div>
+                  <p className={`font-semibold ${isDark ? 'text-red-400' : 'text-red-700'}`}>By Type</p>
+                  {Object.entries(errorStats.byType).map(([type, count]) => (
+                    <p key={type} className={isDark ? 'text-red-300' : 'text-red-600'}>
+                      {type}: {count}
+                    </p>
+                  ))}
+                </div>
+                <div>
+                  <p className={`font-semibold ${isDark ? 'text-red-400' : 'text-red-700'}`}>By Section</p>
+                  {Object.entries(errorStats.bySection).length > 0 ? (
+                    Object.entries(errorStats.bySection).map(([section, count]) => (
+                      <p key={section} className={isDark ? 'text-red-300' : 'text-red-600'}>
+                        {section}: {count}
+                      </p>
+                    ))
+                  ) : (
+                    <p className={isDark ? 'text-gray-500' : 'text-gray-500'}>No section data</p>
+                  )}
+                </div>
+                {errorStats.lastError && (
+                  <div>
+                    <p className={`font-semibold ${isDark ? 'text-red-400' : 'text-red-700'}`}>Last Error</p>
+                    <p className={isDark ? 'text-red-300' : 'text-red-600'}>
+                      {new Date(errorStats.lastError.timestamp).toLocaleString()}
+                    </p>
+                    <p className={`text-xs truncate ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {errorStats.lastError.message}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Error List */}
+          <div className={`space-y-2 max-h-96 overflow-y-auto ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+            {errorLogs.length === 0 ? (
+              <div className={`p-4 rounded-lg text-center ${isDark ? 'bg-dark-100' : 'bg-light-200'}`}>
+                <p className="text-green-600 dark:text-green-400 font-semibold mb-1">✅ No Errors!</p>
+                <p className="text-xs">The application has not encountered any errors yet.</p>
+              </div>
+            ) : (
+              errorLogs.map((error, i) => (
+                <details
+                  key={error.id}
+                  className={`p-3 rounded-lg border ${
+                    isDark 
+                      ? 'bg-red-500/5 border-red-500/20 hover:bg-red-500/10'
+                      : 'bg-red-50 border-red-200 hover:bg-red-100'
+                  }`}
+                >
+                  <summary className="cursor-pointer text-sm font-medium">
+                    <span className={isDark ? 'text-red-400' : 'text-red-700'}>
+                      [{i + 1}] {error.section || error.type}
+                    </span>
+                    <span className={`ml-2 text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      {new Date(error.timestamp).toLocaleString()}
+                    </span>
+                    <p className={`mt-1 text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {error.message}
+                    </p>
+                  </summary>
+                  
+                  <div className={`mt-3 space-y-2 text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <div>
+                      <p className="font-semibold mb-1">ID:</p>
+                      <code className={`px-2 py-1 rounded ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                        {error.id}
+                      </code>
+                    </div>
+                    
+                    {error.stack && (
+                      <div>
+                        <p className="font-semibold mb-1">Stack Trace:</p>
+                        <pre className={`p-2 rounded overflow-x-auto text-[10px] ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
+                          {error.stack}
+                        </pre>
+                      </div>
+                    )}
+                    
+                    {error.componentStack && (
+                      <div>
+                        <p className="font-semibold mb-1">Component Stack:</p>
+                        <pre className={`p-2 rounded overflow-x-auto text-[10px] ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
+                          {error.componentStack}
+                        </pre>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <p className="font-semibold mb-1">Environment:</p>
+                      <p>URL: {error.url}</p>
+                      <p className="truncate">User Agent: {error.userAgent}</p>
+                    </div>
+                  </div>
+                </details>
               ))
             )}
           </div>

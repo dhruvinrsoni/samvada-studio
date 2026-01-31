@@ -308,21 +308,27 @@ function AppContent() {
 
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar />
+        {/* Sidebar - Wrapped to prevent sidebar errors from crashing entire app */}
+        <ErrorBoundary name="Sidebar">
+          <Sidebar />
+        </ErrorBoundary>
 
-        {/* Main Chat Area */}
-        <ChatArea 
-          quotedText={quotedText} 
-          onClearQuote={clearQuote} 
-          onQuote={handleQuote}
-          templateContent={templateContent}
-          onClearTemplate={clearTemplateContent}
-          pwaStatus={pwaStatus}
-        />
+        {/* Main Chat Area - Wrapped to isolate chat errors */}
+        <ErrorBoundary name="Chat Area">
+          <ChatArea 
+            quotedText={quotedText} 
+            onClearQuote={clearQuote} 
+            onQuote={handleQuote}
+            templateContent={templateContent}
+            onClearTemplate={clearTemplateContent}
+            pwaStatus={pwaStatus}
+          />
+        </ErrorBoundary>
 
-        {/* Context Panel (Conditional) */}
-        <ContextPanel />
+        {/* Context Panel (Conditional) - Wrapped to prevent context errors */}
+        <ErrorBoundary name="Context Panel">
+          <ContextPanel />
+        </ErrorBoundary>
       </div>
 
       {/* Modals - Wrapped in ErrorBoundary to prevent component errors from crashing app */}
@@ -349,17 +355,23 @@ function AppContent() {
       <PWAUpdateNotification pwaStatus={pwaStatus} />
       <PWAOfflineIndicator pwaStatus={pwaStatus} />
 
-      {/* Status Bar */}
-      <StatusBar 
-        minimizedOllamaWarnings={minimizedOllamaWarnings}
-        onShowOllamaWarnings={showOllamaWarnings}
-      />
+      {/* Status Bar - Wrapped to prevent status errors from breaking UI */}
+      <ErrorBoundary name="Status Bar">
+        <StatusBar 
+          minimizedOllamaWarnings={minimizedOllamaWarnings}
+          onShowOllamaWarnings={showOllamaWarnings}
+        />
+      </ErrorBoundary>
 
       {/* Silent Failure Prevention - Theme Health Indicator */}
-      <ThemeHealthIndicator />
+      <ErrorBoundary name="Theme Health">
+        <ThemeHealthIndicator />
+      </ErrorBoundary>
 
       {/* Debug Mode - Ctrl+Shift+D */}
-      <DebugMode />
+      <ErrorBoundary name="Debug Mode">
+        <DebugMode />
+      </ErrorBoundary>
     </div>
     </>
   );
