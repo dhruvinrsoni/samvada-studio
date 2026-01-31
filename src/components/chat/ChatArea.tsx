@@ -53,6 +53,13 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
     setIsLoading(false);
   }, [activeChat?.id]);
 
+  // Close dropdown menu when sidebar opens on mobile
+  useEffect(() => {
+    if (isMobile && state.isSidebarOpen) {
+      setIsChatMenuOpen(false);
+    }
+  }, [isMobile, state.isSidebarOpen]);
+
   // Update input when quoted text changes
   useEffect(() => {
     if (quotedText) {
@@ -213,7 +220,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
               </h2>
               
               {/* Chat Actions Dropdown */}
-              <div className="relative chat-menu-dropdown flex-shrink-0 z-50">
+              <div className="relative chat-menu-dropdown flex-shrink-0 z-10">
                 <button
                   onClick={() => setIsChatMenuOpen(!isChatMenuOpen)}
                   className={`p-1 rounded-lg transition-colors min-w-[24px] min-h-[24px] flex items-center justify-center ${
@@ -233,10 +240,9 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
                 {/* Dropdown Menu */}
                 {isChatMenuOpen && (
                   <div 
-                    className={`absolute top-full left-0 mt-1 w-48 sm:w-56 rounded-lg border shadow-2xl py-1 ${
+                    className={`absolute top-full left-0 mt-1 w-48 sm:w-56 rounded-lg border shadow-2xl py-1 z-20 ${
                       isDark ? 'bg-dark-200 border-dark-300' : 'bg-white border-light-400'
                     }`}
-                    style={{ zIndex: 9999 }}
                   >
                     {/* Rename */}
                     <button
