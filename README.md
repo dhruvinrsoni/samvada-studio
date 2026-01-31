@@ -326,7 +326,8 @@ Connect to **6 providers** with unified interface:
 |----------|-------------|
 | [📋 FEATURES.md](docs/FEATURES.md) | Complete feature documentation with examples |
 | [💎 FORMATTING_PROFILES_GUIDE.md](docs/FORMATTING_PROFILES_GUIDE.md) | Complete guide to formatting profiles |
-| [🌐 LOCAL_NETWORK_ACCESS.md](docs/LOCAL_NETWORK_ACCESS.md) | **NEW:** Local network permission management for Ollama & local LLMs |
+| [🔌 CORS_PROXY.md](docs/CORS_PROXY.md) | **IMPORTANT:** OpenAI & Anthropic setup with CORS proxy |
+| [🌐 LOCAL_NETWORK_ACCESS.md](docs/LOCAL_NETWORK_ACCESS.md) | Local network permission management for Ollama & local LLMs |
 | [📱 PWA_GUIDE.md](docs/PWA_GUIDE.md) | Progressive Web App installation & offline guide |
 | [💾 PERSISTENCE.md](docs/PERSISTENCE.md) | How data is saved and restored |
 | [🔒 CONTENT_SANITIZATION.md](docs/CONTENT_SANITIZATION.md) | Content security and validation |

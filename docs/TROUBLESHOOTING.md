@@ -1,5 +1,33 @@
 # Troubleshooting Guide
 
+## 🚨 Critical Issues
+
+### CORS Errors with OpenAI/Anthropic
+
+**Symptoms:**
+- Error: `CORS policy: No 'Access-Control-Allow-Origin' header`
+- Can't connect to OpenAI or Anthropic
+- Test connection fails immediately
+
+**Root Cause:**
+OpenAI and Anthropic APIs don't allow direct browser access due to CORS security restrictions.
+
+**Solution:**
+
+**If running locally:**
+1. Run the CORS proxy: `npm run proxy:insecure`
+2. Configure proxy URL in provider settings: `http://localhost:8080`
+3. See [CORS Proxy Guide](CORS_PROXY.md) for detailed instructions
+
+**If using hosted version (GitHub Pages):**
+1. Use **Google Gemini** instead (no proxy needed)
+2. OR deploy a **Cloudflare Worker** proxy
+3. See [CORS Proxy Guide](CORS_PROXY.md) for setup
+
+📖 **Full Documentation**: [CORS_PROXY.md](CORS_PROXY.md)
+
+---
+
 ## Common Issues and Solutions
 
 ### Issue 1: First Message Never Works (404 Error)

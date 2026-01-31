@@ -26,14 +26,28 @@ This document outlines how LLM providers are implemented in Samvada Studio and h
 
 ## 📋 Supported Providers
 
-| Provider | Authentication | Model Discovery | Endpoint Format | Status |
-|----------|----------------|-----------------|-----------------|--------|
-| **OpenAI** | `Authorization: Bearer` | ✅ Dynamic from API | `https://api.openai.com/v1/chat/completions` | ✅ Production |
-| **Anthropic** | `x-api-key` header | ⚠️ Validated + Hardcoded | `https://api.anthropic.com/v1/messages` | ✅ Production |
-| **Google Gemini** | Query param `?key=` | ✅ Dynamic from API | `https://generativelanguage.googleapis.com/v1beta` | ✅ Production |
-| **Ollama** | None (localhost) | ✅ Dynamic from `/api/tags` | `http://localhost:11434/api/generate` | ✅ Production |
-| **Azure OpenAI** | `api-key` header | ⚠️ Deployment-based | `https://{resource}.openai.azure.com/...` | ✅ Production |
-| **Custom** | `Authorization: Bearer` | Manual | User-defined | ✅ Beta |
+| Provider | Authentication | Model Discovery | CORS Proxy | Endpoint Format | Status |
+|----------|----------------|-----------------|------------|-----------------|--------|
+| **OpenAI** | `Authorization: Bearer` | ✅ Dynamic from API | ⚠️ Required | `https://api.openai.com/v1/chat/completions` | ✅ Production |
+| **Anthropic** | `x-api-key` header | ⚠️ Validated + Hardcoded | ⚠️ Required | `https://api.anthropic.com/v1/messages` | ✅ Production |
+| **Google Gemini** | Query param `?key=` | ✅ Dynamic from API | ✅ Not Needed | `https://generativelanguage.googleapis.com/v1beta` | ✅ Production |
+| **Ollama** | None (localhost) | ✅ Dynamic from `/api/tags` | ✅ Not Needed | `http://localhost:11434/api/generate` | ✅ Production |
+| **Azure OpenAI** | `api-key` header | ⚠️ Deployment-based | ⚠️ Required | `https://{resource}.openai.azure.com/...` | ✅ Production |
+| **Custom** | `Authorization: Bearer` | Manual | Depends | User-defined | ✅ Beta |
+
+### CORS Proxy Requirements
+
+**Why Some Providers Need a Proxy:**
+
+Browsers enforce CORS (Cross-Origin Resource Sharing) security policies. OpenAI, Anthropic, and Azure OpenAI intentionally don't include CORS headers to prevent browser-based apps from exposing API keys.
+
+**Solutions:**
+
+1. **Local Development**: Run `npm run proxy:insecure` → Configure `http://localhost:8080`
+2. **Hosted Deployment**: Deploy a Cloudflare Worker (free tier available)
+3. **No Proxy Needed**: Use Google Gemini or Ollama (local)
+
+📖 **Full Guide**: [CORS_PROXY.md](CORS_PROXY.md)
 
 ---
 

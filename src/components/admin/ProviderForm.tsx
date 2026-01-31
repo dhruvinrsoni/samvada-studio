@@ -3,6 +3,15 @@ import { useChat } from '../../context/ChatContext';
 import { fetchOllamaModels, fetchOpenAIModels, fetchAnthropicModels, fetchGoogleModels } from '../../utils/llmService';
 import type { LLMProviderConfig, LLMProviderType } from '../../types';
 
+// Check if app is running on localhost or hosted
+const isLocalhost = (): boolean => {
+  const hostname = window.location.hostname;
+  return hostname === 'localhost' || 
+         hostname === '127.0.0.1' || 
+         hostname === '[::1]' || 
+         hostname.includes('local');
+};
+
 // Utility function to format bytes
 const formatBytes = (bytes: number): string => {
   if (bytes === 0) return '0 B';
@@ -379,12 +388,31 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
               <div className="flex items-start gap-2">
                 <span className="text-lg flex-shrink-0">⚠️</span>
                 <div className="text-xs">
-                  <p className="font-semibold mb-1">CORS Limitation</p>
+                  <p className="font-semibold mb-1">⚡ Proxy Required</p>
                   <p className="mb-2">
-                    Anthropic's API blocks direct browser requests for security. You need to configure a CORS Proxy URL in <strong>Advanced Settings</strong> below.
+                    Anthropic's API blocks direct browser requests for security.
                   </p>
-                  <p className="text-xs opacity-80">
-                    Alternatively, use Google Gemini or Ollama which work directly in browsers.
+                  {isLocalhost() ? (
+                    <>
+                      <p className="font-mono text-xs mb-1 text-green-500">💻 Running Locally</p>
+                      <p className="mb-1">Run the local CORS proxy:</p>
+                      <code className={`block px-2 py-1 rounded mt-1 ${
+                        isDark ? 'bg-dark-100' : 'bg-white'
+                      }`}>
+                        npm run proxy:insecure
+                      </code>
+                      <p className="mt-2">Then configure the proxy URL in <strong>Advanced Settings</strong> below.</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-mono text-xs mb-1 text-blue-500">🌐 Running on Hosted Version</p>
+                      <p className="mb-2">
+                        Deploy a <strong>Cloudflare Worker</strong> (free tier available) to proxy requests, or use <strong>Google Gemini</strong> which works directly in browsers.
+                      </p>
+                    </>
+                  )}
+                  <p className="text-xs opacity-80 mt-2">
+                    📖 <a href="https://github.com/dhruvinrsoni/samvada-studio/blob/main/docs/CORS_PROXY.md" target="_blank" rel="noopener noreferrer" className="underline">Full CORS Proxy Guide</a>
                   </p>
                 </div>
               </div>
@@ -401,12 +429,31 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
               <div className="flex items-start gap-2">
                 <span className="text-lg flex-shrink-0">⚠️</span>
                 <div className="text-xs">
-                  <p className="font-semibold mb-1">CORS Limitation</p>
+                  <p className="font-semibold mb-1">⚡ Proxy Required</p>
                   <p className="mb-2">
-                    OpenAI's API blocks direct browser requests for security. You need to configure a CORS Proxy URL in <strong>Advanced Settings</strong> below.
+                    OpenAI's API blocks direct browser requests for security.
                   </p>
-                  <p className="text-xs opacity-80">
-                    Alternatively, use Google Gemini or Ollama which work directly in browsers.
+                  {isLocalhost() ? (
+                    <>
+                      <p className="font-mono text-xs mb-1 text-green-500">💻 Running Locally</p>
+                      <p className="mb-1">Run the local CORS proxy:</p>
+                      <code className={`block px-2 py-1 rounded mt-1 ${
+                        isDark ? 'bg-dark-100' : 'bg-white'
+                      }`}>
+                        npm run proxy:insecure
+                      </code>
+                      <p className="mt-2">Then configure the proxy URL in <strong>Advanced Settings</strong> below.</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-mono text-xs mb-1 text-blue-500">🌐 Running on Hosted Version</p>
+                      <p className="mb-2">
+                        Deploy a <strong>Cloudflare Worker</strong> (free tier available) to proxy requests, or use <strong>Google Gemini</strong> which works directly in browsers.
+                      </p>
+                    </>
+                  )}
+                  <p className="text-xs opacity-80 mt-2">
+                    📖 <a href="https://github.com/dhruvinrsoni/samvada-studio/blob/main/docs/CORS_PROXY.md" target="_blank" rel="noopener noreferrer" className="underline">Full CORS Proxy Guide</a>
                   </p>
                 </div>
               </div>
