@@ -29,18 +29,20 @@ Each preset defines colors for both light and dark modes:
 
 ### 2. CSS Custom Properties (`src/index.css`)
 
-Theme colors are exposed as CSS custom properties:
+Theme colors are exposed as CSS custom properties using **space-separated HSL format** (required by Tailwind CSS v3+):
 
 ```css
 :root {
-  --theme-primary: 217, 91%, 67%;       /* HSL values */
-  --theme-primary-hover: 221, 83%, 53%;
-  --theme-primary-light: 214, 100%, 97%;
-  --theme-primary-dark: 224, 76%, 36%;
-  --theme-secondary: 213, 96%, 85%;
-  --theme-accent: 212, 96%, 77%;
+  --theme-primary: 217 91% 67%;       /* HSL values - SPACE-SEPARATED */
+  --theme-primary-hover: 221 83% 53%;
+  --theme-primary-light: 214 100% 97%;
+  --theme-primary-dark: 224 76% 36%;
+  --theme-secondary: 213 96% 85%;
+  --theme-accent: 212 96% 77%;
 }
 ```
+
+⚠️ **Critical Note**: CSS custom properties must use **space-separated** HSL values (`H S L`), not comma-separated (`H, S%, L%`). This is required for Tailwind CSS v3+'s modern HSL syntax.
 
 ### 3. Tailwind Configuration (`tailwind.config.js`)
 
@@ -176,11 +178,21 @@ The theme system works seamlessly with dark mode:
 
 1. User selects a theme preset in Theme Settings
 2. `applyThemeColors()` is called from `theme.ts`
-3. CSS custom properties are updated on the document root
+3. CSS custom properties are updated on the document root using `convertHsl()`
 4. All `theme-*` classes automatically reflect the new colors
 
 ```typescript
-// From theme.ts
+// From theme.ts - convertHsl() function
+const convertHsl = (hsl: string): string => {
+  const parts = hsl.split(' ');
+  if (parts.length === 3) {
+    // CRITICAL: Must return SPACE-SEPARATED format for Tailwind CSS v3+
+    return `${parts[0]} ${parts[1]}% ${parts[2]}%`; // "217 91% 67%" not "217, 91%, 67%"
+  }
+  return hsl;
+};
+
+// applyThemeColors() function
 export const applyThemeColors = (colors: ColorPalette): void => {
   const root = document.documentElement;
   root.style.setProperty('--theme-primary', convertHsl(colors.primary));
@@ -188,6 +200,14 @@ export const applyThemeColors = (colors: ColorPalette): void => {
   // ... etc
 };
 ```
+
+### The Critical Bug (Fixed February 2026)
+
+**Root Cause**: The `convertHsl()` function was outputting comma-separated HSL format (`"217, 91%, 67%"`) but Tailwind CSS v3+ requires space-separated format (`"217 91% 67%"`).
+
+**Impact**: All theme colors appeared as white/transparent because CSS custom properties were invalid.
+
+**Fix**: Changed `convertHsl()` to return space-separated values, ensuring compatibility with Tailwind's modern HSL syntax: `hsl(H S L / alpha)`.
 
 ## Adding New Theme Presets
 
@@ -246,14 +266,59 @@ Theme transitions are smooth thanks to CSS:
 }
 ```
 
-## Best Practices
+## Technical Deep Dive: HSL Format Compatibility
 
-1. **Always use theme classes for brand colors** - Never hardcode blue/primary shades
-2. **Keep semantic colors semantic** - Red for errors, green for success, etc.
-3. **Test in both modes** - Ensure components look good in light and dark
-4. **Use opacity variants** - `bg-theme-primary/10` for subtle backgrounds
-5. **Consistent hover states** - Always pair `bg-theme-primary` with `hover:bg-theme-primary-hover`
-6. **Fallback gracefully** - The default royal-blue theme is always available
+### The Evolution of HSL in CSS
+
+**Legacy HSL Syntax (CSS Color Module Level 3)**:
+```css
+/* Comma-separated - OLD format */
+color: hsl(217, 91%, 67%);
+background: hsl(217, 91%, 67%, 0.5); /* with alpha */
+```
+
+**Modern HSL Syntax (CSS Color Module Level 4)**:
+```css
+/* Space-separated - NEW format (Tailwind CSS v3+) */
+color: hsl(217 91% 67%);
+background: hsl(217 91% 67% / 0.5); /* alpha separated by slash */
+```
+
+### Why This Matters for Theme Systems
+
+1. **Tailwind CSS v3+** uses the modern syntax: `hsl(var(--theme-primary) / <alpha-value>)`
+2. **CSS Custom Properties** must match the expected format
+3. **Mismatch causes invalid colors** → white/transparent appearance
+
+### The Bug Propagation
+
+```
+Theme Preset Data → convertHsl() → CSS Custom Property → Tailwind → Component
+     "217 91 67"  →  "217, 91%, 67%"  →  --theme-primary  →  hsl(var(--theme-primary) / 0.5)
+                                      ❌ Invalid format   ❌ Not recognized
+```
+
+**Result**: All `bg-theme-primary`, `text-theme-primary`, etc. classes rendered as transparent/white.
+
+### The Fix
+
+```typescript
+// BEFORE (broken)
+const convertHsl = (hsl: string): string => {
+  const parts = hsl.split(' ');
+  return `${parts[0]}, ${parts[1]}%, ${parts[2]}%`; // ❌ Comma-separated
+};
+
+// AFTER (fixed)
+const convertHsl = (hsl: string): string => {
+  const parts = hsl.split(' ');
+  return `${parts[0]} ${parts[1]}% ${parts[2]}%`; // ✅ Space-separated
+};
+```
+
+### Lesson Learned
+
+Always verify CSS format compatibility when upgrading CSS frameworks. Modern CSS specifications introduce breaking changes in color syntax that can silently break theming systems.
 
 ## Files Updated
 
@@ -299,6 +364,12 @@ The following components now use theme-aware colors:
 - `index.css` - Selection color, focus rings, prose code
 
 ## Version History
+
+- **v1.1 - February 2026** - Critical HSL format bug fix
+  - Fixed `convertHsl()` function to use space-separated HSL format
+  - Resolved theme colors appearing white/transparent
+  - Updated documentation with modern CSS HSL syntax requirements
+  - Added technical deep-dive section on HSL format evolution
 
 - **v1.0** - Initial theme system implementation with 6 presets
 - All components migrated from hardcoded `primary-*` and `blue-*` colors to theme-aware classes
