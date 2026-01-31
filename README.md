@@ -212,6 +212,7 @@ npm run dev
 | **Always Include/Exclude** | Per-chat formatting rules and content filters |
 | **Sandbox Parameters** | Temperature, tokens, top-p, penalties |
 | **Per-Chat Providers** | Switch LLMs mid-conversation |
+| **Connection Health Monitor** | Real-time provider connectivity status with troubleshooting |
 
 </details>
 
@@ -280,6 +281,38 @@ Connect to **6 providers** with unified interface:
 - Grant, revoke, or reset permissions anytime
 - Test connections directly from Admin settings
 - **📖 [Complete Guide](docs/LOCAL_NETWORK_ACCESS.md)**
+
+</details>
+
+<details>
+<summary><b>🔍 Connection Health Monitor (CHM)</b></summary>
+
+**Real-time connectivity monitoring with smart troubleshooting**
+
+The **Connection Health Monitor** is a floating notification popup that appears in the bottom-right corner when LLM provider connectivity issues are detected.
+
+### ✨ Key Features
+- **Smart Detection**: Monitors Ollama, internet connectivity, and provider health
+- **Expandable Details**: Click to see troubleshooting steps and status
+- **Auto-Recovery**: Checks every 30 seconds with exponential backoff
+- **Provider-Specific**: Different checks for local (Ollama) vs cloud providers
+- **Minimizable**: Can be minimized to status bar or dismissed
+
+### 🎯 What It Monitors
+| Provider Type | What It Checks | Status Shown |
+|---------------|----------------|--------------|
+| **Ollama (Local)** | Service running + model installed | "Ollama Not Running" |
+| **Cloud Providers** | API connectivity + auth | "Provider Offline" |
+| **Internet** | Browser online status | "Offline" |
+
+### 📖 Troubleshooting Integration
+When issues are detected, CHM shows:
+- **Problem Description**: Clear explanation of what's wrong
+- **Fix Steps**: Step-by-step resolution instructions
+- **Quick Actions**: Direct links to relevant settings
+- **Status Details**: Response times, last checked timestamps
+
+**📖 [Health Monitoring Guide](docs/HEALTH_MONITORING.md)**
 
 </details>
 

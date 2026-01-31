@@ -2,6 +2,23 @@ import { useState, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { HealthService } from '../../utils/healthService';
 
+/**
+ * Connection Health Monitor (CHM)
+ *
+ * A floating notification popup that appears in the bottom-right corner when LLM provider
+ * connectivity issues are detected. Shows warnings for offline providers and provides
+ * expandable troubleshooting guidance.
+ *
+ * Key Features:
+ * - Monitors Ollama, internet connectivity, and provider health
+ * - Shows "Ollama Not Running" when Ollama service is unavailable
+ * - Expandable to show detailed status and fix instructions
+ * - Can be minimized to status bar or dismissed
+ * - Auto-checks every 30 seconds with smart polling
+ *
+ * @param minimized - Whether to show in minimized mode
+ * @param onMinimize - Callback when user minimizes the popup
+ */
 interface ConnectionStatusProps {
   minimized?: boolean;
   onMinimize?: () => void;

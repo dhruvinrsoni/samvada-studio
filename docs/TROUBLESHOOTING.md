@@ -65,7 +65,7 @@ Ollama is not running or not installed on your machine.
    ```
 
 4. **Verify Connection**
-   - Check the connection status indicator in bottom-right of app
+   - Check the Connection Health Monitor (bottom-right popup)
    - Should show "Ollama (localhost:11434): Connected"
    - Or run in console:
    ```javascript
