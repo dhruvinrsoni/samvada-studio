@@ -39,6 +39,8 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
   const [showDetails, setShowDetails] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
   const [localNetworkPermission, setLocalNetworkPermission] = useState<'granted' | 'denied' | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
 
   const isDark = state.themeSettings.mode === 'dark' ||
     (state.themeSettings.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -67,10 +69,17 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
     setIsChecking(true);
     try {
       const status = await HealthService.checkBasicConnectivity();
-      setConnectivity({
+      const newConnectivity = {
         online: navigator.onLine,
         ...status,
-      });
+      };
+      setConnectivity(newConnectivity);
+      
+      // If Ollama is found, reset retry count and mark as not initial load
+      if (status.ollama) {
+        setRetryCount(0);
+        setIsInitialLoad(false);
+      }
     } catch (error) {
       console.error('Failed to check connectivity:', error);
     } finally {
@@ -78,12 +87,61 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
     }
   };
 
+  // Initial check with grace period and retries
   useEffect(() => {
-    checkStatus();
-    // Re-check every 30 seconds
+    let mounted = true;
+    
+    const performInitialCheck = async () => {
+      // Wait 2 seconds on initial load to let network stabilize
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      if (!mounted) return;
+      
+      // Perform first check
+      await checkStatus();
+      
+      if (!mounted) return;
+      
+      // If Ollama not found on first try, retry up to 2 more times with delays
+      for (let i = 0; i < 2; i++) {
+        if (!mounted) break;
+        
+        const currentStatus = await HealthService.checkBasicConnectivity();
+        if (currentStatus.ollama) {
+          // Found it! Update and stop retrying
+          setConnectivity({
+            online: navigator.onLine,
+            ...currentStatus,
+          });
+          setIsInitialLoad(false);
+          break;
+        }
+        
+        // Wait before next retry (exponential backoff: 3s, then 5s)
+        await new Promise(resolve => setTimeout(resolve, 3000 * (i + 1)));
+        setRetryCount(i + 1);
+      }
+      
+      // After retries, mark as no longer initial load
+      if (mounted) {
+        setIsInitialLoad(false);
+      }
+    };
+    
+    performInitialCheck();
+    
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Regular checks after initial load
+  useEffect(() => {
+    if (isInitialLoad) return; // Skip regular checks during initial load
+    
     const interval = setInterval(checkStatus, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isInitialLoad]);
 
   if (!connectivity) return null;
 
@@ -98,6 +156,11 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
   );
   
   const showWarning = hasOllamaProvider && (!connectivity.ollama || (connectivity.ollama && !modelInstalled));
+
+  // Don't show warning during initial load and retries - give it time to connect
+  if (isInitialLoad) {
+    return null;
+  }
 
   if (!showWarning && connectivity.online) {
     return null; // Everything is fine
