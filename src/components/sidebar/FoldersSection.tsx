@@ -64,7 +64,7 @@ export default function FoldersSection({ renderChatItem }: FoldersSectionProps) 
           <div
             className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer group transition-colors ${
               dragOverFolderId === folder.id 
-                ? 'ring-2 ring-primary-500' 
+                ? 'ring-2 ring-theme-primary' 
                 : ''
             } ${isDark ? 'hover:bg-dark-300' : 'hover:bg-gray-100'}`}
             onClick={() => dispatch({ type: 'TOGGLE_FOLDER_EXPAND', payload: folder.id })}
@@ -145,7 +145,7 @@ export default function FoldersSection({ renderChatItem }: FoldersSectionProps) 
           >
             Unfiled
           </div>
-          <div className={`mt-1 space-y-1 ${dragOverFolderId === 'none' ? 'ring-2 ring-primary-500 rounded-lg' : ''}`}>
+          <div className={`mt-1 space-y-1 ${dragOverFolderId === 'none' ? 'ring-2 ring-theme-primary rounded-lg' : ''}`}>
             {getUnfolderedChats().map(chat => (
               <div
                 key={chat.id}
@@ -231,7 +231,7 @@ function FolderForm({ folder, onSave, onDelete, onCancel, isDark }: FolderFormPr
                   onClick={() => setIcon(i)}
                   className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg text-base sm:text-xl flex items-center justify-center transition-colors ${
                     icon === i
-                      ? 'bg-primary-600 text-white'
+                      ? 'bg-theme-primary text-white'
                       : isDark ? 'bg-dark-300 hover:bg-dark-400' : 'bg-gray-100 hover:bg-gray-200'
                   }`}
                 >
@@ -281,7 +281,7 @@ function FolderForm({ folder, onSave, onDelete, onCancel, isDark }: FolderFormPr
             <button
               onClick={() => name.trim() && onSave(name.trim(), color, icon)}
               disabled={!name.trim()}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 text-xs sm:text-sm min-h-[36px]"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-theme-primary text-white rounded-lg font-medium hover:bg-theme-primary-hover disabled:opacity-50 text-xs sm:text-sm min-h-[36px]"
             >
               Save
             </button>

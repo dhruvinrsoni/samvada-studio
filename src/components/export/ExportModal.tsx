@@ -113,7 +113,7 @@ export default function ExportModal() {
                   onClick={() => setFormat(opt.value as ExportFormat)}
                   className={`p-2 sm:p-3 rounded-lg border text-center transition-colors ${
                     format === opt.value
-                      ? 'border-primary-500 bg-primary-500/10'
+                      ? 'border-theme-primary bg-theme-primary/10'
                       : isDark
                       ? 'border-dark-400 hover:border-dark-300'
                       : 'border-gray-200 hover:border-gray-300'
@@ -148,7 +148,7 @@ export default function ExportModal() {
                     type="checkbox"
                     checked={selectedChats.includes(chat.id)}
                     onChange={() => toggleChatSelection(chat.id)}
-                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 flex-shrink-0"
+                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-gray-300 text-theme-primary focus:ring-theme-primary flex-shrink-0"
                   />
                   <span className={`flex-1 truncate text-xs sm:text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {chat.title}
@@ -173,7 +173,7 @@ export default function ExportModal() {
                 type="checkbox"
                 checked={includeTimestamps}
                 onChange={(e) => setIncludeTimestamps(e.target.checked)}
-                className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-gray-300 text-theme-primary focus:ring-theme-primary"
               />
               <span className="text-xs sm:text-sm">Include timestamps</span>
             </label>
@@ -202,7 +202,7 @@ export default function ExportModal() {
             <button
               onClick={handleExport}
               disabled={selectedChats.length === 0}
-              className="flex-1 xs:flex-none px-3 sm:px-4 py-2 bg-primary-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 xs:flex-none px-3 sm:px-4 py-2 bg-theme-primary text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-theme-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Export ({selectedChats.length})
             </button>

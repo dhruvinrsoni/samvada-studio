@@ -42,13 +42,13 @@
   /* Smooth theme transitions */
   transition: background-color 0.3s ease, color 0.3s ease;
 
-  /* Theme Colors - Default to Royal Blue */
-  --theme-primary: 217, 91%, 67%;
-  --theme-primary-hover: 221, 83%, 53%;
-  --theme-primary-light: 214, 100%, 97%;
-  --theme-primary-dark: 224, 76%, 36%;
-  --theme-secondary: 213, 96%, 85%;
-  --theme-accent: 212, 96%, 77%;
+  /* Theme Colors - Default to Royal Blue (space-separated for Tailwind's modern HSL format) */
+  --theme-primary: 217 91% 67%;
+  --theme-primary-hover: 221 83% 53%;
+  --theme-primary-light: 214 100% 97%;
+  --theme-primary-dark: 224 76% 36%;
+  --theme-secondary: 213 96% 85%;
+  --theme-accent: 212 96% 77%;
 
   /* Font Size - Responsive base */
   --font-size-base: 16px;
@@ -147,12 +147,12 @@ html:not(.dark) ::-webkit-scrollbar-thumb:hover {
 
 /* Selection */
 ::selection {
-  @apply bg-primary-600/50 text-white;
+  @apply bg-theme-primary/50 text-white;
 }
 
 /* Focus styles */
 *:focus-visible {
-  @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  @apply outline-none ring-2 ring-theme-primary ring-offset-2;
 }
 
 html.dark *:focus-visible {
@@ -184,7 +184,7 @@ html:not(.dark) *:focus-visible {
 
 /* Prose overrides for markdown - Dark */
 html.dark .prose code {
-  @apply bg-dark-100 px-1.5 py-0.5 rounded text-primary-400;
+  @apply bg-dark-100 px-1.5 py-0.5 rounded text-theme-primary;
 }
 
 html.dark .prose pre {
@@ -193,7 +193,7 @@ html.dark .prose pre {
 
 /* Prose overrides for markdown - Light */
 html:not(.dark) .prose code {
-  @apply bg-light-400 px-1.5 py-0.5 rounded text-primary-700;
+  @apply bg-light-400 px-1.5 py-0.5 rounded text-theme-primary;
 }
 
 html:not(.dark) .prose pre {

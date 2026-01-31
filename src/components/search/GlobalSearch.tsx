@@ -141,7 +141,7 @@ export default function GlobalSearch() {
         <div className="max-h-[60vh] sm:max-h-[65vh] md:max-h-[70vh] overflow-y-auto overflow-x-hidden scroll-touch">
           {globalSearch.isSearching ? (
             <div className={`p-6 sm:p-8 md:p-12 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-              <div className="animate-spin w-6 h-6 sm:w-8 sm:h-8 border-2 border-primary-500 border-t-transparent rounded-full mx-auto mb-2 sm:mb-3"></div>
+              <div className="animate-spin w-6 h-6 sm:w-8 sm:h-8 border-2 border-theme-primary border-t-transparent rounded-full mx-auto mb-2 sm:mb-3"></div>
               <span className="text-xs sm:text-sm">Searching...</span>
             </div>
           ) : globalSearch.results.length === 0 && globalSearch.query.length >= 2 ? (
@@ -160,7 +160,7 @@ export default function GlobalSearch() {
                   onClick={() => handleResultClick(result)}
                   className={`w-full text-left p-3 sm:p-4 md:p-6 border-b transition-colors ${
                     index === globalSearch.selectedResultIndex
-                      ? 'bg-primary-500/20'
+                      ? 'bg-theme-primary/20'
                       : isDark 
                         ? 'border-dark-100 hover:bg-dark-300' 
                         : 'border-light-400 hover:bg-light-200'
@@ -169,7 +169,7 @@ export default function GlobalSearch() {
                   <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
                     <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded ${
                       result.messageType === 'prompt'
-                        ? 'bg-blue-500/20 text-blue-400'
+                        ? 'bg-theme-primary/20 text-theme-primary'
                         : 'bg-green-500/20 text-green-400'
                     }`}>
                       {result.messageType === 'prompt' ? '📤' : '📥'}<span className="hidden sm:inline"> {result.messageType === 'prompt' ? 'Prompt' : 'Response'}</span>

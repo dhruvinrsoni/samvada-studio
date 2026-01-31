@@ -247,7 +247,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
                       key={provider.id}
                       className={`px-2 sm:px-3 py-2 text-xs sm:text-sm cursor-pointer transition-colors first:rounded-t-lg last:rounded-b-lg ${
                         selectedProvider?.id === provider.id
-                          ? isDark ? 'bg-primary-600 text-white' : 'bg-primary-500 text-white'
+                          ? 'bg-theme-primary text-white'
                           : isDark ? 'text-gray-300 hover:bg-dark-100' : 'text-gray-700 hover:bg-light-200'
                       }`}
                       onClick={() => {
@@ -278,7 +278,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
             onClick={() => setShowSettings(!showSettings)}
             className={`p-1.5 sm:p-2 rounded-lg transition-colors min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center ${
               showSettings 
-                ? 'bg-primary-600 text-white' 
+                ? 'bg-theme-primary text-white' 
                 : isDark 
                   ? 'bg-dark-100 text-gray-400 hover:bg-dark-200'
                   : 'bg-light-300 text-gray-600 hover:bg-light-400'
@@ -330,7 +330,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
         {/* Loading Indicator - responsive */}
         {isLoading && (
           <div ref={loadingRef} className={`flex items-center gap-2 p-2 sm:p-3 md:p-4 rounded-lg ${isDark ? 'bg-dark-200' : 'bg-light-300'}`}>
-            <div className="animate-spin w-4 h-4 sm:w-5 sm:h-5 border-2 border-primary-500 border-t-transparent rounded-full flex-shrink-0" />
+            <div className="animate-spin w-4 h-4 sm:w-5 sm:h-5 border-2 border-theme-primary border-t-transparent rounded-full flex-shrink-0" />
             <span className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Generating response...</span>
           </div>
         )}

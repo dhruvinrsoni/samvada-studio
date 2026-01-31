@@ -97,7 +97,7 @@ export default function TemplatesLibrary({ onSelectTemplate }: TemplatesLibraryP
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <button
               onClick={() => setIsCreating(true)}
-              className="px-2 sm:px-3 py-1 sm:py-1.5 bg-primary-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-primary-700 transition-colors min-h-[32px] sm:min-h-[36px] whitespace-nowrap"
+              className="px-2 sm:px-3 py-1 sm:py-1.5 bg-theme-primary text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-theme-primary-hover transition-colors min-h-[32px] sm:min-h-[36px] whitespace-nowrap"
             >
               <span className="hidden xs:inline">+ New</span>
               <span className="xs:hidden">+</span>
@@ -142,7 +142,7 @@ export default function TemplatesLibrary({ onSelectTemplate }: TemplatesLibraryP
                       onClick={() => setSelectedCategory(cat)}
                       className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap min-h-[28px] sm:min-h-[32px] ${
                         selectedCategory === cat
-                          ? 'bg-primary-600 text-white'
+                          ? 'bg-theme-primary text-white'
                           : isDark ? 'text-gray-400 hover:bg-dark-300' : 'text-gray-600 hover:bg-gray-100'
                       }`}
                     >
@@ -223,7 +223,7 @@ export default function TemplatesLibrary({ onSelectTemplate }: TemplatesLibraryP
                       </div>
                       <button
                         onClick={() => handleUseTemplate(template)}
-                        className="px-2 sm:px-3 py-1 sm:py-1.5 bg-primary-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-primary-700 transition-colors min-h-[28px] sm:min-h-[32px] flex-shrink-0"
+                        className="px-2 sm:px-3 py-1 sm:py-1.5 bg-theme-primary text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-theme-primary-hover transition-colors min-h-[28px] sm:min-h-[32px] flex-shrink-0"
                       >
                         Use
                       </button>
@@ -341,7 +341,7 @@ function TemplateForm({ template, onSave, onCancel, isDark }: TemplateFormProps)
         </button>
         <button
           type="submit"
-          className="px-3 sm:px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 text-sm sm:text-base min-h-[36px] sm:min-h-[40px]"
+          className="px-3 sm:px-4 py-2 bg-theme-primary text-white rounded-lg font-medium hover:bg-theme-primary-hover text-sm sm:text-base min-h-[36px] sm:min-h-[40px]"
         >
           {template ? 'Save' : 'Create'}
         </button>

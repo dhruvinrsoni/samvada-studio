@@ -57,7 +57,7 @@ export default function ProviderCard({
   return (
     <div className={`p-4 rounded-lg border transition-colors ${
       isDefault 
-        ? 'border-primary-500 bg-primary-500/10' 
+        ? 'border-theme-primary bg-theme-primary/10' 
         : isDark 
           ? 'border-dark-100 bg-dark-300 hover:border-dark-50' 
           : 'border-light-400 bg-light-200 hover:border-light-500'
@@ -71,7 +71,7 @@ export default function ProviderCard({
                 {provider.name}
               </h4>
               {isDefault && (
-                <span className="px-2 py-0.5 text-xs bg-primary-600 text-white rounded-full">
+                <span className="px-2 py-0.5 text-xs bg-theme-primary text-white rounded-full">
                   Default
                 </span>
               )}
@@ -110,7 +110,7 @@ export default function ProviderCard({
                   <button
                     onClick={() => setShowTestDetails(!showTestDetails)}
                     className={`mt-1 text-xs font-medium transition-colors ${
-                      isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                      isDark ? 'text-theme-primary hover:text-theme-primary-hover' : 'text-theme-primary hover:text-theme-primary-hover'
                     }`}
                   >
                     {showTestDetails ? '▼' : '▶'} Show Technical Details
@@ -147,7 +147,7 @@ export default function ProviderCard({
                           </p>
                         )}
                         {provider.testErrorDetails.userAction && (
-                          <p className={`mt-2 break-words ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>
+                          <p className={`mt-2 break-words ${isDark ? 'text-theme-primary' : 'text-theme-primary'}`}>
                             💡 {provider.testErrorDetails.userAction}
                           </p>
                         )}
@@ -157,7 +157,7 @@ export default function ProviderCard({
                             target="_blank"
                             rel="noopener noreferrer"
                             className={`mt-1 inline-block ${
-                              isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                              isDark ? 'text-theme-primary hover:text-theme-primary-hover' : 'text-theme-primary hover:text-theme-primary-hover'
                             }`}
                           >
                             📚 View Documentation
@@ -214,7 +214,7 @@ export default function ProviderCard({
             className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
               provider.testStatus === 'pending'
                 ? 'bg-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700'
+                : 'bg-theme-primary hover:bg-theme-primary-hover'
             } text-white`}
           >
             {provider.testStatus === 'pending' ? '⟳' : '🔌'} Test

@@ -190,7 +190,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
               navigator.clipboard.writeText(promptResponse.id);
               addToast('success', 'Copied!', `PnR ID ${promptResponse.id.slice(0, 8)} copied to clipboard`);
             }}
-            className={`text-[10px] sm:text-xs font-mono hover:underline cursor-pointer transition-colors flex-shrink-0 ${isDark ? 'text-gray-500 hover:text-primary-400' : 'text-gray-500 hover:text-primary-600'}`}
+            className={`text-[10px] sm:text-xs font-mono hover:underline cursor-pointer transition-colors flex-shrink-0 ${isDark ? 'text-gray-500 hover:text-theme-primary' : 'text-gray-500 hover:text-theme-primary'}`}
             title="Click to copy full PnR ID"
           >
             #{promptResponse.id.slice(0, 6)}<span className="hidden sm:inline">{promptResponse.id.slice(6, 8)}</span>
@@ -291,7 +291,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
           {/* User Prompt */}
           <div className="relative group">
             <div className="flex items-start gap-2 sm:gap-3">
-              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs sm:text-sm font-medium flex-shrink-0">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-theme-primary flex items-center justify-center text-white text-xs sm:text-sm font-medium flex-shrink-0">
                 U
               </div>
               <div className="flex-1 min-w-0">
@@ -323,7 +323,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                     <div className="flex gap-1.5 sm:gap-2">
                       <button
                         onClick={handleSavePromptEdit}
-                        className="px-2 sm:px-3 py-1 bg-primary-600 text-white rounded text-xs sm:text-sm"
+                        className="px-2 sm:px-3 py-1 bg-theme-primary text-white rounded text-xs sm:text-sm hover:bg-theme-primary-hover"
                       >
                         Save
                       </button>
@@ -385,7 +385,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                           onClick={() => handleSelectDraft(index)}
                           className={`w-5 h-5 sm:w-6 sm:h-6 rounded text-[10px] sm:text-xs flex items-center justify-center ${
                             index === promptResponse.activeResponseIndex
-                              ? 'bg-primary-600 text-white'
+                              ? 'bg-theme-primary text-white'
                               : isDark 
                                 ? 'bg-dark-100 text-gray-400 hover:bg-dark-300'
                                 : 'bg-light-300 text-gray-600 hover:bg-light-400'
@@ -412,7 +412,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                       <div className="flex gap-1.5 sm:gap-2">
                         <button
                           onClick={handleSaveResponseEdit}
-                          className="px-2 sm:px-3 py-1 bg-primary-600 text-white rounded text-xs sm:text-sm"
+                          className="px-2 sm:px-3 py-1 bg-theme-primary text-white rounded text-xs sm:text-sm hover:bg-theme-primary-hover"
                         >
                           Save
                         </button>
@@ -483,8 +483,8 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                   }}
                   className={`flex items-center gap-1 px-2 sm:px-3 py-1 text-xs sm:text-sm rounded border-2 border-dashed min-h-[28px] sm:min-h-[32px] ${
                     isDark 
-                      ? 'border-primary-500/50 bg-primary-600/10 text-primary-400 hover:bg-primary-600/20 hover:border-primary-400' 
-                      : 'border-primary-400/50 bg-primary-50 text-primary-600 hover:bg-primary-100 hover:border-primary-500'
+                      ? 'border-theme-primary/50 bg-theme-primary/10 text-theme-primary hover:bg-theme-primary/20 hover:border-theme-primary' 
+                      : 'border-theme-primary/50 bg-theme-primary-light text-theme-primary hover:bg-theme-primary-light hover:border-theme-primary'
                   }`}
                   title="Quote in next prompt (ChatGPT-style)"
                 >

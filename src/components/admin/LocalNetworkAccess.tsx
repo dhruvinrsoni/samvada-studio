@@ -235,8 +235,8 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
       </div>
 
       {/* Info Box */}
-      <div className={`p-3 rounded-lg mb-4 ${isDark ? 'bg-blue-900/20 border border-blue-800/30' : 'bg-blue-50 border border-blue-200'}`}>
-        <p className={`text-sm ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>
+      <div className={`p-3 rounded-lg mb-4 ${isDark ? 'bg-theme-primary-light/20 border border-theme-primary/30' : 'bg-theme-primary-light border border-theme-primary/30'}`}>
+        <p className={`text-sm ${isDark ? 'text-theme-primary' : 'text-theme-primary'}`}>
           <strong>Why this is needed:</strong> Browsers restrict access to local network resources (localhost, 192.168.x.x) for security. 
           This feature allows Samvada Studio to connect to locally running LLM servers like Ollama, without requiring external cloud APIs.
         </p>
@@ -270,7 +270,7 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
               className={`flex-1 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
                 isLoading
                   ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-primary-600 hover:bg-primary-700 text-white'
+                  : 'bg-theme-primary hover:bg-theme-primary-hover text-white'
               }`}
             >
               {isLoading ? '⏳ Testing Connection...' : '🔓 Grant Local Network Access'}
@@ -334,7 +334,7 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
             <div className="flex gap-3">
               <button
                 onClick={requestPermission}
-                className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium text-sm"
+                className="flex-1 px-4 py-2 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-lg font-medium text-sm"
                 title="Grant access to connect to local LLM servers"
               >
                 🔓 Grant Access

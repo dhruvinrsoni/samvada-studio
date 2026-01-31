@@ -332,21 +332,32 @@ export const THEME_CSS_VARS = {
 export const applyThemeColors = (colors: ColorPalette): void => {
   const root = document.documentElement;
 
-  // Convert space-separated HSL values to comma-separated format for CSS
+  // Convert space-separated HSL values to proper format for CSS (space-separated with % signs)
+  // Tailwind expects: "217 91% 67%" not "217, 91%, 67%"
   const convertHsl = (hsl: string): string => {
     const parts = hsl.split(' ');
     if (parts.length === 3) {
-      return `${parts[0]}, ${parts[1]}%, ${parts[2]}%`;
+      // Return space-separated format with % on saturation and lightness
+      return `${parts[0]} ${parts[1]}% ${parts[2]}%`;
     }
     return hsl;
   };
 
-  root.style.setProperty(THEME_CSS_VARS.primary, convertHsl(colors.primary));
+  console.log('[Theme] Applying theme colors:', colors);
+  const convertedPrimary = convertHsl(colors.primary);
+  console.log('[Theme] Converted primary:', convertedPrimary);
+
+  root.style.setProperty(THEME_CSS_VARS.primary, convertedPrimary);
   root.style.setProperty(THEME_CSS_VARS.primaryHover, convertHsl(colors.primaryHover));
   root.style.setProperty(THEME_CSS_VARS.primaryLight, convertHsl(colors.primaryLight));
   root.style.setProperty(THEME_CSS_VARS.primaryDark, convertHsl(colors.primaryDark));
   root.style.setProperty(THEME_CSS_VARS.secondary, convertHsl(colors.secondary));
   root.style.setProperty(THEME_CSS_VARS.accent, convertHsl(colors.accent));
+  
+  console.log('[Theme] Applied CSS variables:', {
+    primary: root.style.getPropertyValue('--theme-primary'),
+    primaryHover: root.style.getPropertyValue('--theme-primary-hover'),
+  });
 };
 
 // Convert hex color to HSL string (for CSS custom properties)

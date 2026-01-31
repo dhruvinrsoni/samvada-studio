@@ -236,7 +236,7 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
                 onClick={() => setFormData({ ...formData, type })}
                 className={`p-3 rounded-lg border text-left transition-colors ${
                   formData.type === type
-                    ? 'border-primary-500 bg-primary-500/20'
+                    ? 'border-theme-primary bg-theme-primary/20'
                     : isDark
                       ? 'border-dark-100 bg-dark-200 hover:border-dark-50'
                       : 'border-light-400 bg-white hover:border-light-500'
@@ -268,7 +268,7 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
               <div>
                 {isFetchingModels ? (
                   <div className={`${inputClass} flex items-center gap-2`}>
-                    <div className="animate-spin w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full" />
+                    <div className="animate-spin w-4 h-4 border-2 border-theme-primary border-t-transparent rounded-full" />
                     <span className="text-sm">Fetching models...</span>
                   </div>
                 ) : ollamaModels.length > 0 ? (
@@ -309,7 +309,7 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
               <div>
                 {isFetchingModels ? (
                   <div className={`${inputClass} flex items-center gap-2`}>
-                    <div className="animate-spin w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full" />
+                    <div className="animate-spin w-4 h-4 border-2 border-theme-primary border-t-transparent rounded-full" />
                     <span className="text-sm">Fetching models from API...</span>
                   </div>
                 ) : dynamicModels.length > 0 ? (
@@ -565,8 +565,8 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
                   </p>
                   <div className={`text-xs space-y-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                     <p>1. Open a <strong>NEW terminal</strong> (keep this app running!)</p>
-                    <p>2. Run: <code className="px-1 py-0.5 rounded bg-opacity-50 bg-primary-500">npm run proxy</code></p>
-                    <p>3. Enter: <code className="px-1 py-0.5 rounded bg-opacity-50 bg-primary-500">http://localhost:8080</code> in the field above</p>
+                    <p>2. Run: <code className="px-1 py-0.5 rounded bg-opacity-50 bg-theme-primary">npm run proxy</code></p>
+                    <p>3. Enter: <code className="px-1 py-0.5 rounded bg-opacity-50 bg-theme-primary">http://localhost:8080</code> in the field above</p>
                     <p className="text-xs opacity-75">⚠️ Keep BOTH terminals running • ✓ Zero latency</p>
                   </div>
                   
@@ -574,7 +574,7 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
                     ☁️ Option 2: Cloudflare Worker (Recommended for Production)
                   </p>
                   <div className={`text-xs space-y-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    <p>1. Go to <a href="https://workers.cloudflare.com" target="_blank" rel="noopener noreferrer" className="text-primary-500 underline">workers.cloudflare.com</a> and create a free account</p>
+                    <p>1. Go to <a href="https://workers.cloudflare.com" target="_blank" rel="noopener noreferrer" className="text-theme-primary underline">workers.cloudflare.com</a> and create a free account</p>
                     <p>2. Create a new Worker and paste this code:</p>
                     <pre className={`p-2 rounded text-xs overflow-x-auto ${isDark ? 'bg-dark-300' : 'bg-white'}`}>
 {`export default {
@@ -601,8 +601,8 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
     return newResponse;
   }
 }`}</pre>
-                    <p>3. Deploy and copy your Worker URL (e.g., <code className="px-1 rounded bg-opacity-50 bg-primary-500">https://your-proxy.workers.dev</code>)</p>
-                    <p>4. Paste the URL above. Requests will be routed as: <code className="px-1 rounded bg-opacity-50 bg-primary-500">{'{proxy}/{api-url}'}</code></p>
+                    <p>3. Deploy and copy your Worker URL (e.g., <code className="px-1 rounded bg-opacity-50 bg-theme-primary">https://your-proxy.workers.dev</code>)</p>
+                    <p>4. Paste the URL above. Requests will be routed as: <code className="px-1 rounded bg-opacity-50 bg-theme-primary">{'{proxy}/{api-url}'}</code></p>
                   </div>
                 </div>
               </div>
@@ -710,7 +710,7 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700"
+            className="px-4 py-2 bg-theme-primary text-white rounded-lg font-medium hover:bg-theme-primary-hover"
           >
             {isEditing ? 'Save Changes' : 'Add Provider'}
           </button>

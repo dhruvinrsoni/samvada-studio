@@ -146,7 +146,7 @@ export default function CommandPalette() {
                 onMouseEnter={() => setSelectedIndex(index)}
                 className={`w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 text-left transition-colors ${
                   index === selectedIndex
-                    ? isDark ? 'bg-primary-600/20' : 'bg-primary-50'
+                    ? isDark ? 'bg-theme-primary/20' : 'bg-theme-primary-light'
                     : ''
                 } ${isDark ? 'hover:bg-dark-300' : 'hover:bg-gray-50'}`}
               >

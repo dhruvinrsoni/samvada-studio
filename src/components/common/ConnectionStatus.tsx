@@ -126,7 +126,7 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
         >
           <div className="flex-shrink-0">
             {isChecking ? (
-              <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-theme-primary border-t-transparent rounded-full animate-spin" />
             ) : showWarning ? (
               <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                 <path
@@ -329,8 +329,8 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
                   }}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                     isDark
-                      ? 'bg-primary-600 hover:bg-primary-700 text-white'
-                      : 'bg-primary-500 hover:bg-primary-600 text-white'
+                      ? 'bg-theme-primary hover:bg-theme-primary-hover text-white'
+                      : 'bg-theme-primary hover:bg-theme-primary-hover text-white'
                   }`}
                 >
                   Install Ollama

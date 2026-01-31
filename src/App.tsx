@@ -258,7 +258,7 @@ function AppContent() {
             onClick={() => dispatch({ type: 'TOGGLE_CONTEXT_PANEL_MODE' })}
             className={`p-1.5 sm:p-2 rounded-lg transition-all ${
               state.isContextPanelMode
-                ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400'
+                ? 'bg-theme-primary text-white shadow-lg ring-2 ring-theme-primary'
                 : state.theme === 'dark' 
                   ? 'text-gray-400 hover:bg-dark-100' 
                   : 'text-gray-600 hover:bg-light-300'

@@ -210,7 +210,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
               onClick={() => setActiveTab('providers')}
               className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'providers'
-                  ? 'bg-primary-600 text-white'
+                  ? 'bg-theme-primary text-white'
                   : isDark 
                     ? 'text-gray-400 hover:bg-dark-100' 
                     : 'text-gray-600 hover:bg-light-300'
@@ -222,7 +222,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
               onClick={() => setActiveTab('settings')}
               className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'settings'
-                  ? 'bg-primary-600 text-white'
+                  ? 'bg-theme-primary text-white'
                   : isDark 
                     ? 'text-gray-400 hover:bg-dark-100' 
                     : 'text-gray-600 hover:bg-light-300'
@@ -234,7 +234,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
               onClick={() => setActiveTab('pwa')}
               className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'pwa'
-                  ? 'bg-primary-600 text-white'
+                  ? 'bg-theme-primary text-white'
                   : isDark 
                     ? 'text-gray-400 hover:bg-dark-100' 
                     : 'text-gray-600 hover:bg-light-300'
@@ -246,7 +246,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
               onClick={() => setActiveTab('developer')}
               className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'developer'
-                  ? 'bg-primary-600 text-white'
+                  ? 'bg-theme-primary text-white'
                   : isDark 
                     ? 'text-gray-400 hover:bg-dark-100' 
                     : 'text-gray-600 hover:bg-light-300'
@@ -276,7 +276,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                 </p>
                 <button
                   onClick={handleAddNewProvider}
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-xs sm:text-sm font-medium whitespace-nowrap"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-theme-primary text-white rounded-lg hover:bg-theme-primary-hover text-xs sm:text-sm font-medium whitespace-nowrap"
                 >
                   + Add Provider
                 </button>
@@ -344,7 +344,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                   <p className="text-xs sm:text-sm mb-3 sm:mb-4">Add OpenAI, Claude, Gemini, or Ollama</p>
                   <button
                     onClick={handleAddNewProvider}
-                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-xs sm:text-sm"
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-theme-primary text-white rounded-lg hover:bg-theme-primary-hover text-xs sm:text-sm"
                   >
                     Add Your First Provider
                   </button>
@@ -472,7 +472,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                         onChange={(e) => dispatch({ type: 'TOGGLE_HEALTH_MONITORING', payload: e.target.checked })}
                         className="sr-only peer"
                       />
-                      <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600 ${
+                      <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme-primary ${
                         isDark ? 'bg-gray-600' : 'bg-gray-300'
                       }`}></div>
                     </label>
@@ -503,7 +503,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                         a.download = `samvada-studio-export-${new Date().toISOString().split('T')[0]}.json`;
                         a.click();
                       }}
-                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm"
+                      className="px-4 py-2 bg-theme-primary text-white rounded-lg hover:bg-theme-primary-hover text-sm"
                     >
                       📥 Export JSON
                     </button>

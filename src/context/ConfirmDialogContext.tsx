@@ -75,7 +75,7 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
           icon: 'ℹ️',
           bgColor: 'bg-blue-500/10',
           borderColor: 'border-blue-500/30',
-          buttonColor: 'bg-primary-600 hover:bg-primary-700',
+          buttonColor: 'bg-theme-primary hover:bg-theme-primary-hover',
         };
     }
   };

@@ -273,7 +273,7 @@ export default function ChatSettings({ chat, onClose, pwaStatus }: ChatSettingsP
             </label>
             <button
               onClick={addExample}
-              className="text-sm text-primary-400 hover:text-primary-300"
+              className="text-sm text-theme-primary hover:text-theme-primary-hover"
             >
               + Add Example
             </button>
@@ -327,7 +327,7 @@ export default function ChatSettings({ chat, onClose, pwaStatus }: ChatSettingsP
             </div>
             <button
               onClick={() => setShowFormattingSection(!showFormattingSection)}
-              className="text-primary-400 hover:text-primary-300 text-sm"
+              className="text-theme-primary hover:text-theme-primary-hover text-sm"
             >
               {showFormattingSection ? '▼' : '▶'}
             </button>
@@ -357,8 +357,8 @@ export default function ChatSettings({ chat, onClose, pwaStatus }: ChatSettingsP
                 onClick={createCustomProfile}
                 className={`w-full p-2 border-2 border-dashed rounded text-sm ${
                   isDark
-                    ? 'border-dark-100 text-gray-400 hover:border-primary-500 hover:text-primary-400'
-                    : 'border-light-400 text-gray-600 hover:border-primary-500 hover:text-primary-600'
+                    ? 'border-dark-100 text-gray-400 hover:border-theme-primary hover:text-theme-primary'
+                    : 'border-light-400 text-gray-600 hover:border-theme-primary hover:text-theme-primary'
                 }`}
               >
                 + Create Custom Profile
@@ -428,7 +428,7 @@ export default function ChatSettings({ chat, onClose, pwaStatus }: ChatSettingsP
                         {settings.formattingProfile.isCustom && (
                           <button
                             onClick={addFormattingRule}
-                            className="text-xs text-primary-400 hover:text-primary-300"
+                            className="text-xs text-theme-primary hover:text-theme-primary-hover"
                           >
                             + Add Rule
                           </button>
@@ -524,7 +524,7 @@ export default function ChatSettings({ chat, onClose, pwaStatus }: ChatSettingsP
             }`}>App Installation</h3>
             
             <div className={`p-4 rounded-lg border ${
-              isDark ? 'bg-dark-200 border-dark-300 border-l-4 border-l-blue-500' : 'bg-light-200 border-light-400 border-l-4 border-l-blue-500'
+              isDark ? 'bg-dark-200 border-dark-300 border-l-4 border-l-theme-primary' : 'bg-light-200 border-light-400 border-l-4 border-l-theme-primary'
             }`}>
               {pwaStatus.isInstalled || pwaStatus.isStandalone ? (
                 <div className="flex items-center gap-3">
@@ -583,7 +583,7 @@ export default function ChatSettings({ chat, onClose, pwaStatus }: ChatSettingsP
                     }}
                     disabled={isInstalling}
                     className={`flex items-center justify-center gap-2 px-4 py-2 w-full
-                      bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700
+                      bg-theme-primary hover:bg-theme-primary-hover
                       text-white text-sm font-medium rounded-lg transition-all
                       ${
                         isInstalling ? 'opacity-50 cursor-not-allowed' : ''
@@ -659,7 +659,7 @@ export default function ChatSettings({ chat, onClose, pwaStatus }: ChatSettingsP
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
+            className="px-4 py-2 bg-theme-primary text-white rounded hover:bg-theme-primary-hover"
           >
             Save Settings
           </button>

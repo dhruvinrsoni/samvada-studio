@@ -590,7 +590,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
                         </div>
                         
                         {health.errorDetails.userAction && (
-                          <div className={`text-xs ${state.theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
+                          <div className={`text-xs ${state.theme === 'dark' ? 'text-theme-primary' : 'text-theme-primary'}`}>
                             💡 {health.errorDetails.userAction}
                           </div>
                         )}
@@ -601,7 +601,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
                             target="_blank"
                             rel="noopener noreferrer"
                             className={`inline-flex items-center gap-1 text-xs underline hover:no-underline ${
-                              state.theme === 'dark' ? 'text-primary-400' : 'text-primary-600'
+                              state.theme === 'dark' ? 'text-theme-primary' : 'text-theme-primary'
                             }`}
                             onClick={(e) => e.stopPropagation()}
                           >

@@ -189,7 +189,7 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
               {(isInstalled || isStandalone) ? '✓ App Installed' : 'Install Samvada Studio'}
             </p>
             {!(isInstalled || isStandalone) ? (
-              <ul className={`text-xs space-y-1 ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>
+              <ul className={`text-xs space-y-1 ${isDark ? 'text-theme-primary' : 'text-theme-primary'}`}>
                 <li>✓ Works offline</li>
                 <li>✓ Faster loading</li>
                 <li>✓ Desktop/Mobile icon</li>
@@ -201,7 +201,7 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
               </p>
             )}
             {!isInstallable && !(isInstalled || isStandalone) && (
-              <p className={`text-xs mt-2 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+              <p className={`text-xs mt-2 ${isDark ? 'text-theme-primary' : 'text-theme-primary'}`}>
                 💡 Tip: If install fails, try refreshing the page or visiting a few times
               </p>
             )}
@@ -218,7 +218,7 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
             ) : (
               <button
                 onClick={handleInstall}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors"
+                className="px-4 py-2 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-lg font-medium text-sm transition-colors"
                 title="Install the app for offline access and faster performance"
               >
                 📥 Install App

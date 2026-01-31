@@ -569,8 +569,8 @@ export default function DeveloperTools() {
             disabled={isRunningFull}
             className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
               isDark
-                ? 'bg-primary-600 hover:bg-primary-700 text-white disabled:bg-gray-700'
-                : 'bg-primary-500 hover:bg-primary-600 text-white disabled:bg-gray-400'
+                ? 'bg-theme-primary hover:bg-theme-primary-hover text-white disabled:bg-gray-700'
+                : 'bg-theme-primary hover:bg-theme-primary-hover text-white disabled:bg-gray-400'
             }`}
           >
             {isRunningFull ? (
@@ -680,7 +680,7 @@ export default function DeveloperTools() {
                     <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>{p.name}</span>
                     {p.isDefault && (
                       <span className={`px-1.5 py-0.5 rounded text-[10px] ${
-                        isDark ? 'bg-primary-500/20 text-primary-400' : 'bg-primary-100 text-primary-700'
+                        isDark ? 'bg-theme-primary/20 text-theme-primary' : 'bg-theme-primary-light text-theme-primary'
                       }`}>
                         Default
                       </span>
@@ -781,7 +781,7 @@ function StatusCard({
     success: isDark ? 'bg-green-500/20 text-green-400' : 'bg-green-100 text-green-700',
     error: isDark ? 'bg-red-500/20 text-red-400' : 'bg-red-100 text-red-700',
     warning: isDark ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-100 text-yellow-700',
-    info: isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-700',
+    info: isDark ? 'bg-theme-primary/20 text-theme-primary' : 'bg-theme-primary-light text-theme-primary',
   };
 
   return (

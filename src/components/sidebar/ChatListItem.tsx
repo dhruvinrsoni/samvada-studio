@@ -41,11 +41,11 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
     <div
       className={`group relative flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-lg cursor-pointer transition-colors mb-1 ${
         isActive
-          ? 'bg-primary-600/20 border border-primary-600/50'
+          ? 'bg-theme-primary/20 border border-theme-primary/50'
           : isSelected
           ? isDark 
-            ? 'bg-dark-100 border border-primary-500/30' 
-            : 'bg-light-300 border border-primary-500/30'
+            ? 'bg-dark-100 border border-theme-primary/30' 
+            : 'bg-light-300 border border-theme-primary/30'
           : isDark 
             ? 'hover:bg-dark-100 border border-transparent' 
             : 'hover:bg-light-300 border border-transparent'
@@ -60,7 +60,7 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
           e.stopPropagation();
           dispatch({ type: 'TOGGLE_SELECT_CHAT', payload: chat.id });
         }}
-        className={`w-4 h-4 sm:w-4 sm:h-4 rounded text-primary-500 focus:ring-primary-500 flex-shrink-0 ${isDark ? 'border-gray-600 bg-dark-300' : 'border-gray-400 bg-white'}`}
+        className={`w-4 h-4 sm:w-4 sm:h-4 rounded text-theme-primary focus:ring-theme-primary flex-shrink-0 ${isDark ? 'border-gray-600 bg-dark-300' : 'border-gray-400 bg-white'}`}
       />
 
       {/* Chat Info */}

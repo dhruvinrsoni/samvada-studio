@@ -389,7 +389,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
               }}
               className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${
                 listMode.active && listMode.type === 'numbered'
-                  ? 'bg-primary-600/20 text-primary-400'
+                  ? 'bg-theme-primary/20 text-theme-primary'
                   : isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
               }`}
               title="Numbered List (type 1. to start)"
@@ -406,7 +406,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
               }}
               className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${
                 listMode.active && listMode.type === 'bullet'
-                  ? 'bg-primary-600/20 text-primary-400'
+                  ? 'bg-theme-primary/20 text-theme-primary'
                   : isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
               }`}
               title="Bullet List"
@@ -431,7 +431,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
           <div className="hidden sm:flex flex-1 items-center gap-1 sm:gap-2 ml-1 sm:ml-2 flex-wrap">
             {listMode.active && (
               <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap ${
-                isDark ? 'bg-primary-600/20 text-primary-400' : 'bg-primary-100 text-primary-700'
+                isDark ? 'bg-theme-primary/20 text-theme-primary' : 'bg-theme-primary-light text-theme-primary-dark'
               }`}>
                 📝 <span className="hidden md:inline">List Mode</span>
               </span>
@@ -447,7 +447,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             
             {multiLineMode && (
               <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap ${
-                isDark ? 'bg-blue-600/20 text-blue-400' : 'bg-blue-100 text-blue-700'
+                isDark ? 'bg-theme-primary/20 text-theme-primary' : 'bg-theme-primary/20 text-theme-primary'
               }`}>
                 📄 <span className="hidden md:inline">Multi-line</span>
               </span>
@@ -471,7 +471,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
                 ? "Multi-line: Enter for newline, Shift+Enter to send"
                 : "Type message... (Enter to send)"
           }
-          className={`w-full p-2 sm:p-3 md:p-4 pr-20 sm:pr-24 md:pr-28 border rounded-lg focus:outline-none focus:border-primary-500 resize-none min-h-[48px] sm:min-h-[56px] md:min-h-[60px] max-h-[200px] sm:max-h-[250px] md:max-h-[300px] font-mono text-xs sm:text-sm ${
+          className={`w-full p-2 sm:p-3 md:p-4 pr-20 sm:pr-24 md:pr-28 border rounded-lg focus:outline-none focus:border-theme-primary resize-none min-h-[48px] sm:min-h-[56px] md:min-h-[60px] max-h-[200px] sm:max-h-[250px] md:max-h-[300px] font-mono text-xs sm:text-sm ${
             isDark 
               ? 'bg-dark-100 border-dark-300 text-gray-200 placeholder-gray-500' 
               : 'bg-white border-light-400 text-gray-800 placeholder-gray-400'
@@ -484,7 +484,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             onClick={() => setShowToolbar(!showToolbar)}
             className={`p-1.5 sm:p-2 rounded-lg transition-all min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center ${
               showToolbar
-                ? 'bg-primary-600 text-white'
+                ? 'bg-theme-primary text-white'
                 : isDark
                   ? 'hover:bg-dark-100 text-gray-400'
                   : 'hover:bg-light-300 text-gray-600'
@@ -502,7 +502,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
           <button
             onClick={handleSend}
             disabled={disabled || !value.trim()}
-            className="p-1.5 sm:p-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center"
+            className="p-1.5 sm:p-2 bg-theme-primary hover:bg-theme-primary-hover disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center"
             title="Send (Ctrl+Enter or Shift+Enter)"
           >
             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

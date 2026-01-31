@@ -227,8 +227,8 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
               <code 
                 className={`px-1.5 py-0.5 rounded font-mono text-sm ${
                   isDark 
-                    ? 'bg-dark-100 text-primary-400' 
-                    : 'bg-gray-100 text-primary-600'
+                    ? 'bg-dark-100 text-theme-primary' 
+                    : 'bg-gray-100 text-theme-primary'
                 }`} 
                 {...props}
               >
@@ -263,7 +263,7 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
           },
           blockquote({ children }) {
             return (
-              <blockquote className={`border-l-4 border-primary-500 pl-4 italic my-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              <blockquote className={`border-l-4 border-theme-primary pl-4 italic my-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 {children}
               </blockquote>
             );
@@ -274,7 +274,7 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary-500 hover:text-primary-400 underline"
+                className="text-theme-primary hover:text-theme-primary-hover underline"
               >
                 {children}
               </a>
@@ -308,7 +308,7 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
         {processedContent}
       </ReactMarkdown>
       {isStreaming && (
-        <span className="inline-block w-2 h-4 ml-1 bg-primary-500 animate-pulse" />
+        <span className="inline-block w-2 h-4 ml-1 bg-theme-primary animate-pulse" />
       )}
     </div>
   );

@@ -92,7 +92,7 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
           <div className="flex items-stretch">
             <button
               onClick={() => createChat()}
-              className="py-2 px-2 sm:px-3 bg-blue-500 hover:bg-blue-600 text-white rounded-l-lg transition-colors flex items-center text-xs sm:text-sm flex-1 min-h-[44px]"
+              className="py-2 px-2 sm:px-3 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-l-lg transition-colors flex items-center text-xs sm:text-sm flex-1 min-h-[44px]"
               title="Create new chat (Ctrl+N)"
             >
               <span className="flex items-center gap-1 sm:gap-2">
@@ -105,7 +105,7 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
             <button
               onClick={() => setIsNewChatDropdownOpen(!isNewChatDropdownOpen)}
               onMouseEnter={() => setIsNewChatDropdownOpen(true)}
-              className="py-2 px-2 bg-blue-500 hover:bg-blue-600 text-white rounded-r-lg transition-colors border-l border-white/20 flex items-center justify-center min-h-[44px] min-w-[36px]"
+              className="py-2 px-2 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-r-lg transition-colors border-l border-white/20 flex items-center justify-center min-h-[44px] min-w-[36px]"
               title="More new chat options"
             >
               <svg className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${isNewChatDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,7 +127,7 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
                   createChat();
                   setIsNewChatDropdownOpen(false);
                 }}
-                className={`w-full px-3 sm:px-4 py-2.5 sm:py-2 text-left hover:bg-blue-500 hover:text-white transition-colors rounded-t-lg text-sm ${
+                className={`w-full px-3 sm:px-4 py-2.5 sm:py-2 text-left hover:bg-theme-primary hover:text-white transition-colors rounded-t-lg text-sm ${
                   isDark ? 'text-gray-300' : 'text-gray-700'
                 }`}
               >
@@ -147,9 +147,9 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
                     createChat(undefined, provider);
                     setIsNewChatDropdownOpen(false);
                   }}
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-2 text-left hover:bg-blue-500 hover:text-white transition-colors text-sm ${
+                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-2 text-left hover:bg-theme-primary hover:text-white transition-colors text-sm ${
                     isDark ? 'text-gray-300' : 'text-gray-700'
-                  } ${provider.id === state.providers.find(p => p.isDefault)?.id ? 'border-l-4 border-blue-500' : ''}`}
+                  } ${provider.id === state.providers.find(p => p.isDefault)?.id ? 'border-l-4 border-theme-primary' : ''}`}
                 >
                   <span className="flex items-center gap-2">
                     <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -198,7 +198,7 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
           onClick={() => setLocalShowArchived(!localShowArchived)}
           className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full transition-colors ${
             localShowArchived
-              ? 'bg-blue-500 text-white'
+              ? 'bg-theme-primary text-white'
               : state.theme === 'dark'
                 ? 'bg-dark-100 text-gray-400 hover:bg-dark-300'
                 : 'bg-light-300 text-gray-600 hover:bg-light-400'

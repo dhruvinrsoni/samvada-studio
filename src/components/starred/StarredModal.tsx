@@ -113,7 +113,7 @@ export default function StarredModal({ onClose }: StarredModalProps) {
                             {/* Prompt */}
                             <div className="mb-2 sm:mb-3">
                               <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
-                                <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary-600 flex items-center justify-center text-white text-[10px] sm:text-xs font-medium flex-shrink-0">U</span>
+                                <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-theme-primary flex items-center justify-center text-white text-[10px] sm:text-xs font-medium flex-shrink-0">U</span>
                                 <span className={`text-[10px] sm:text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>You</span>
                               </div>
                               <div className={`text-xs sm:text-sm pl-6 sm:pl-8 line-clamp-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -198,7 +198,7 @@ export default function StarredModal({ onClose }: StarredModalProps) {
                             </span>
                             <span className={`px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs rounded-full ${
                               message.role === 'user'
-                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                ? 'bg-theme-primary-light text-theme-primary dark:bg-theme-primary/20 dark:text-theme-primary'
                                 : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                             }`}>
                               {message.role === 'user' ? 'You' : 'AI'}
