@@ -213,7 +213,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
       {/* Disable Warning Banner */}
       {showDisableWarning && !warningDismissed && (
         <div 
-          className={`fixed bottom-0 left-0 right-0 z-50 px-4 py-3 border-t-2 border-yellow-500 ${
+          className={`fixed bottom-0 left-0 right-0 z-50 px-3 sm:px-4 py-2 sm:py-2.5 border-t-2 border-yellow-500 ${
             state.theme === 'dark' ? 'bg-yellow-900/20' : 'bg-yellow-100'
           }`}
         >
@@ -268,25 +268,25 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
 
       {/* Status Bar */}
       <div 
-        className={`fixed left-0 right-0 z-40 transition-all duration-300 ${
-          showDisableWarning && !warningDismissed ? 'bottom-[68px]' : 'bottom-0'
+        className={`fixed left-0 right-0 z-30 transition-all duration-300 ${
+          showDisableWarning && !warningDismissed ? 'bottom-[56px] sm:bottom-[62px]' : 'bottom-0'
         } ${
           state.theme === 'dark' ? 'bg-dark-100 border-dark-300' : 'bg-light-100 border-light-400'
         } border-t`}
       >
       {/* No Providers Message */}
       {!hasProviders && (
-        <div className={`px-4 py-2 text-center text-xs font-mono ${
+        <div className={`px-3 sm:px-4 py-1 sm:py-1.5 text-center text-xs font-mono ${
           state.theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
         }`}>
           No providers configured. Add providers in Settings ⚙️ to enable health monitoring.
         </div>
       )}
 
-      {/* Compact Bar */}
+      {/* Compact Bar - Mobile-optimized compact height: py-1 (~4px) on mobile, py-1.5 (~6px) on desktop */}
       {hasProviders && state.healthMonitoringEnabled && (
       <div 
-        className="flex items-center justify-between px-4 py-2 cursor-pointer"
+        className="flex items-center justify-between px-3 sm:px-4 py-1 sm:py-1.5 cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         {/* Left: Overall Status */}
