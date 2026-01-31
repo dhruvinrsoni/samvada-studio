@@ -21,6 +21,8 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<'providers' | 'settings' | 'pwa' | 'developer'>('providers');
   const [editingProvider, setEditingProvider] = useState<LLMProviderConfig | null>(null);
   const [isAddingProvider, setIsAddingProvider] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [pendingEditProvider, setPendingEditProvider] = useState<LLMProviderConfig | 'add' | null>(null);
   const isDark = state.theme === 'dark';
 
   // Centralized health monitoring for all providers (only when panel is open and on providers tab)
@@ -31,6 +33,77 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
 
   if (!state.isAdminPanelOpen) return null;
 
+  const handleEditProvider = (provider: LLMProviderConfig) => {
+    // If already editing and has unsaved changes, ask for confirmation
+    if ((editingProvider || isAddingProvider) && hasUnsavedChanges) {
+      setPendingEditProvider(provider);
+      return;
+    }
+    
+    // Otherwise, switch to editing this provider
+    setIsAddingProvider(false);
+    setEditingProvider(provider);
+    setHasUnsavedChanges(false);
+    setPendingEditProvider(null);
+    
+    // Scroll to the provider card after a brief delay to allow rendering
+    setTimeout(() => {
+      const element = document.getElementById(`provider-${provider.id}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 100);
+  };
+
+  const handleAddNewProvider = () => {
+    // If already editing and has unsaved changes, ask for confirmation
+    if ((editingProvider || isAddingProvider) && hasUnsavedChanges) {
+      setPendingEditProvider('add'); // Use 'add' to signal "add new"
+      return;
+    }
+    
+    // Otherwise, switch to add mode
+    setEditingProvider(null);
+    setIsAddingProvider(true);
+    setHasUnsavedChanges(false);
+    
+    // Scroll to top after a brief delay
+    setTimeout(() => {
+      const element = document.getElementById('add-provider-form');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
+
+  const handleConfirmSwitch = () => {
+    if (pendingEditProvider === 'add') {
+      // User wants to add new provider
+      setEditingProvider(null);
+      setIsAddingProvider(true);
+      setHasUnsavedChanges(false);
+      setPendingEditProvider(null);
+    } else if (pendingEditProvider) {
+      // User wants to edit another provider
+      setIsAddingProvider(false);
+      setEditingProvider(pendingEditProvider);
+      setHasUnsavedChanges(false);
+      setPendingEditProvider(null);
+      
+      // Scroll to the provider
+      setTimeout(() => {
+        const element = document.getElementById(`provider-${pendingEditProvider.id}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }, 100);
+    }
+  };
+
+  const handleCancelSwitch = () => {
+    setPendingEditProvider(null);
+  };
+
   const handleAddProvider = (config: Omit<LLMProviderConfig, 'id'>) => {
     const newProvider: LLMProviderConfig = {
       ...config,
@@ -38,11 +111,19 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
     };
     dispatch({ type: 'ADD_PROVIDER', payload: newProvider });
     setIsAddingProvider(false);
+    setHasUnsavedChanges(false);
   };
 
   const handleUpdateProvider = (config: LLMProviderConfig) => {
     dispatch({ type: 'UPDATE_PROVIDER', payload: config });
     setEditingProvider(null);
+    setHasUnsavedChanges(false);
+  };
+
+  const handleCancel = () => {
+    setIsAddingProvider(false);
+    setEditingProvider(null);
+    setHasUnsavedChanges(false);
   };
 
   const handleDeleteProvider = (id: string) => {
@@ -186,12 +267,65 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                   Configure your LLM backends. Add API keys and test connections.
                 </p>
                 <button
-                  onClick={() => setIsAddingProvider(true)}
+                  onClick={handleAddNewProvider}
                   className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium"
                 >
                   + Add Provider
                 </button>
               </div>
+
+              {/* Add New Provider Form (at top) */}
+              {isAddingProvider && (
+                <div id="add-provider-form">
+                  <ProviderForm
+                    provider={null}
+                    onSave={handleAddProvider}
+                    onCancel={handleCancel}
+                    onFormChange={(hasChanges) => setHasUnsavedChanges(hasChanges)}
+                  />
+                </div>
+              )}
+
+              {/* Unsaved Changes Confirmation Dialog */}
+              {pendingEditProvider !== null && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCancelSwitch} />
+                  <div className={`relative p-6 rounded-xl shadow-2xl max-w-md mx-4 ${
+                    isDark ? 'bg-dark-200' : 'bg-white'
+                  }`}>
+                    <h3 className={`text-lg font-bold mb-3 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                      ⚠️ Unsaved Changes
+                    </h3>
+                    <p className={`text-sm mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      You have unsaved changes in the current form. Do you want to discard them and continue?
+                    </p>
+                    <div className="flex gap-3 justify-end">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCancelSwitch();
+                        }}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                          isDark 
+                            ? 'bg-dark-100 text-gray-400 hover:bg-dark-50' 
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleConfirmSwitch();
+                        }}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+                      >
+                        Discard Changes
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Provider List */}
               {state.providers.length === 0 && !isAddingProvider ? (
@@ -201,48 +335,46 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                   <p className="text-lg mb-2">No LLM providers configured</p>
                   <p className="text-sm mb-4">Add providers like OpenAI, Claude, Gemini, or Ollama</p>
                   <button
-                    onClick={() => setIsAddingProvider(true)}
+                    onClick={handleAddNewProvider}
                     className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
                   >
                     Add Your First Provider
                   </button>
                 </div>
               ) : (
-                <div className="grid gap-4">
+                <div className="space-y-4">
                   {state.providers.map(provider => {
                     const health = healthStatus.find(h => h.providerId === provider.id);
+                    const isEditingThis = editingProvider?.id === provider.id;
+                    
                     return (
-                      <ProviderCard
-                        key={provider.id}
-                        provider={provider}
-                        isDefault={provider.id === state.defaultProviderId}
-                        providerHealth={health}
-                        onEdit={() => setEditingProvider(provider)}
-                        onDelete={() => handleDeleteProvider(provider.id)}
-                        onSetDefault={() => handleSetDefault(provider.id)}
-                        onTest={() => handleTestProvider(provider)}
-                      />
+                      <div key={provider.id} id={`provider-${provider.id}`}>
+                        {/* Provider Card */}
+                        <ProviderCard
+                          provider={provider}
+                          isDefault={provider.id === state.defaultProviderId}
+                          providerHealth={health}
+                          onEdit={() => handleEditProvider(provider)}
+                          onDelete={() => handleDeleteProvider(provider.id)}
+                          onSetDefault={() => handleSetDefault(provider.id)}
+                          onTest={() => handleTestProvider(provider)}
+                        />
+                        
+                        {/* Inline Edit Form */}
+                        {isEditingThis && (
+                          <div className="mt-4">
+                            <ProviderForm
+                              provider={editingProvider}
+                              onSave={(config) => handleUpdateProvider({ ...editingProvider, ...config })}
+                              onCancel={handleCancel}
+                              onFormChange={(hasChanges) => setHasUnsavedChanges(hasChanges)}
+                            />
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
-              )}
-
-              {/* Add/Edit Provider Form */}
-              {(isAddingProvider || editingProvider) && (
-                <ProviderForm
-                  provider={editingProvider}
-                  onSave={(config) => {
-                    if (editingProvider) {
-                      handleUpdateProvider({ ...editingProvider, ...config });
-                    } else {
-                      handleAddProvider(config);
-                    }
-                  }}
-                  onCancel={() => {
-                    setIsAddingProvider(false);
-                    setEditingProvider(null);
-                  }}
-                />
               )}
             </div>
           )}

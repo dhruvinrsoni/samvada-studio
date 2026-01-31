@@ -16,6 +16,7 @@ interface ProviderFormProps {
   provider?: LLMProviderConfig | null;
   onSave: (config: Omit<LLMProviderConfig, 'id'>) => void;
   onCancel: () => void;
+  onFormChange?: (hasChanges: boolean) => void;
 }
 
 const PROVIDER_TYPES: { type: LLMProviderType; label: string; icon: string }[] = [
@@ -45,12 +46,12 @@ const DEFAULT_MODELS: Record<LLMProviderType, string[]> = {
   custom: [],
 };
 
-export default function ProviderForm({ provider, onSave, onCancel }: ProviderFormProps) {
+export default function ProviderForm({ provider, onSave, onCancel, onFormChange }: ProviderFormProps) {
   const { state } = useChat();
   const isDark = state.theme === 'dark';
   const isEditing = !!provider;
 
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     type: provider?.type || 'openai' as LLMProviderType,
     name: provider?.name || '',
     apiKey: provider?.apiKey || '',
@@ -64,7 +65,9 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
     frequencyPenalty: provider?.settings.frequencyPenalty ?? 0,
     presencePenalty: provider?.settings.presencePenalty ?? 0,
     corsProxy: provider?.corsProxy || '',
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
   
   // Show advanced settings (CORS proxy, etc.)
   const [showAdvanced, setShowAdvanced] = useState(!!provider?.corsProxy);
@@ -76,6 +79,15 @@ export default function ProviderForm({ provider, onSave, onCancel }: ProviderFor
   
   // State for dynamic models from API providers
   const [dynamicModels, setDynamicModels] = useState<string[]>([]);
+
+  // Detect form changes and notify parent
+  useEffect(() => {
+    if (!onFormChange) return;
+    
+    const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialFormData);
+    onFormChange(hasChanges);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData]); // Only trigger on formData changes, not onFormChange
 
   // Fetch Ollama models when type is ollama and endpoint changes
   useEffect(() => {
