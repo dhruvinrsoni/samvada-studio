@@ -59,7 +59,6 @@ class HealthMonitor {
 
   // Run all enabled health checks
   async runAllChecks(): Promise<HealthReport> {
-    const startTime = Date.now();
     const results: HealthReport['checks'] = [];
 
     for (const [checkId, check] of this.checks) {

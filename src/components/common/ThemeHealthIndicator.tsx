@@ -142,8 +142,8 @@ export const ThemeHealthIndicator: React.FC<ThemeHealthIndicatorProps> = ({ clas
             <button
               onClick={() => {
                 console.log('🔍 Full Debug Info:');
-                console.log('Theme Status:', validateCSS.getThemeStatus());
-                console.log('Theme Health:', validateCSS.checkThemeHealth());
+                // console.log('Theme Status:', validateCSS.getThemeStatus());
+                // console.log('Theme Health:', validateCSS.checkThemeHealth());
                 console.log('User Agent:', navigator.userAgent);
               }}
               className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs transition-colors"

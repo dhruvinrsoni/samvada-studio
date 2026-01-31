@@ -2,6 +2,7 @@ import { ChatProvider, useChat } from './context/ChatContext';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { useIsMobile, useIsTablet } from './hooks/useMediaQuery';
 import { useLocalNetworkPermission } from './hooks/useLocalNetworkPermission';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import Sidebar from './components/sidebar/Sidebar';
 import ChatArea from './components/chat/ChatArea';
 import ContextPanel from './components/context/ContextPanel';
@@ -324,15 +325,15 @@ function AppContent() {
         <ContextPanel />
       </div>
 
-      {/* Modals */}
-      <AdminPanel pwaStatus={pwaStatus} />
-      <GlobalSearch />
-      <CommandPalette />
-      <KeyboardShortcuts />
-      <TemplatesLibrary onSelectTemplate={handleSelectTemplate} />
-      <ExportModal />
-      {state.isStarredModalOpen && <StarredModal onClose={() => dispatch({ type: 'TOGGLE_STARRED_MODAL' })} />}
-      {isThemeSettingsOpen && <ThemeSettingsModal onClose={() => setIsThemeSettingsOpen(false)} />}
+      {/* Modals - Wrapped in ErrorBoundary to prevent component errors from crashing app */}
+      <ErrorBoundary><AdminPanel pwaStatus={pwaStatus} /></ErrorBoundary>
+      <ErrorBoundary><GlobalSearch /></ErrorBoundary>
+      <ErrorBoundary><CommandPalette /></ErrorBoundary>
+      <ErrorBoundary><KeyboardShortcuts /></ErrorBoundary>
+      <ErrorBoundary><TemplatesLibrary onSelectTemplate={handleSelectTemplate} /></ErrorBoundary>
+      <ErrorBoundary><ExportModal /></ErrorBoundary>
+      <ErrorBoundary>{state.isStarredModalOpen && <StarredModal onClose={() => dispatch({ type: 'TOGGLE_STARRED_MODAL' })} />}</ErrorBoundary>
+      <ErrorBoundary>{isThemeSettingsOpen && <ThemeSettingsModal onClose={() => setIsThemeSettingsOpen(false)} />}</ErrorBoundary>
 
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onRemove={removeToast} position="top-right" />

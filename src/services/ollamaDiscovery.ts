@@ -367,10 +367,12 @@ class OllamaDiscoveryService {
 
     if (healthyResults.length > 0) {
       const fastest = healthyResults[0];
-      this.cacheSuccessfulEndpoint(fastest.endpoint);
-      this.discoveryResults.set(this.getEndpointUrl(fastest.endpoint), fastest);
-      console.log(`✅ Fastest Ollama endpoint: ${this.getEndpointUrl(fastest.endpoint)} (${fastest.responseTime}ms)`);
-      return fastest;
+      if (fastest) {
+        this.cacheSuccessfulEndpoint(fastest.endpoint);
+        this.discoveryResults.set(this.getEndpointUrl(fastest.endpoint), fastest);
+        console.log(`✅ Fastest Ollama endpoint: ${this.getEndpointUrl(fastest.endpoint)} (${fastest.responseTime}ms)`);
+        return fastest;
+      }
     }
 
     console.warn('❌ No healthy Ollama endpoints found');
