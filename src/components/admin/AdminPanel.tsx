@@ -245,67 +245,72 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
               ✕
             </button>
           </div>
-          {/* Tabs - horizontal scroll on mobile */}
-          <div className="flex gap-1 overflow-x-auto scroll-touch pb-1 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0">
+          {/* Tabs - horizontal scroll on mobile, full labels on all screen sizes */}
+          <div className="flex gap-1 sm:gap-1.5 overflow-x-auto pb-1 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0 snap-x snap-mandatory scroll-smooth">
             <button
               onClick={() => setActiveTab('providers')}
-              className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+              className={`px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1 sm:gap-1.5 snap-start ${
                 activeTab === 'providers'
-                  ? 'bg-theme-primary text-white'
+                  ? 'bg-theme-primary text-white shadow-lg'
                   : isDark 
-                    ? 'text-gray-400 hover:bg-dark-100' 
-                    : 'text-gray-600 hover:bg-light-300'
+                    ? 'text-gray-400 hover:bg-dark-100 hover:text-gray-200' 
+                    : 'text-gray-600 hover:bg-light-300 hover:text-gray-800'
               }`}
             >
-              🤖 <span className="hidden sm:inline">Providers</span>
+              <span className="text-sm sm:text-base">🤖</span>
+              <span className="text-[11px] sm:text-xs md:text-sm">Providers</span>
             </button>
             <button
               onClick={() => setActiveTab('settings')}
-              className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+              className={`px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1 sm:gap-1.5 snap-start ${
                 activeTab === 'settings'
-                  ? 'bg-theme-primary text-white'
+                  ? 'bg-theme-primary text-white shadow-lg'
                   : isDark 
-                    ? 'text-gray-400 hover:bg-dark-100' 
-                    : 'text-gray-600 hover:bg-light-300'
+                    ? 'text-gray-400 hover:bg-dark-100 hover:text-gray-200' 
+                    : 'text-gray-600 hover:bg-light-300 hover:text-gray-800'
               }`}
             >
-              🔧 <span className="hidden sm:inline">General</span>
+              <span className="text-sm sm:text-base">🔧</span>
+              <span className="text-[11px] sm:text-xs md:text-sm">General</span>
             </button>
             <button
               onClick={() => setActiveTab('pwa')}
-              className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+              className={`px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1 sm:gap-1.5 snap-start ${
                 activeTab === 'pwa'
-                  ? 'bg-theme-primary text-white'
+                  ? 'bg-theme-primary text-white shadow-lg'
                   : isDark 
-                    ? 'text-gray-400 hover:bg-dark-100' 
-                    : 'text-gray-600 hover:bg-light-300'
+                    ? 'text-gray-400 hover:bg-dark-100 hover:text-gray-200' 
+                    : 'text-gray-600 hover:bg-light-300 hover:text-gray-800'
               }`}
             >
-              📱 <span className="hidden sm:inline">PWA</span>
+              <span className="text-sm sm:text-base">📱</span>
+              <span className="text-[11px] sm:text-xs md:text-sm">PWA</span>
             </button>
             <button
               onClick={() => setActiveTab('developer')}
-              className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+              className={`px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1 sm:gap-1.5 snap-start ${
                 activeTab === 'developer'
-                  ? 'bg-theme-primary text-white'
+                  ? 'bg-theme-primary text-white shadow-lg'
                   : isDark 
-                    ? 'text-gray-400 hover:bg-dark-100' 
-                    : 'text-gray-600 hover:bg-light-300'
+                    ? 'text-gray-400 hover:bg-dark-100 hover:text-gray-200' 
+                    : 'text-gray-600 hover:bg-light-300 hover:text-gray-800'
               }`}
             >
-              🛠️ <span className="hidden sm:inline">Developer</span>
+              <span className="text-sm sm:text-base">🛠️</span>
+              <span className="text-[11px] sm:text-xs md:text-sm">Developer</span>
             </button>
             <button
               onClick={() => setActiveTab('ollama')}
-              className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
+              className={`px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1 sm:gap-1.5 snap-start ${
                 activeTab === 'ollama'
-                  ? 'bg-theme-primary text-white'
+                  ? 'bg-theme-primary text-white shadow-lg'
                   : isDark 
-                    ? 'text-gray-400 hover:bg-dark-100' 
-                    : 'text-gray-600 hover:bg-light-300'
+                    ? 'text-gray-400 hover:bg-dark-100 hover:text-gray-200' 
+                    : 'text-gray-600 hover:bg-light-300 hover:text-gray-800'
               }`}
             >
-              🦙 <span className="hidden sm:inline">Ollama</span>
+              <span className="text-sm sm:text-base">🦙</span>
+              <span className="text-[11px] sm:text-xs md:text-sm">Ollama</span>
             </button>
           </div>
           <button
