@@ -26,14 +26,15 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
     currentNumber: 1,
   });
 
-  // Prompt navigation hook
+  // Prompt navigation hook - pass current value so it's always in sync
   const {
-    initializeNavigation,
+    startNavigation,
     navigateToPrevious,
     navigateToNext,
+    restoreOriginal,
     resetNavigation,
     isNavigating,
-  } = usePromptNavigation();
+  } = usePromptNavigation(value);
 
   // Reset multi-line mode when input is cleared or becomes single line
   useEffect(() => {
@@ -41,14 +42,6 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
       setMultiLineMode(false);
     }
   }, [value]);
-
-  // Initialize prompt navigation on mount and when chat changes
-  // Store current input value when starting navigation
-  useEffect(() => {
-    if (state.promptNavigationEnabled) {
-      initializeNavigation(value);
-    }
-  }, [state.promptNavigationEnabled, state.activeChat, initializeNavigation]);
 
   // Detect list mode patterns
   useEffect(() => {
@@ -116,16 +109,16 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
       if (e.key === 'ArrowUp' && isFirstLine && cursorAtLineStart) {
         // Navigate to previous prompt - cursor goes to end
         e.preventDefault();
-        // First call to initializeNavigation stores current content
+        // First time navigating - save current content
         if (!isNavigating) {
-          initializeNavigation(value);
+          startNavigation(value);
         }
-        const previousContent = navigateToPrevious();
-        if (previousContent !== null) {
-          onChange?.(previousContent);
+        const result = navigateToPrevious();
+        if (result !== null) {
+          onChange?.(result.content);
           setTimeout(() => {
             textarea.focus();
-            textarea.setSelectionRange(previousContent.length, previousContent.length);
+            textarea.setSelectionRange(result.content.length, result.content.length);
           }, 0);
         }
         return;
@@ -134,9 +127,9 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
       if (e.key === 'ArrowDown' && isLastLine && cursorAtLineEnd) {
         // Navigate to next prompt - cursor goes to start
         e.preventDefault();
-        const nextContent = navigateToNext();
-        if (nextContent !== null) {
-          onChange?.(nextContent);
+        const result = navigateToNext();
+        if (result !== null) {
+          onChange?.(result.content);
           setTimeout(() => {
             textarea.focus();
             textarea.setSelectionRange(0, 0);
@@ -146,9 +139,14 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
       }
 
       if (e.key === 'Escape' && isNavigating) {
-        // Exit navigation mode and restore original content
+        // ESC: Restore original content and exit navigation
         e.preventDefault();
-        resetNavigation();
+        const originalContent = restoreOriginal();
+        onChange?.(originalContent);
+        setTimeout(() => {
+          textarea.focus();
+          textarea.setSelectionRange(originalContent.length, originalContent.length);
+        }, 0);
         return;
       }
     }
@@ -458,7 +456,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
               </span>
             )}
             
-            {isNavigating && state.promptNavigationEnabled && (
+            {state.promptNavigationEnabled && isNavigating && (
               <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1 ${
                 isDark ? 'bg-purple-600/20 text-purple-400' : 'bg-purple-100 text-purple-700'
               }`}>

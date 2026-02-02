@@ -6,79 +6,119 @@ interface PromptNavigationItem {
   id: string;
   content: string;
   timestamp: Date;
+  isCurrent?: boolean;
 }
 
-export const usePromptNavigation = () => {
+export const usePromptNavigation = (currentContent: string) => {
   const { activeChat } = useChat();
   const [navigationIndex, setNavigationIndex] = useState<number>(-1);
-  const [originalContent, setOriginalContent] = useState<string>('');
+  const [savedCurrentContent, setSavedCurrentContent] = useState<string>('');
 
   // Reset navigation when active chat changes
   useEffect(() => {
     setNavigationIndex(-1);
-    setOriginalContent('');
+    setSavedCurrentContent('');
   }, [activeChat?.id]);
 
-  // Build navigation history from current chat's prompts ONLY (not drafts)
+  // Build navigation history: [oldest sent...newest sent, current typed]
+  // Current prompt is ALWAYS the last entry
   const navigationHistory = useMemo((): PromptNavigationItem[] => {
     if (!activeChat) return [];
 
-    // Only include sent prompts, in chronological order (oldest first)
-    return activeChat.promptResponses.map((pnr: PromptResponse) => ({
+    // Include sent prompts in chronological order (oldest first)
+    const sentPrompts = activeChat.promptResponses.map((pnr: PromptResponse) => ({
       id: pnr.id,
       content: pnr.prompt.content,
       timestamp: pnr.prompt.timestamp,
+      isCurrent: false,
     }));
-  }, [activeChat]);
 
-  const initializeNavigation = useCallback((currentContent: string) => {
-    setOriginalContent(currentContent);
-    setNavigationIndex(-1); // -1 means we're at the current/unsent content
+    // Always append current prompt as the last entry (even if empty)
+    const currentPrompt: PromptNavigationItem = {
+      id: 'current',
+      content: savedCurrentContent || currentContent,
+      timestamp: new Date(),
+      isCurrent: true,
+    };
+
+    return [...sentPrompts, currentPrompt];
+  }, [activeChat, savedCurrentContent, currentContent]);
+
+  const startNavigation = useCallback((content: string) => {
+    // Save the current content when starting navigation
+    setSavedCurrentContent(content);
   }, []);
 
-  const navigateToPrevious = useCallback((): string | null => {
-    // navigationIndex: -1 = current input, 0 = oldest, length-1 = newest
+  const navigateToPrevious = useCallback((): { content: string; isCurrent: boolean } | null => {
+    // Navigation: -1 = not started, 0 = oldest, length-1 = current
     // Going "previous" means going backward in time (older prompts)
-    const currentIndex = navigationIndex === -1 ? navigationHistory.length : navigationIndex;
     
-    if (currentIndex > 0) {
-      const newIndex = currentIndex - 1;
-      setNavigationIndex(newIndex);
-      return navigationHistory[newIndex]?.content ?? null;
+    if (navigationIndex === -1) {
+      // Starting navigation - go to newest sent prompt (or current if no sent prompts)
+      const newIndex = navigationHistory.length - 2; // -2 because last is current
+      if (newIndex >= 0) {
+        setNavigationIndex(newIndex);
+        return {
+          content: navigationHistory[newIndex]?.content ?? '',
+          isCurrent: false,
+        };
+      }
+      return null; // No history to navigate
     }
-    return null; // No more previous items
+    
+    if (navigationIndex > 0) {
+      const newIndex = navigationIndex - 1;
+      setNavigationIndex(newIndex);
+      return {
+        content: navigationHistory[newIndex]?.content ?? '',
+        isCurrent: navigationHistory[newIndex]?.isCurrent ?? false,
+      };
+    }
+    
+    return null; // Already at oldest
   }, [navigationIndex, navigationHistory]);
 
-  const navigateToNext = useCallback((): string | null => {
+  const navigateToNext = useCallback((): { content: string; isCurrent: boolean } | null => {
     // Going "next" means going forward in time (newer prompts)
     if (navigationIndex === -1) {
-      return null; // Already at current input
+      return null; // Not navigating
     }
     
     if (navigationIndex < navigationHistory.length - 1) {
       const newIndex = navigationIndex + 1;
       setNavigationIndex(newIndex);
-      return navigationHistory[newIndex]?.content ?? null;
-    } else {
-      // Going back to original/current content
-      setNavigationIndex(-1);
-      return originalContent;
+      return {
+        content: navigationHistory[newIndex]?.content ?? '',
+        isCurrent: navigationHistory[newIndex]?.isCurrent ?? false,
+      };
     }
-  }, [navigationIndex, navigationHistory, originalContent]);
+    
+    return null; // Already at newest (current)
+  }, [navigationIndex, navigationHistory]);
+
+  const restoreOriginal = useCallback((): string => {
+    // ESC: Always restore the original saved content
+    setNavigationIndex(-1);
+    return savedCurrentContent;
+  }, [savedCurrentContent]);
 
   const resetNavigation = useCallback(() => {
     setNavigationIndex(-1);
+    setSavedCurrentContent('');
   }, []);
 
-  const isNavigating = navigationIndex >= 0;
+  // isNavigating = true when NOT on current prompt (i.e., viewing a sent prompt)
+  const currentItem = navigationIndex >= 0 ? navigationHistory[navigationIndex] : null;
+  const isNavigating = navigationIndex >= 0 && !(currentItem?.isCurrent ?? false);
 
   return {
     navigationHistory,
     currentNavigationIndex: navigationIndex,
     isNavigating,
-    initializeNavigation,
+    startNavigation,
     navigateToPrevious,
     navigateToNext,
+    restoreOriginal,
     resetNavigation,
   };
 };
