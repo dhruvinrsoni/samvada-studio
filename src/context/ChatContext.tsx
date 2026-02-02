@@ -19,7 +19,6 @@ const defaultThemeSettings: ThemeSettings = {
   customColors: null,
   fontSize: 'medium',
   compactMode: false,
-  promptNavigationEnabled: true, // Enable prompt navigation by default
 };
 
 // Create default providers (local ones that don't require API keys)
@@ -81,6 +80,8 @@ const initialState: AppState = {
   healthMonitoringEnabled: true,
   // NEW: Mobile/Responsive
   isSidebarOpen: true, // Desktop default: open, will be false on mobile
+  // NEW: Prompt Navigation
+  promptNavigationEnabled: true,
 };
 
 function chatReducer(state: AppState, action: ChatAction): AppState {
@@ -681,6 +682,13 @@ function chatReducer(state: AppState, action: ChatAction): AppState {
       return {
         ...state,
         isSidebarOpen: action.payload,
+      };
+
+    // NEW: Prompt Navigation
+    case 'TOGGLE_PROMPT_NAVIGATION':
+      return {
+        ...state,
+        promptNavigationEnabled: action.payload,
       };
 
     default:

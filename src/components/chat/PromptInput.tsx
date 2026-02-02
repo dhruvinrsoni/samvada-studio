@@ -42,12 +42,13 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
     }
   }, [value]);
 
-  // Initialize prompt navigation when value changes
+  // Initialize prompt navigation on mount and when chat changes
+  // Store current input value when starting navigation
   useEffect(() => {
-    if (state.themeSettings.promptNavigationEnabled) {
+    if (state.promptNavigationEnabled) {
       initializeNavigation(value);
     }
-  }, [value, state.themeSettings.promptNavigationEnabled, initializeNavigation]);
+  }, [state.promptNavigationEnabled, state.activeChat, initializeNavigation]);
 
   // Detect list mode patterns
   useEffect(() => {
@@ -95,19 +96,47 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
     if (!textarea) return;
 
     // Handle prompt navigation with arrow keys (only if enabled)
-    if (state.themeSettings.promptNavigationEnabled && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
+    if (state.promptNavigationEnabled && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
       const lines = value.split('\n');
       const currentLineIndex = getCurrentLineIndex(textarea);
+      const cursorPosition = textarea.selectionStart;
+      
+      // For single-line inputs (most common case), check line position
+      // For multi-line, check cursor at start/end of line
       const isFirstLine = currentLineIndex === 0;
       const isLastLine = currentLineIndex === lines.length - 1;
+      
+      // Get the start position of the current line
+      const lineStartPos = lines.slice(0, currentLineIndex).join('\n').length + (currentLineIndex > 0 ? 1 : 0);
+      const currentLine = lines[currentLineIndex] ?? '';
+      const lineEndPos = lineStartPos + currentLine.length;
+      const cursorAtLineStart = cursorPosition === lineStartPos;
+      const cursorAtLineEnd = cursorPosition === lineEndPos;
 
-      if (e.key === 'ArrowUp' && isFirstLine) {
-        // Navigate to previous prompt
+      if (e.key === 'ArrowUp' && isFirstLine && cursorAtLineStart) {
+        // Navigate to previous prompt - cursor goes to end
         e.preventDefault();
+        // First call to initializeNavigation stores current content
+        if (!isNavigating) {
+          initializeNavigation(value);
+        }
         const previousContent = navigateToPrevious();
         if (previousContent !== null) {
           onChange?.(previousContent);
-          // Move cursor to beginning of first line
+          setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(previousContent.length, previousContent.length);
+          }, 0);
+        }
+        return;
+      }
+
+      if (e.key === 'ArrowDown' && isLastLine && cursorAtLineEnd) {
+        // Navigate to next prompt - cursor goes to start
+        e.preventDefault();
+        const nextContent = navigateToNext();
+        if (nextContent !== null) {
+          onChange?.(nextContent);
           setTimeout(() => {
             textarea.focus();
             textarea.setSelectionRange(0, 0);
@@ -116,18 +145,10 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
         return;
       }
 
-      if (e.key === 'ArrowDown' && isLastLine) {
-        // Navigate to next prompt (or back to current)
+      if (e.key === 'Escape' && isNavigating) {
+        // Exit navigation mode and restore original content
         e.preventDefault();
-        const nextContent = navigateToNext();
-        if (nextContent !== null) {
-          onChange?.(nextContent);
-          // Move cursor to end of last line
-          setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(nextContent.length, nextContent.length);
-          }, 0);
-        }
+        resetNavigation();
         return;
       }
     }
@@ -437,11 +458,13 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
               </span>
             )}
             
-            {isNavigating && state.themeSettings.promptNavigationEnabled && (
-              <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap ${
+            {isNavigating && state.promptNavigationEnabled && (
+              <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1 ${
                 isDark ? 'bg-purple-600/20 text-purple-400' : 'bg-purple-100 text-purple-700'
               }`}>
-                🧭 <span className="hidden md:inline">History</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
+                <span className="hidden md:inline">Navigating History</span>
+                <span className="md:hidden">History</span>
               </span>
             )}
             

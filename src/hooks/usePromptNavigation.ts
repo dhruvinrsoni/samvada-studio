@@ -1,14 +1,11 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useChat } from '../context/ChatContext';
-import type { PromptResponse, Draft } from '../types';
+import type { PromptResponse } from '../types';
 
 interface PromptNavigationItem {
   id: string;
   content: string;
-  type: 'prompt' | 'draft';
   timestamp: Date;
-  pnrId?: string;
-  draftIndex?: number;
 }
 
 export const usePromptNavigation = () => {
@@ -16,41 +13,22 @@ export const usePromptNavigation = () => {
   const [navigationIndex, setNavigationIndex] = useState<number>(-1);
   const [originalContent, setOriginalContent] = useState<string>('');
 
-  // Build navigation history from current chat's prompts and drafts
+  // Reset navigation when active chat changes
+  useEffect(() => {
+    setNavigationIndex(-1);
+    setOriginalContent('');
+  }, [activeChat?.id]);
+
+  // Build navigation history from current chat's prompts ONLY (not drafts)
   const navigationHistory = useMemo((): PromptNavigationItem[] => {
     if (!activeChat) return [];
 
-    const history: PromptNavigationItem[] = [];
-
-    // Add current unsent content as a "draft" if it exists
-    // This will be handled by the component using this hook
-
-    // Add all prompts and drafts from the chat (in reverse chronological order for navigation)
-    activeChat.promptResponses.forEach((pnr: PromptResponse) => {
-      // Add drafts for this prompt (most recent first)
-      pnr.drafts.slice().reverse().forEach((draft: Draft, draftIndex: number) => {
-        history.push({
-          id: `draft-${pnr.id}-${draft.id}`,
-          content: draft.content,
-          type: 'draft',
-          timestamp: draft.timestamp,
-          pnrId: pnr.id,
-          draftIndex: pnr.drafts.length - 1 - draftIndex, // Reverse index for original order
-        });
-      });
-
-      // Add the sent prompt
-      history.push({
-        id: `prompt-${pnr.id}`,
-        content: pnr.prompt.content,
-        type: 'prompt',
-        timestamp: pnr.prompt.timestamp,
-        pnrId: pnr.id,
-      });
-    });
-
-    // Reverse to get chronological order (oldest first)
-    return history.reverse();
+    // Only include sent prompts, in chronological order (oldest first)
+    return activeChat.promptResponses.map((pnr: PromptResponse) => ({
+      id: pnr.id,
+      content: pnr.prompt.content,
+      timestamp: pnr.prompt.timestamp,
+    }));
   }, [activeChat]);
 
   const initializeNavigation = useCallback((currentContent: string) => {
@@ -59,25 +37,33 @@ export const usePromptNavigation = () => {
   }, []);
 
   const navigateToPrevious = useCallback((): string | null => {
-    if (navigationIndex < navigationHistory.length - 1) {
-      const newIndex = navigationIndex + 1;
+    // navigationIndex: -1 = current input, 0 = oldest, length-1 = newest
+    // Going "previous" means going backward in time (older prompts)
+    const currentIndex = navigationIndex === -1 ? navigationHistory.length : navigationIndex;
+    
+    if (currentIndex > 0) {
+      const newIndex = currentIndex - 1;
       setNavigationIndex(newIndex);
-      return navigationHistory[newIndex].content;
+      return navigationHistory[newIndex]?.content ?? null;
     }
     return null; // No more previous items
   }, [navigationIndex, navigationHistory]);
 
   const navigateToNext = useCallback((): string | null => {
-    if (navigationIndex > 0) {
-      const newIndex = navigationIndex - 1;
+    // Going "next" means going forward in time (newer prompts)
+    if (navigationIndex === -1) {
+      return null; // Already at current input
+    }
+    
+    if (navigationIndex < navigationHistory.length - 1) {
+      const newIndex = navigationIndex + 1;
       setNavigationIndex(newIndex);
-      return navigationHistory[newIndex].content;
-    } else if (navigationIndex === 0) {
-      // Going back to original content
+      return navigationHistory[newIndex]?.content ?? null;
+    } else {
+      // Going back to original/current content
       setNavigationIndex(-1);
       return originalContent;
     }
-    return null; // Already at the beginning
   }, [navigationIndex, navigationHistory, originalContent]);
 
   const resetNavigation = useCallback(() => {

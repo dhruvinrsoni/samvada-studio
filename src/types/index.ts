@@ -423,7 +423,6 @@ export interface ThemeSettings {
   customColors: CustomTheme | null;
   fontSize: 'xs' | 'small' | 'medium' | 'large' | 'xl';
   compactMode: boolean;
-  promptNavigationEnabled: boolean; // Enable/disable prompt navigation with arrow keys
 }
 
 // Keyboard Shortcuts
@@ -500,6 +499,8 @@ export interface AppState {
   healthMonitoringEnabled?: boolean;
   // NEW: Mobile/Responsive
   isSidebarOpen: boolean; // For mobile sidebar toggle
+  // NEW: Prompt Navigation
+  promptNavigationEnabled: boolean;
 }
 
 // Secure version for localStorage (excludes sensitive provider data)
@@ -537,6 +538,8 @@ export interface SafeAppState {
   streamingMessageId: string | null;
   // NEW: Mobile/Responsive
   isSidebarOpen: boolean;
+  // NEW: Prompt Navigation
+  promptNavigationEnabled: boolean;
 }
 
 export type ChatAction =
@@ -613,7 +616,9 @@ export type ChatAction =
   | { type: 'TOGGLE_HEALTH_MONITORING'; payload: boolean }
   // NEW: Mobile/Responsive
   | { type: 'TOGGLE_SIDEBAR' }
-  | { type: 'SET_SIDEBAR_OPEN'; payload: boolean };
+  | { type: 'SET_SIDEBAR_OPEN'; payload: boolean }
+  // NEW: Prompt Navigation
+  | { type: 'TOGGLE_PROMPT_NAVIGATION'; payload: boolean };
 
 // Toast Notification Types
 export type ToastType = 'success' | 'error' | 'warning' | 'info';

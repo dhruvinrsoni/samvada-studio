@@ -535,6 +535,31 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                       }`}></div>
                     </label>
                   </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Prompt Navigation
+                      </p>
+                      <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                        Navigate between prompts using arrow keys (like VS Code)
+                      </p>
+                      <p className={`text-xs mt-1 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                        ↑ on first line = previous prompt, ↓ on last line = next prompt, ESC = exit
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={state.promptNavigationEnabled ?? true}
+                        onChange={(e) => dispatch({ type: 'TOGGLE_PROMPT_NAVIGATION', payload: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme-primary ${
+                        isDark ? 'bg-gray-600' : 'bg-gray-300'
+                      }`}></div>
+                    </label>
+                  </div>
                 </div>
               </div>
               <div className={`p-4 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300' : 'border-light-400 bg-light-200'}`}>

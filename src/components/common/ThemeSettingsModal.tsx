@@ -213,17 +213,6 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                       icon: '📐',
                       enabled: state.themeSettings.compactMode,
                       toggle: handleCompactModeToggle
-                    },
-                    {
-                      id: 'prompt-nav',
-                      title: 'Prompt Navigation',
-                      desc: 'Use arrow keys to navigate prompts',
-                      icon: '⌨️',
-                      enabled: state.themeSettings.promptNavigationEnabled,
-                      toggle: () => dispatch({
-                        type: 'UPDATE_THEME_SETTINGS',
-                        payload: { ...state.themeSettings, promptNavigationEnabled: !state.themeSettings.promptNavigationEnabled }
-                      })
                     }
                   ].map(item => (
                     <div key={item.id} className={`p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl flex items-center justify-between gap-2 sm:gap-3 ${
