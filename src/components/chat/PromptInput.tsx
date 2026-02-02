@@ -436,6 +436,16 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
 
           <div className={`w-px h-4 mx-0.5 sm:mx-1 ${isDark ? 'bg-dark-100' : 'bg-light-400'}`} />
 
+          {/* Voice Input - Mobile only in toolbar */}
+          <div className="sm:hidden">
+            <VoiceInput 
+              onTranscript={(text) => onChange?.(value + (value ? ' ' : '') + text)}
+              disabled={disabled}
+            />
+          </div>
+
+          <div className={`w-px h-4 mx-0.5 sm:mx-1 ${isDark ? 'bg-dark-100' : 'bg-light-400'}`} />
+
           {/* Clear Formatting */}
           <button
             type="button"
@@ -445,36 +455,36 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
           >
             ✕
           </button>
-
-          {/* Status Indicators - hide on mobile, compact on tablet */}
-          <div className="hidden sm:flex flex-1 items-center gap-1 sm:gap-2 ml-1 sm:ml-2 flex-wrap">
-            {listMode.active && (
-              <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap ${
-                isDark ? 'bg-theme-primary/20 text-theme-primary' : 'bg-theme-primary-light text-theme-primary-dark'
-              }`}>
-                📝 <span className="hidden md:inline">List Mode</span>
-              </span>
-            )}
-            
-            {state.promptNavigationEnabled && isNavigating && (
-              <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1 ${
-                isDark ? 'bg-purple-600/20 text-purple-400' : 'bg-purple-100 text-purple-700'
-              }`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
-                <span className="hidden md:inline">Navigating History</span>
-                <span className="md:hidden">History</span>
-              </span>
-            )}
-            
-            {multiLineMode && (
-              <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap ${
-                isDark ? 'bg-theme-primary/20 text-theme-primary' : 'bg-theme-primary/20 text-theme-primary'
-              }`}>
-                📄 <span className="hidden md:inline">Multi-line</span>
-              </span>
-            )}
-          </div>
         </div>
+      </div>
+
+      {/* Status Indicators - Always visible, outside collapsible toolbar */}
+      <div className="flex items-center gap-1 sm:gap-2 mb-2 flex-wrap">
+        {listMode.active && (
+          <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap ${
+            isDark ? 'bg-theme-primary/20 text-theme-primary' : 'bg-theme-primary-light text-theme-primary-dark'
+          }`}>
+            📝 <span className="hidden md:inline">List Mode</span>
+          </span>
+        )}
+        
+        {state.promptNavigationEnabled && isNavigating && (
+          <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1 ${
+            isDark ? 'bg-purple-600/20 text-purple-400' : 'bg-purple-100 text-purple-700'
+          }`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
+            <span className="hidden md:inline">Navigating History</span>
+            <span className="md:hidden">History</span>
+          </span>
+        )}
+        
+        {multiLineMode && (
+          <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap ${
+            isDark ? 'bg-theme-primary/20 text-theme-primary' : 'bg-theme-primary/20 text-theme-primary'
+          }`}>
+            📄 <span className="hidden md:inline">Multi-line</span>
+          </span>
+        )}
       </div>
 
       <div className="relative">
@@ -534,10 +544,13 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
               <text x="12" y="18" textAnchor="middle" fontSize="18" fontWeight="bold" fontFamily="Arial, sans-serif" fill="currentColor">A</text>
             </svg>
           </button>
-          <VoiceInput 
-            onTranscript={(text) => onChange?.(value + (value ? ' ' : '') + text)}
-            disabled={disabled}
-          />
+          {/* Voice Input - Desktop only in bottom right, Mobile in toolbar */}
+          <div className="hidden sm:block">
+            <VoiceInput 
+              onTranscript={(text) => onChange?.(value + (value ? ' ' : '') + text)}
+              disabled={disabled}
+            />
+          </div>
           <button
             onClick={handleSend}
             disabled={disabled || !value.trim()}
