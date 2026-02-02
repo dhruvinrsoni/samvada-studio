@@ -166,10 +166,29 @@ export function usePWA(): PWAStatus {
       setIsInstallable(false);
     }
 
+    // Detect if app was uninstalled (standalone mode changed to false)
+    // Check periodically if we were installed but now not in standalone
+    const checkInstallStatus = setInterval(() => {
+      const wasInstalled = localStorage.getItem('pwa-installed') === 'true';
+      const currentlyStandalone = 
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as Navigator & { standalone?: boolean }).standalone === true ||
+        document.referrer.includes('android-app://');
+      
+      // If was installed but now not standalone, app was likely uninstalled
+      if (wasInstalled && !currentlyStandalone) {
+        console.log('[PWA] App appears to have been uninstalled');
+        localStorage.removeItem('pwa-installed');
+        setIsInstalled(false);
+        setIsInstallable(false); // Will be set to true when beforeinstallprompt fires again
+      }
+    }, 5000); // Check every 5 seconds
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
+      clearInterval(checkInstallStatus);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
@@ -294,6 +313,7 @@ export function usePWA(): PWAStatus {
       }, 5000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [offlineReady, setOfflineReady]);
 
   return {

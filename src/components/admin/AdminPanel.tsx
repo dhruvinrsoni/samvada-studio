@@ -245,7 +245,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
               ✕
             </button>
           </div>
-          {/* Tabs - horizontal scroll on mobile, full labels on all screen sizes */}
+          {/* Tabs - horizontal scroll on mobile, always show labels */}
           <div className="flex gap-1 sm:gap-1.5 overflow-x-auto pb-1 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0 snap-x snap-mandatory scroll-smooth">
             <button
               onClick={() => setActiveTab('providers')}
@@ -258,7 +258,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
               }`}
             >
               <span className="text-sm sm:text-base">🤖</span>
-              <span className="text-[11px] sm:text-xs md:text-sm">Providers</span>
+              <span className="text-xs sm:text-sm">Providers</span>
             </button>
             <button
               onClick={() => setActiveTab('settings')}
@@ -271,7 +271,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
               }`}
             >
               <span className="text-sm sm:text-base">🔧</span>
-              <span className="text-[11px] sm:text-xs md:text-sm">General</span>
+              <span className="text-xs sm:text-sm">General</span>
             </button>
             <button
               onClick={() => setActiveTab('pwa')}

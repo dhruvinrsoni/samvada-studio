@@ -102,7 +102,7 @@ export default function PWAAdvancedControls({ pwaStatus, isDark }: PWAAdvancedCo
       await Promise.all(cacheNames.map(name => caches.delete(name)));
       console.log('[PWA] All caches cleared');
       await fetchCacheInfo();
-      alert('Cache cleared successfully! You can reload the page to see the changes take effect.');
+      alert('Cache cleared successfully! Reload the page to see changes take effect.');
     } catch (error) {
       console.error('[PWA] Error clearing cache:', error);
       alert('Failed to clear cache. Check console for details.');
@@ -136,7 +136,7 @@ export default function PWAAdvancedControls({ pwaStatus, isDark }: PWAAdvancedCo
         await registration.unregister();
       }
       console.log('[PWA] Service worker unregistered');
-      alert('Service worker unregistered. You can reload the page to complete the changes.');
+      alert('Service worker unregistered. Reload the page to complete changes.');
     } catch (error) {
       console.error('[PWA] Error unregistering service worker:', error);
       alert('Failed to unregister service worker. Check console for details.');
@@ -165,11 +165,43 @@ export default function PWAAdvancedControls({ pwaStatus, isDark }: PWAAdvancedCo
       localStorage.removeItem('pwa-last-prompt');
 
       console.log('[PWA] Complete reset performed');
-      alert('PWA reset complete. You can reload the page to complete the reset and see the changes take effect.');
+      alert('PWA reset complete. Page will reload automatically to fetch the latest version.');
       await fetchCacheInfo();
+      
+      // Auto-reload after a short delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('[PWA] Error during reset:', error);
       alert('Failed to reset PWA. Check console for details.');
+    }
+  };
+
+  const handleForceRefresh = async () => {
+    if (!confirm('Force refresh and fetch latest app version? This will:\n\n• Clear all caches\n• Unregister service workers\n• Hard reload the page\n• Fetch the latest version from server\n\nYour chats and settings will be preserved.')) {
+      return;
+    }
+
+    try {
+      // Clear all caches
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(name => caches.delete(name)));
+      console.log('[PWA] All caches cleared');
+
+      // Unregister all service workers
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        await registration.unregister();
+        console.log('[PWA] Service worker unregistered');
+      }
+
+      // Hard reload - bypasses cache completely
+      console.log('[PWA] Performing hard reload to fetch latest version');
+      window.location.reload();
+    } catch (error) {
+      console.error('[PWA] Error during force refresh:', error);
+      alert('Failed to force refresh. Check console for details.');
     }
   };
 
@@ -295,19 +327,37 @@ export default function PWAAdvancedControls({ pwaStatus, isDark }: PWAAdvancedCo
             ⚠️ Danger Zone
           </h4>
           <p className={`text-xs mb-3 ${isDark ? 'text-red-400' : 'text-red-700'}`}>
-            Reset all PWA data including caches, service worker, and install state. 
-            Your chats and settings will NOT be affected.
+            Advanced operations that affect PWA functionality. Your chats and settings will NOT be affected.
           </p>
-          <button
-            onClick={handleResetPWA}
-            className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              isDark
-                ? 'bg-red-900/50 hover:bg-red-900/70 text-red-200'
-                : 'bg-red-600 hover:bg-red-700 text-white'
-            }`}
-          >
-            🔄 Full PWA Reset
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={handleForceRefresh}
+              className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isDark
+                  ? 'bg-green-900/50 hover:bg-green-900/70 text-green-200 border border-green-800/30'
+                  : 'bg-green-600 hover:bg-green-700 text-white border border-green-500'
+              }`}
+            >
+              ⚡ Force Refresh Latest App
+            </button>
+            <p className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+              Clears all caches and forces a complete reload to fetch the latest version from the server
+            </p>
+            
+            <button
+              onClick={handleResetPWA}
+              className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isDark
+                  ? 'bg-red-900/50 hover:bg-red-900/70 text-red-200'
+                  : 'bg-red-600 hover:bg-red-700 text-white'
+              }`}
+            >
+              🔄 Full PWA Reset
+            </button>
+            <p className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+              Resets all PWA data including install state and service workers
+            </p>
+          </div>
         </div>
 
         {/* Debug Info */}
