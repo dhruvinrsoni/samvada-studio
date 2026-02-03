@@ -290,23 +290,26 @@ function AppContent() {
             </button>
           )}
 
-          {/* Context Panel - Prominent in navbar with creative styling */}
+          {/* Context Panel - Prominent with Creative Ripple Effect */}
           <button
             onClick={() => dispatch({ type: 'TOGGLE_CONTEXT_PANEL_MODE' })}
-            className={`relative p-1.5 sm:p-2 rounded-lg transition-all group ${
+            className={`relative px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-all ${
               state.isContextPanelMode
-                ? 'bg-theme-primary text-white shadow-lg shadow-theme-primary/50 ring-2 ring-theme-primary scale-110'
+                ? 'bg-gradient-to-r from-theme-primary to-theme-primary-hover text-white shadow-lg ring-2 ring-theme-primary/50 context-panel-active'
                 : state.theme === 'dark' 
-                  ? 'text-gray-400 hover:bg-dark-100 hover:scale-110' 
-                  : 'text-gray-600 hover:bg-light-300 hover:scale-110'
+                  ? 'text-gray-400 hover:bg-dark-100' 
+                  : 'text-gray-600 hover:bg-light-300'
             }`}
             title={`Context Panel - ${state.isContextPanelMode ? 'Click to close' : 'Add custom context snippets'}`}
           >
-            <span className="text-base sm:text-lg transition-transform group-hover:animate-bounce">{state.isContextPanelMode ? '📋' : '📄'}</span>
-            {/* Creative spark indicator when active */}
-            {state.isContextPanelMode && (
-              <span className="absolute -top-1 -right-1 inline-flex h-3 w-3 rounded-full bg-theme-primary animate-pulse"></span>
-            )}
+            <div className="flex items-center gap-1.5">
+              <span className={`text-base sm:text-lg transition-transform ${state.isContextPanelMode ? 'context-panel-icon' : ''}`}>
+                {state.isContextPanelMode ? '✨' : '📝'}
+              </span>
+              {!isMobile && state.isContextPanelMode && (
+                <span className="text-xs font-semibold">Active</span>
+              )}
+            </div>
           </button>
 
           {/* Divider - Hide on mobile */}
@@ -344,29 +347,20 @@ function AppContent() {
             <span className="text-base sm:text-lg">{state.isAdminPanelOpen ? '🛠️' : '⚙️'}</span>
           </button>
 
-          {/* Mobile Actions Menu - Creative Chevron with Smooth Animation */}
+          {/* Mobile Actions Menu - Fixed Chevron Icon */}
           {isMobile && (
             <button
               onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-              className={`p-1.5 rounded-lg transition-all group relative ${
+              className={`p-1.5 rounded-lg transition-all ${
                 isDark
                   ? 'text-gray-200 hover:bg-dark-100'
                   : 'text-gray-700 hover:bg-light-300'
               }`}
               title="More actions"
             >
-              <svg className={`w-5 h-5 transition-all duration-300 ease-out ${
-                isMobileMenuOpen 
-                  ? 'rotate-180 opacity-0' 
-                  : 'rotate-0 opacity-100'
-              }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`w-5 h-5 transition-transform duration-300 ${isMobileMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
               </svg>
-              {isMobileMenuOpen && (
-                <svg className="absolute w-5 h-5 rotate-180 transition-all duration-300 ease-out" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                </svg>
-              )}
             </button>
           )}
         </div>

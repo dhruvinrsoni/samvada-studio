@@ -463,3 +463,43 @@ img, video, svg, iframe {
   max-height: 100dvh;
 }
 
+/* Creative Context Panel Animations */
+@keyframes contextPulseRipple {
+  0% {
+    box-shadow: 0 0 0 0 rgba(var(--theme-primary-rgb), 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(var(--theme-primary-rgb), 0);
+  }
+  100% {
+    box-shadow: 0 0 0 10px rgba(var(--theme-primary-rgb), 0);
+  }
+}
+
+@keyframes contextGlow {
+  0%, 100% {
+    text-shadow: 0 0 5px rgba(var(--theme-primary-rgb), 0.5);
+  }
+  50% {
+    text-shadow: 0 0 10px rgba(var(--theme-primary-rgb), 1);
+  }
+}
+
+@keyframes contextSlideIn {
+  from {
+    transform: translateX(-4px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.context-panel-active {
+  animation: contextPulseRipple 2s infinite;
+}
+
+.context-panel-icon {
+  animation: contextGlow 2s ease-in-out infinite;
+}
