@@ -31,6 +31,7 @@ function AppContent() {
   const pwaStatus = usePWA();
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
+  const isDark = state.theme === 'dark';
   
   // Local network permission hook - prompts on first use with Ollama
   useLocalNetworkPermission();
@@ -39,6 +40,7 @@ function AppContent() {
   const [templateContent, setTemplateContent] = useState<string>('');
   const [isThemeSettingsOpen, setIsThemeSettingsOpen] = useState(false);
   const [minimizedOllamaWarnings, setMinimizedOllamaWarnings] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleQuote = (text: string) => {
     setQuotedText(prev => prev ? `${prev}\n\n> ${text}` : `> ${text}`);
@@ -131,6 +133,12 @@ function AppContent() {
     dispatch({ type: 'SET_SIDEBAR_OPEN', payload: !isMobile });
   }, [isMobile, dispatch]);
 
+  useEffect(() => {
+    if (!isMobile) {
+      setIsMobileMenuOpen(false);
+    }
+  }, [isMobile]);
+
   return (
     <>
       <div className={`flex flex-col h-screen-safe overflow-hidden ${state.theme === 'dark' ? 'bg-dark-300 text-gray-200' : 'bg-light-200 text-gray-800'}`}>
@@ -157,33 +165,42 @@ function AppContent() {
                 </svg>
               </button>
             )}
-          <h1 className="text-sm sm:text-base md:text-lg font-bold text-theme-primary truncate max-w-[100px] sm:max-w-none">
-            {isMobile ? BRAND.shortName || BRAND.displayName.split(' ')[0] : BRAND.displayName}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-sm sm:text-base md:text-lg font-bold text-theme-primary truncate max-w-[100px] sm:max-w-none">
+              {isMobile ? BRAND.shortName || BRAND.displayName.split(' ')[0] : BRAND.displayName}
+            </h1>
+            {import.meta.env.DEV && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold tracking-wide bg-theme-primary text-white border border-white/20 shadow-sm">
+                DEV MODE
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Global Search Trigger - fills the empty space */}
-        <button
-          onClick={() => dispatch({ type: 'TOGGLE_GLOBAL_SEARCH' })}
-          className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex-1 mx-2 sm:mx-3 md:mx-4 max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg ${
-            state.theme === 'dark'
-              ? 'bg-dark-100 text-gray-400 hover:bg-dark-200 border border-dark-300'
-              : 'bg-light-200 text-gray-600 hover:bg-light-300 border border-light-400'
-          }`}
-          title="Search everywhere (Ctrl+Shift+F)"
-        >
-          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <span className="text-xs sm:text-sm truncate hidden xs:inline">
-            {isMobile ? 'Search...' : 'Search everywhere...'}
-          </span>
-          <kbd className={`px-1 sm:px-1.5 py-0.5 text-xs rounded ml-auto hidden lg:inline flex-shrink-0 ${
-            state.theme === 'dark' ? 'bg-dark-300' : 'bg-light-300'
-          }`}>
-            Ctrl+Shift+F
-          </kbd>
-        </button>
+        {!isMobile && (
+          <button
+            onClick={() => dispatch({ type: 'TOGGLE_GLOBAL_SEARCH' })}
+            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex-1 mx-2 sm:mx-3 md:mx-4 max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg ${
+              state.theme === 'dark'
+                ? 'bg-dark-100 text-gray-400 hover:bg-dark-200 border border-dark-300'
+                : 'bg-light-200 text-gray-600 hover:bg-light-300 border border-light-400'
+            }`}
+            title="Search everywhere (Ctrl+Shift+F)"
+          >
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span className="text-xs sm:text-sm truncate hidden xs:inline">
+              Search everywhere...
+            </span>
+            <kbd className={`px-1 sm:px-1.5 py-0.5 text-xs rounded ml-auto hidden lg:inline flex-shrink-0 ${
+              state.theme === 'dark' ? 'bg-dark-300' : 'bg-light-300'
+            }`}>
+              Ctrl+Shift+F
+            </kbd>
+          </button>
+        )}
 
         {/* Right Side Action Buttons */}
         <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2 flex-shrink-0">
@@ -199,6 +216,23 @@ function AppContent() {
               title="Keyboard Shortcuts (?)"
             >
               <span className="text-base sm:text-lg">?</span>
+            </button>
+          )}
+
+          {/* Global Search - Mobile icon */}
+          {isMobile && (
+            <button
+              onClick={() => dispatch({ type: 'TOGGLE_GLOBAL_SEARCH' })}
+              className={`p-1.5 rounded-lg transition-colors ${
+                isDark
+                  ? 'text-gray-200 hover:bg-dark-100'
+                  : 'text-gray-700 hover:bg-light-300'
+              }`}
+              title="Global Search"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </button>
           )}
 
@@ -257,19 +291,21 @@ function AppContent() {
           )}
 
           {/* Context Panel */}
-          <button
-            onClick={() => dispatch({ type: 'TOGGLE_CONTEXT_PANEL_MODE' })}
-            className={`p-1.5 sm:p-2 rounded-lg transition-all ${
-              state.isContextPanelMode
-                ? 'bg-theme-primary text-white shadow-lg ring-2 ring-theme-primary'
-                : state.theme === 'dark' 
-                  ? 'text-gray-400 hover:bg-dark-100' 
-                  : 'text-gray-600 hover:bg-light-300'
-            }`}
-            title={`Context Panel - ${state.isContextPanelMode ? 'Click to close' : 'Add custom context snippets for on-demand inclusion'}`}
-          >
-            <span className="text-base sm:text-lg">{state.isContextPanelMode ? '📋' : '📄'}</span>
-          </button>
+          {!isMobile && (
+            <button
+              onClick={() => dispatch({ type: 'TOGGLE_CONTEXT_PANEL_MODE' })}
+              className={`p-1.5 sm:p-2 rounded-lg transition-all ${
+                state.isContextPanelMode
+                  ? 'bg-theme-primary text-white shadow-lg ring-2 ring-theme-primary'
+                  : state.theme === 'dark' 
+                    ? 'text-gray-400 hover:bg-dark-100' 
+                    : 'text-gray-600 hover:bg-light-300'
+              }`}
+              title={`Context Panel - ${state.isContextPanelMode ? 'Click to close' : 'Add custom context snippets for on-demand inclusion'}`}
+            >
+              <span className="text-base sm:text-lg">{state.isContextPanelMode ? '📋' : '📄'}</span>
+            </button>
+          )}
 
           {/* Divider - Hide on mobile */}
           {!isMobile && (
@@ -277,17 +313,19 @@ function AppContent() {
           )}
 
           {/* Theme Settings */}
-          <button
-            onClick={() => setIsThemeSettingsOpen(true)}
-            className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-              state.theme === 'dark' 
-                ? 'text-gray-400 hover:bg-dark-100' 
-                : 'text-gray-600 hover:bg-light-300'
-            }`}
-            title="Theme Settings"
-          >
-            <span className="text-base sm:text-lg">{state.theme === 'dark' ? '🌙' : '☀️'}</span>
-          </button>
+          {!isMobile && (
+            <button
+              onClick={() => setIsThemeSettingsOpen(true)}
+              className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
+                state.theme === 'dark' 
+                  ? 'text-gray-400 hover:bg-dark-100' 
+                  : 'text-gray-600 hover:bg-light-300'
+              }`}
+              title="Theme Settings"
+            >
+              <span className="text-base sm:text-lg">{state.theme === 'dark' ? '🌙' : '☀️'}</span>
+            </button>
+          )}
 
           {/* Admin Settings */}
           <button
@@ -303,8 +341,102 @@ function AppContent() {
           >
             <span className="text-base sm:text-lg">{state.isAdminPanelOpen ? '🛠️' : '⚙️'}</span>
           </button>
+
+          {/* Mobile Actions Menu */}
+          {isMobile && (
+            <button
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+              className={`p-1.5 rounded-lg transition-colors ${
+                isDark
+                  ? 'text-gray-200 hover:bg-dark-100'
+                  : 'text-gray-700 hover:bg-light-300'
+              }`}
+              title="More actions"
+            >
+              <svg className={`w-5 h-5 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
+
+      {isMobile && isMobileMenuOpen && (
+        <div className={`border-b ${isDark ? 'border-dark-100 bg-dark-200' : 'border-light-400 bg-light-100'}`}>
+          <div className="max-h-[60vh] overflow-y-auto px-3 py-3 space-y-2">
+            <button
+              onClick={() => {
+                dispatch({ type: 'TOGGLE_SHORTCUTS_HELP' });
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full text-left p-3 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300 text-gray-200' : 'border-light-400 bg-white text-gray-800'}`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg">?</span>
+                <span className="font-medium">Keyboard Shortcuts</span>
+              </div>
+              <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>See all available shortcuts</p>
+            </button>
+
+            <button
+              onClick={() => {
+                dispatch({ type: 'TOGGLE_TEMPLATES_MODAL' });
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full text-left p-3 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300 text-gray-200' : 'border-light-400 bg-white text-gray-800'}`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📄</span>
+                <span className="font-medium">Prompt Templates</span>
+              </div>
+              <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Browse and reuse prompts</p>
+            </button>
+
+            <button
+              onClick={() => {
+                dispatch({ type: 'TOGGLE_EXPORT_MODAL' });
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full text-left p-3 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300 text-gray-200' : 'border-light-400 bg-white text-gray-800'}`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📦</span>
+                <span className="font-medium">Export</span>
+              </div>
+              <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Download chat data</p>
+            </button>
+
+            <button
+              onClick={() => {
+                dispatch({ type: 'TOGGLE_CONTEXT_PANEL_MODE' });
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full text-left p-3 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300 text-gray-200' : 'border-light-400 bg-white text-gray-800'}`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📋</span>
+                <span className="font-medium">Context Panel</span>
+              </div>
+              <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Toggle context snippets</p>
+            </button>
+
+            <button
+              onClick={() => {
+                setIsThemeSettingsOpen(true);
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full text-left p-3 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300 text-gray-200' : 'border-light-400 bg-white text-gray-800'}`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🎨</span>
+                <span className="font-medium">Theme Settings</span>
+              </div>
+              <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Customize colors and fonts</p>
+            </button>
+
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">

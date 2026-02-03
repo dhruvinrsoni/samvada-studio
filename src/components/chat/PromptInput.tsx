@@ -436,16 +436,6 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
 
           <div className={`w-px h-4 mx-0.5 sm:mx-1 ${isDark ? 'bg-dark-100' : 'bg-light-400'}`} />
 
-          {/* Voice Input - Mobile only in toolbar */}
-          <div className="sm:hidden">
-            <VoiceInput 
-              onTranscript={(text) => onChange?.(value + (value ? ' ' : '') + text)}
-              disabled={disabled}
-            />
-          </div>
-
-          <div className={`w-px h-4 mx-0.5 sm:mx-1 ${isDark ? 'bg-dark-100' : 'bg-light-400'}`} />
-
           {/* Clear Formatting */}
           <button
             type="button"
@@ -544,8 +534,8 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
               <text x="12" y="18" textAnchor="middle" fontSize="18" fontWeight="bold" fontFamily="Arial, sans-serif" fill="currentColor">A</text>
             </svg>
           </button>
-          {/* Voice Input - Desktop only in bottom right, Mobile in toolbar */}
-          <div className="hidden sm:block">
+          {/* Voice Input - Always visible */}
+          <div>
             <VoiceInput 
               onTranscript={(text) => onChange?.(value + (value ? ' ' : '') + text)}
               disabled={disabled}

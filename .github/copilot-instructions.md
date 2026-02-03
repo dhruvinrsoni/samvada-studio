@@ -91,3 +91,7 @@ src/components/
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npx tsc --noEmit` - Type check
+
+## Contribution Rules
+- For any new UI element involving CRUD (add/update/delete), design mobile behavior first and add a mobile-specific layout if needed.
+- For any new colors or color adjustments, verify compatibility with theme customization and light/dark mode.

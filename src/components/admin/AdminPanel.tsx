@@ -25,6 +25,14 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [pendingEditProvider, setPendingEditProvider] = useState<LLMProviderConfig | 'add' | null>(null);
   const isDark = state.theme === 'dark';
+  const repoUrl = 'https://github.com/dhruvinrsoni/samvada-studio';
+  const appVersion = import.meta.env.APP_VERSION || '0.0.0';
+  const gitCommit = import.meta.env.GIT_COMMIT || 'unknown';
+  const [ciStatus, setCiStatus] = useState<{
+    status: 'loading' | 'success' | 'failure' | 'running' | 'error' | 'unknown';
+    url?: string;
+    updatedAt?: string;
+  }>({ status: 'loading' });
 
   // Centralized health monitoring for all providers (only when panel is open and on providers tab)
   const { healthStatus } = useProviderHealthMonitor({
@@ -71,6 +79,49 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
     window.addEventListener('ollama-discovered', handleOllamaDiscovered as EventListener);
     return () => window.removeEventListener('ollama-discovered', handleOllamaDiscovered as EventListener);
   }, [state.providers, dispatch]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchCiStatus = async () => {
+      try {
+        const response = await fetch(
+          'https://api.github.com/repos/dhruvinrsoni/samvada-studio/actions/runs?per_page=1',
+          { signal: controller.signal }
+        );
+        if (!response.ok) {
+          setCiStatus({ status: 'error' });
+          return;
+        }
+        const data = await response.json();
+        const latest = data.workflow_runs?.[0];
+        if (!latest) {
+          setCiStatus({ status: 'unknown' });
+          return;
+        }
+        const runStatus = latest.status as string | undefined;
+        const conclusion = latest.conclusion as string | undefined;
+        const status = runStatus !== 'completed'
+          ? 'running'
+          : conclusion === 'success'
+            ? 'success'
+            : conclusion === 'failure' || conclusion === 'cancelled'
+              ? 'failure'
+              : 'unknown';
+
+        setCiStatus({
+          status,
+          url: latest.html_url,
+          updatedAt: latest.updated_at,
+        });
+      } catch {
+        setCiStatus({ status: 'error' });
+      }
+    };
+
+    fetchCiStatus();
+    return () => controller.abort();
+  }, []);
 
   if (!state.isAdminPanelOpen) return null;
 
@@ -509,6 +560,77 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                   System Settings
                 </h3>
                 <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        App Version
+                      </p>
+                      <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                        Release build and git commit
+                      </p>
+                    </div>
+                    <div className={`text-right text-sm font-mono ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                      <div>
+                        <a
+                          href={`${repoUrl}/releases/tag/v${appVersion}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:underline"
+                          title="View release on GitHub"
+                        >
+                          v{appVersion}
+                        </a>
+                      </div>
+                      <div className={`${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {gitCommit !== 'unknown' ? (
+                          <a
+                            href={`${repoUrl}/commit/${gitCommit}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="hover:underline"
+                            title="View commit on GitHub"
+                          >
+                            {gitCommit}
+                          </a>
+                        ) : (
+                          gitCommit
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        CI Status
+                      </p>
+                      <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                        Latest GitHub Actions run
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        ciStatus.status === 'success'
+                          ? (isDark ? 'bg-green-900/30 text-green-300' : 'bg-green-100 text-green-800')
+                          : ciStatus.status === 'failure'
+                            ? (isDark ? 'bg-red-900/30 text-red-300' : 'bg-red-100 text-red-800')
+                            : ciStatus.status === 'running'
+                              ? (isDark ? 'bg-yellow-900/30 text-yellow-300' : 'bg-yellow-100 text-yellow-800')
+                              : (isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700')
+                      }`}>
+                        {ciStatus.status === 'loading' ? 'Checking…' : ciStatus.status}
+                      </span>
+                      <a
+                        href={ciStatus.url || `${repoUrl}/actions`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`text-sm font-medium hover:underline ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
+                      >
+                        View
+                      </a>
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between">
                     <div>
                       <p className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>

@@ -2,14 +2,29 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath } from 'url'
+import { readFileSync } from 'fs'
+import { execSync } from 'child_process'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as { version?: string }
+const appVersion = pkg.version ?? '0.0.0'
+const gitCommit = (() => {
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim()
+  } catch {
+    return 'unknown'
+  }
+})()
 
 // Use environment variable for base path (GitHub Pages needs /repo-name/)
 const base = process.env.BASE_URL || '/'
 
 export default defineConfig({
   base,
+  define: {
+    'import.meta.env.APP_VERSION': JSON.stringify(appVersion),
+    'import.meta.env.GIT_COMMIT': JSON.stringify(gitCommit)
+  },
   plugins: [
     react(),
     VitePWA({

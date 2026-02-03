@@ -31,8 +31,9 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
     updateApp,
   } = pwaStatus;
 
-  // Get app version from package.json or manifest
-  const appVersion = '0.1.0'; // TODO: Pull from package.json dynamically
+  const appVersion = import.meta.env.APP_VERSION || '0.0.0';
+  const gitCommit = import.meta.env.GIT_COMMIT || 'unknown';
+  const repoUrl = 'https://github.com/dhruvinrsoni/samvada-studio';
 
   // Fetch cache size summary
   useEffect(() => {
@@ -150,7 +151,15 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
         <div>
           <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Version</p>
           <p className={`font-mono font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-            v{appVersion}
+            <a
+              href={`${repoUrl}/releases/tag/v${appVersion}`}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+              title="View release on GitHub"
+            >
+              v{appVersion}
+            </a>
           </p>
         </div>
         <div>
@@ -258,7 +267,34 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
           🔧 Technical Details
         </summary>
         <div className={`pl-4 space-y-1 font-mono ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-          <p>Version: v{appVersion}</p>
+          <p>
+            Version:{' '}
+            <a
+              href={`${repoUrl}/releases/tag/v${appVersion}`}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+              title="View release on GitHub"
+            >
+              v{appVersion}
+            </a>
+          </p>
+          <p>
+            Commit:{' '}
+            {gitCommit !== 'unknown' ? (
+              <a
+                href={`${repoUrl}/commit/${gitCommit}`}
+                target="_blank"
+                rel="noreferrer"
+                className="hover:underline"
+                title="View commit on GitHub"
+              >
+                {gitCommit}
+              </a>
+            ) : (
+              gitCommit
+            )}
+          </p>
           <p>Service Worker: {swStatus}</p>
           <p>Cache Size: {formatBytes(totalCacheSize)}</p>
           <p>Network: {isOnline ? 'Online' : 'Offline'}</p>
