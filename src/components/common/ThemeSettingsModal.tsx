@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { createLLMReport } from '../../utils/debug';
-import { getAllThemePresets, getThemePreset, type CustomTheme, type ThemeMode } from '../../utils/theme';
+import { getAllThemePresets, getThemePreset } from '../../utils/theme';
+import type { CustomTheme, ThemeMode } from '../../types';
+import ColorPicker from './ColorPicker';
 
 interface ThemeSettingsModalProps {
   onClose: () => void;
@@ -298,17 +300,17 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                     <ColorPicker
                       label="Primary Color"
                       value={customColors.primary}
-                      onChange={(color) => handleCustomColorChange('primary', color)}
+                      onChange={(color: string) => handleCustomColorChange('primary', color)}
                     />
                     <ColorPicker
                       label="Secondary Color"
                       value={customColors.secondary}
-                      onChange={(color) => handleCustomColorChange('secondary', color)}
+                      onChange={(color: string) => handleCustomColorChange('secondary', color)}
                     />
                     <ColorPicker
                       label="Accent Color"
                       value={customColors.accent}
-                      onChange={(color) => handleCustomColorChange('accent', color)}
+                      onChange={(color: string) => handleCustomColorChange('accent', color)}
                     />
                   </div>
                 </div>

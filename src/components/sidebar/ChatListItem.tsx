@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { getFirstWords, formatDate } from '../../utils/helpers';
 import type { Chat } from '../../types';
+import { useIsMobile } from '../../hooks/useMediaQuery';
 
 interface ChatListItemProps {
   chat: Chat;
@@ -9,6 +10,7 @@ interface ChatListItemProps {
 
 export default function ChatListItem({ chat }: ChatListItemProps) {
   const { state, dispatch } = useChat();
+  const isMobile = useIsMobile();
   const isActive = state.activeChat === chat.id;
   const isSelected = state.selectedChatIds.includes(chat.id);
   const isDark = state.theme === 'dark';
@@ -17,13 +19,18 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
   const [isDeleteHover, setIsDeleteHover] = useState(false);
 
   const lastMessage = chat.promptResponses.length > 0
-    ? chat.promptResponses[chat.promptResponses.length - 1].prompt.content
+    ? (chat.promptResponses[chat.promptResponses.length - 1]?.prompt?.content || 'No messages yet')
     : 'No messages yet';
 
   const handleRename = () => {
     if (newTitle.trim() && newTitle !== chat.title) {
       dispatch({ type: 'UPDATE_CHAT', payload: { ...chat, title: newTitle.trim() } });
     }
+    setIsRenaming(false);
+  };
+
+  const handleRenameCancel = () => {
+    setNewTitle(chat.title);
     setIsRenaming(false);
   };
 
@@ -73,7 +80,13 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
               type="text"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              onBlur={handleRename}
+              onBlur={() => {
+                if (isMobile) {
+                  handleRenameCancel();
+                  return;
+                }
+                handleRename();
+              }}
               onKeyDown={handleRenameKeyDown}
               onClick={(e) => e.stopPropagation()}
               autoFocus
@@ -110,6 +123,10 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
         <button
           onClick={(e) => {
             e.stopPropagation();
+            if (isRenaming) {
+              handleRename();
+              return;
+            }
             setIsRenaming(true);
             setNewTitle(chat.title);
           }}
@@ -118,6 +135,18 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
         >
           {isRenaming ? '💾' : '✏️'}
         </button>
+        {isRenaming && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRenameCancel();
+            }}
+            className={`p-1 sm:p-1.5 rounded text-gray-500 min-w-[24px] min-h-[24px] sm:min-w-[28px] sm:min-h-[28px] flex items-center justify-center text-xs sm:text-sm ${isDark ? 'hover:bg-dark-300' : 'hover:bg-light-400'}`}
+            title="Cancel rename"
+          >
+            ✖️
+          </button>
+        )}
         <button
           onClick={(e) => {
             e.stopPropagation();

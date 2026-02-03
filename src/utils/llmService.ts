@@ -267,14 +267,14 @@ export const callLLMProvider = async (
         
         // Only add temperature for non-reasoning models
         if (!isReasoningModel) {
-          requestBody.temperature = provider.settings.temperature;
+          (requestBody as Record<string, unknown>)['temperature'] = provider.settings.temperature;
         }
         
         // Use the correct token parameter based on model
         if (usesNewTokenParam) {
-          requestBody.max_completion_tokens = provider.settings.maxTokens;
+          (requestBody as Record<string, unknown>)['max_completion_tokens'] = provider.settings.maxTokens;
         } else {
-          requestBody.max_tokens = provider.settings.maxTokens;
+          (requestBody as Record<string, unknown>)['max_tokens'] = provider.settings.maxTokens;
         }
         
         response = await proxiedFetch(endpoint, {

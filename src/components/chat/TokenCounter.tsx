@@ -27,8 +27,8 @@ export default function TokenCounter({ text, showCost = false }: TokenCounterPro
   const estimatedCost = useMemo(() => {
     if (!showCost) return 0;
     const model = provider?.model || 'default';
-    const costs = TOKEN_COSTS[model] || TOKEN_COSTS.default;
-    return (tokenCount / 1000) * costs.input;
+    const costs = TOKEN_COSTS[model] || TOKEN_COSTS['default'];
+    return (tokenCount / 1000) * (costs?.input || 0.0015);
   }, [tokenCount, showCost, provider]);
 
   const getTokenColor = () => {

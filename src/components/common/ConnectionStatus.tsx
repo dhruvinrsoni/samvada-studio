@@ -40,7 +40,6 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
   const [isDismissed, setIsDismissed] = useState(false);
   const [localNetworkPermission, setLocalNetworkPermission] = useState<'granted' | 'denied' | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [retryCount, setRetryCount] = useState(0);
 
   const isDark = state.themeSettings.mode === 'dark' ||
     (state.themeSettings.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -75,9 +74,8 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
       };
       setConnectivity(newConnectivity);
       
-      // If Ollama is found, reset retry count and mark as not initial load
+      // If Ollama is found, mark as not initial load
       if (status.ollama) {
-        setRetryCount(0);
         setIsInitialLoad(false);
       }
     } catch (error) {
@@ -119,7 +117,6 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
         
         // Wait before next retry (exponential backoff: 3s, then 5s)
         await new Promise(resolve => setTimeout(resolve, 3000 * (i + 1)));
-        setRetryCount(i + 1);
       }
       
       // After retries, mark as no longer initial load

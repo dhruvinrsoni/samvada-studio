@@ -305,7 +305,14 @@ export const THEME_PRESETS: Record<string, ThemePreset> = {
 export const getThemeColors = (presetId: string, mode: 'light' | 'dark'): ColorPalette => {
   const preset = THEME_PRESETS[presetId];
   if (!preset) {
-    return THEME_PRESETS['royal-blue'].colors[mode];
+    return THEME_PRESETS['royal-blue']?.colors?.[mode] || {
+      primary: '217 91 67',
+      primaryHover: '221 83 53',
+      primaryLight: '214 100 97',
+      primaryDark: '224 76 36',
+      secondary: '213 96 85',
+      accent: '212 96 77',
+    };
   }
   return preset.colors[mode];
 };
@@ -389,10 +396,14 @@ export const hexToHsl = (hex: string): string => {
 // Generate color palette from a base color
 export const generateColorPalette = (baseColor: string): ColorPalette => {
   const hsl = hexToHsl(baseColor);
-  const [h, s, l] = hsl.split(' ').map((v, i) => {
+  const parts = hsl.split(' ').map((v, i) => {
     if (i === 0) return parseInt(v);
     return parseInt(v.replace('%', ''));
   });
+  
+  const h = parts[0] ?? 0;
+  const s = parts[1] ?? 50;
+  const l = parts[2] ?? 50;
 
   return {
     primary: `${h} ${s}% ${l}%`,

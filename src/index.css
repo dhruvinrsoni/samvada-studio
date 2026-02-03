@@ -463,6 +463,16 @@ img, video, svg, iframe {
   max-height: 100dvh;
 }
 
+/* Hide scrollbars (mobile settings carousel) */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Creative Context Panel Animations */
 @keyframes contextPulseRipple {
   0% {

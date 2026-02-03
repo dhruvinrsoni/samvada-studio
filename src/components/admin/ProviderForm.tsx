@@ -109,7 +109,7 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
           setOllamaModels(result.models);
           // Select first model if current model not in list
           if (result.models.length > 0 && !result.models.some(m => m.name === formData.model)) {
-            setFormData(prev => ({ ...prev, model: result.models[0].name }));
+            setFormData(prev => ({ ...prev, model: result.models[0]?.name || '' }));
           }
         } else {
           setModelFetchError(result.error || 'Failed to fetch models');
@@ -121,6 +121,7 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
       const timeoutId = setTimeout(fetchModels, 500);
       return () => clearTimeout(timeoutId);
     }
+    return undefined;
   }, [formData.type, formData.apiEndpoint]);
 
   // Auto-fill discovered Ollama base URL when switching to Ollama type (NEW PROVIDERS ONLY)
@@ -175,8 +176,10 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
       if (result.success && result.models.length > 0) {
         setDynamicModels(result.models);
         // Select first model if current model not in list
-        if (!result.models.includes(formData.model)) {
-          setFormData(prev => ({ ...prev, model: result.models[0] }));
+        const firstModel = result.models[0];
+        if (firstModel && !result.models.includes(formData.model)) {
+          const modelName = typeof firstModel === 'string' ? firstModel : ((firstModel as Record<string, unknown>)['name'] as string) || '';
+          setFormData(prev => ({ ...prev, model: modelName }));
         }
       } else if (result.error) {
         setModelFetchError(result.error);

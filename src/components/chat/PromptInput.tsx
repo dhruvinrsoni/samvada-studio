@@ -56,7 +56,8 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
       setHistoryIndex(newIndex);
-      onChange?.(history[newIndex]);
+      const text = history[newIndex];
+      if (text !== undefined) onChange?.(text);
     }
   };
 
@@ -65,7 +66,8 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
     if (historyIndex < history.length - 1) {
       const newIndex = historyIndex + 1;
       setHistoryIndex(newIndex);
-      onChange?.(history[newIndex]);
+      const text = history[newIndex];
+      if (text !== undefined) onChange?.(text);
     }
   };
 
@@ -82,17 +84,18 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
   // Detect list mode patterns
   useEffect(() => {
     const lines = value.split('\n');
-    const lastLine = lines[lines.length - 1];
+    const lastLine = lines[lines.length - 1] || '';
     
     // Check if last line starts a numbered list
     const numberedMatch = lastLine.match(/^(\d+)\.\s/);
     const bulletMatch = lastLine.match(/^[-*]\s/);
     
     if (numberedMatch && !listMode.active) {
+      const number = numberedMatch[1] ? parseInt(numberedMatch[1]) : 1;
       setListMode({
         active: true,
         type: 'numbered',
-        currentNumber: parseInt(numberedMatch[1]),
+        currentNumber: number,
       });
     } else if (bulletMatch && !listMode.active) {
       setListMode({
@@ -206,7 +209,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
       e.preventDefault();
       
       const lines = value.split('\n');
-      const lastLine = lines[lines.length - 1];
+      const lastLine = lines[lines.length - 1] || '';
       
       // Check if list item is empty (just the marker)
       const emptyNumbered = /^\d+\.\s*$/.test(lastLine);

@@ -76,8 +76,9 @@ export default function GlobalSearch() {
       e.preventDefault();
       const newIndex = Math.max(globalSearch.selectedResultIndex - 1, 0);
       dispatch({ type: 'SET_GLOBAL_SEARCH_INDEX', payload: newIndex });
-    } else if (e.key === 'Enter' && globalSearch.results[globalSearch.selectedResultIndex]) {
-      handleResultClick(globalSearch.results[globalSearch.selectedResultIndex]);
+    } else if (e.key === 'Enter' && globalSearch.results.length > 0 && globalSearch.selectedResultIndex >= 0) {
+      const result = globalSearch.results[globalSearch.selectedResultIndex];
+      if (result) handleResultClick(result);
     }
   };
 

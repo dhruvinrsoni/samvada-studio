@@ -193,8 +193,8 @@ interface FolderFormProps {
 
 function FolderForm({ folder, onSave, onDelete, onCancel, isDark }: FolderFormProps) {
   const [name, setName] = useState(folder?.name || '');
-  const [color, setColor] = useState(folder?.color || FOLDER_COLORS[0].value);
-  const [icon, setIcon] = useState(folder?.icon || FOLDER_ICONS[0]);
+  const [color, setColor] = useState<string>(((folder?.color || FOLDER_COLORS[0]?.value) || '#3b82f6') as string);
+  const [icon, setIcon] = useState<string>((folder?.icon || FOLDER_ICONS[0]) as string);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
@@ -279,7 +279,14 @@ function FolderForm({ folder, onSave, onDelete, onCancel, isDark }: FolderFormPr
               Cancel
             </button>
             <button
-              onClick={() => name.trim() && onSave(name.trim(), color, icon)}
+              onClick={() => { 
+                const trimmedName = name.trim(); 
+                if (trimmedName) {
+                  const finalColor: string = color || '#3b82f6'; 
+                  const finalIcon: string = icon; 
+                  onSave(trimmedName, finalColor, finalIcon);
+                }
+              }}
               disabled={!name.trim()}
               className="px-3 sm:px-4 py-1.5 sm:py-2 bg-theme-primary text-white rounded-lg font-medium hover:bg-theme-primary-hover disabled:opacity-50 text-xs sm:text-sm min-h-[36px]"
             >

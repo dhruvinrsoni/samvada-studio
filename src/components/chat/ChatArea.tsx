@@ -7,7 +7,7 @@ import { getLLMResponse } from '../../utils/llmService';
 import PromptResponseItem from './PromptResponseItem';
 import PromptInput from './PromptInput';
 import ChatSettings from './ChatSettings';
-import type { LLMProviderConfig } from '../../types';
+import type { LLMProviderConfig, Chat } from '../../types';
 import type { PWAStatus } from '../../hooks/usePWA';
 
 interface ChatAreaProps {
@@ -19,7 +19,7 @@ interface ChatAreaProps {
   pwaStatus?: PWAStatus;
 }
 
-export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templateContent = '', onClearTemplate, pwaStatus }: ChatAreaProps) {
+export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templateContent = '', onClearTemplate }: ChatAreaProps) {
   const { state, activeChat, dispatch } = useChat();
   const { addToast } = useToast();
   const isMobile = useIsMobile();
@@ -264,8 +264,8 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
                     {/* Duplicate */}
                     <button
                       onClick={() => {
-                        const newChat = { ...activeChat, id: Date.now().toString(), title: `${activeChat.title} (Copy)`, createdAt: Date.now() };
-                        dispatch({ type: 'ADD_CHAT', payload: newChat });
+                        const newChat: Chat = { ...activeChat, id: Date.now().toString(), title: `${activeChat.title} (Copy)`, createdAt: new Date(), updatedAt: new Date() };
+                        dispatch({ type: 'CREATE_CHAT', payload: newChat });
                         dispatch({ type: 'SET_ACTIVE_CHAT', payload: newChat.id });
                         setIsChatMenuOpen(false);
                         addToast('success', 'Duplicated', 'Chat copied successfully');
@@ -283,7 +283,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
                     {/* Pin/Unpin */}
                     <button
                       onClick={() => {
-                        dispatch({ type: 'TOGGLE_PIN_CHAT', payload: activeChat.id });
+                        dispatch({ type: 'UPDATE_CHAT', payload: { ...activeChat, isPinned: !activeChat.isPinned } });
                         setIsChatMenuOpen(false);
                         addToast('success', activeChat.isPinned ? 'Unpinned' : 'Pinned', `Chat ${activeChat.isPinned ? 'unpinned' : 'pinned to top'}`);
                       }}
@@ -501,7 +501,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
 
       {/* Settings Panel */}
       {showSettings && (
-        <ChatSettings chat={activeChat} onClose={() => setShowSettings(false)} pwaStatus={pwaStatus} />
+        <ChatSettings chat={activeChat} onClose={() => setShowSettings(false)} />
       )}
 
       {/* Messages Area - responsive padding and spacing */}

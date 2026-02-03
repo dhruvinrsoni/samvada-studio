@@ -312,6 +312,23 @@ function AppContent() {
             </div>
           </button>
 
+          {/* Templates Library - Mobile quick access */}
+          {isMobile && (
+            <button
+              onClick={() => dispatch({ type: 'TOGGLE_TEMPLATES_MODAL' })}
+              className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
+                state.theme === 'dark' 
+                  ? 'text-gray-300 hover:bg-dark-100' 
+                  : 'text-gray-600 hover:bg-light-300'
+              }`}
+              title="Prompt Templates"
+            >
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </button>
+          )}
+
           {/* Divider - Hide on mobile */}
           {!isMobile && (
             <div className={`h-5 sm:h-6 w-px ${state.theme === 'dark' ? 'bg-dark-100' : 'bg-light-400'}`} />
@@ -395,20 +412,6 @@ function AppContent() {
                 <span className="font-medium">Prompt Templates</span>
               </div>
               <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Browse and reuse prompts</p>
-            </button>
-
-            <button
-              onClick={() => {
-                dispatch({ type: 'TOGGLE_EXPORT_MODAL' });
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full text-left p-3 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300 text-gray-200' : 'border-light-400 bg-white text-gray-800'}`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-lg">📦</span>
-                <span className="font-medium">Export</span>
-              </div>
-              <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Download chat data</p>
             </button>
 
             <button

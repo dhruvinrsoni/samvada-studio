@@ -120,7 +120,7 @@ const KEYWORDS: Record<string, string[]> = {
 };
 
 function highlightCode(code: string, language: string): string {
-  const keywords = KEYWORDS[language] || KEYWORDS.javascript;
+  const keywords = KEYWORDS[language] || KEYWORDS['javascript'];
   let highlighted = code
     // Escape HTML
     .replace(/&/g, '&amp;')
@@ -136,10 +136,12 @@ function highlightCode(code: string, language: string): string {
   highlighted = highlighted.replace(/(#.*$)/gm, '<span class="text-gray-500">$1</span>');
   
   // Highlight keywords
-  keywords.forEach(keyword => {
-    const regex = new RegExp(`\\b(${keyword})\\b`, 'g');
-    highlighted = highlighted.replace(regex, '<span class="text-purple-400">$1</span>');
-  });
+  if (keywords) {
+    keywords.forEach(keyword => {
+      const regex = new RegExp(`\\b(${keyword})\\b`, 'g');
+      highlighted = highlighted.replace(regex, '<span class="text-purple-400">$1</span>');
+    });
+  }
   
   // Highlight numbers
   highlighted = highlighted.replace(/\b(\d+\.?\d*)\b/g, '<span class="text-orange-400">$1</span>');
@@ -219,7 +221,7 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
             const codeString = String(children).replace(/\n$/, '');
             
             if (match) {
-              return <CodeBlock language={match[1]} code={codeString} />;
+              return <CodeBlock language={match[1] || 'javascript'} code={codeString} />
             }
             
             // Inline code

@@ -82,11 +82,12 @@ export function useProviderHealthMonitor({
   }, []);
 
   /**
+  /**
    * Get cached health status if valid
    */
   const getCachedHealth = useCallback((providerId: string): HealthStatus | null => {
     if (isCacheValid(providerId)) {
-      return cacheRef.current[providerId].status;
+      return cacheRef.current[providerId]?.status || null;
     }
     return null;
   }, [isCacheValid]);
@@ -112,14 +113,15 @@ export function useProviderHealthMonitor({
     // Check cache first
     const cached = getCachedHealth(provider.id);
     if (cached) {
+      const cache = cacheRef.current[provider.id];
       return {
         providerId: provider.id,
         providerName: provider.name,
         model: provider.model,
         status: cached,
-        lastChecked: cacheRef.current[provider.id].timestamp,
-        responseTime: cacheRef.current[provider.id].responseTime,
-        modelSize: cacheRef.current[provider.id].modelSize,
+        lastChecked: cache?.timestamp || Date.now(),
+        responseTime: cache?.responseTime || 0,
+        modelSize: cache?.modelSize,
       };
     }
 

@@ -40,7 +40,9 @@ const log = (level: LogLevel, category: string, message: string, data?: any, err
   }
 
   // Console output (with colors and formatting)
-  const timestamp = entry.timestamp.toISOString().split('T')[1].slice(0, -1);
+  const isoString = entry.timestamp.toISOString();
+  const timePart = isoString.split('T')[1];
+  const timestamp = timePart ? timePart.slice(0, -1) : '00:00:00';
   const prefix = `[${timestamp}] [${category}]`;
 
   switch (level) {
