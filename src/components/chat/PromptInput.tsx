@@ -26,6 +26,10 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
     currentNumber: 1,
   });
 
+  // Undo/Redo History
+  const [history, setHistory] = useState<string[]>([value]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+
   // Prompt navigation hook - pass current value so it's always in sync
   const {
     startNavigation,
@@ -35,6 +39,38 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
     resetNavigation,
     isNavigating,
   } = usePromptNavigation(value);
+
+  // Track history changes when value prop changes
+  useEffect(() => {
+    if (value !== history[historyIndex]) {
+      // Create new history entry if current value is different from last saved
+      const newHistory = history.slice(0, historyIndex + 1);
+      newHistory.push(value);
+      setHistory(newHistory);
+      setHistoryIndex(newHistory.length - 1);
+    }
+  }, [value]);
+
+  // Undo handler
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      onChange?.(history[newIndex]);
+    }
+  };
+
+  // Redo handler
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      onChange?.(history[newIndex]);
+    }
+  };
+
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
 
   // Reset multi-line mode when input is cleared or becomes single line
   useEffect(() => {
@@ -87,6 +123,20 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
   const handleKeyDownInternal = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
+
+    // Handle Undo (Ctrl+Z / Cmd+Z)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      handleUndo();
+      return;
+    }
+
+    // Handle Redo (Ctrl+Y / Ctrl+Shift+Z / Cmd+Shift+Z)
+    if (((e.ctrlKey || e.metaKey) && e.key === 'y') || ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z')) {
+      e.preventDefault();
+      handleRedo();
+      return;
+    }
 
     // Handle prompt navigation with arrow keys (only if enabled)
     if (state.promptNavigationEnabled && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
@@ -328,6 +378,38 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
         }`}
       >
         <div className={`flex flex-wrap items-center gap-0.5 sm:gap-1 pb-2 border-b ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
+          {/* Undo/Redo */}
+          <div className="flex items-center gap-0.5 sm:gap-1">
+            <button
+              type="button"
+              onClick={handleUndo}
+              disabled={!canUndo}
+              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${
+                canUndo
+                  ? isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
+                  : isDark ? 'text-gray-600 cursor-not-allowed' : 'text-gray-300 cursor-not-allowed'
+              }`}
+              title="Undo (Ctrl+Z)"
+            >
+              ↶
+            </button>
+            <button
+              type="button"
+              onClick={handleRedo}
+              disabled={!canRedo}
+              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${
+                canRedo
+                  ? isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
+                  : isDark ? 'text-gray-600 cursor-not-allowed' : 'text-gray-300 cursor-not-allowed'
+              }`}
+              title="Redo (Ctrl+Y)"
+            >
+              ↷
+            </button>
+          </div>
+
+          <div className={`w-px h-4 mx-0.5 sm:mx-1 ${isDark ? 'bg-dark-100' : 'bg-light-400'}`} />
+
           {/* Text Formatting */}
           <div className="flex items-center gap-0.5 sm:gap-1">
             <button

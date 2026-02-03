@@ -290,22 +290,24 @@ function AppContent() {
             </button>
           )}
 
-          {/* Context Panel */}
-          {!isMobile && (
-            <button
-              onClick={() => dispatch({ type: 'TOGGLE_CONTEXT_PANEL_MODE' })}
-              className={`p-1.5 sm:p-2 rounded-lg transition-all ${
-                state.isContextPanelMode
-                  ? 'bg-theme-primary text-white shadow-lg ring-2 ring-theme-primary'
-                  : state.theme === 'dark' 
-                    ? 'text-gray-400 hover:bg-dark-100' 
-                    : 'text-gray-600 hover:bg-light-300'
-              }`}
-              title={`Context Panel - ${state.isContextPanelMode ? 'Click to close' : 'Add custom context snippets for on-demand inclusion'}`}
-            >
-              <span className="text-base sm:text-lg">{state.isContextPanelMode ? '📋' : '📄'}</span>
-            </button>
-          )}
+          {/* Context Panel - Prominent in navbar with creative styling */}
+          <button
+            onClick={() => dispatch({ type: 'TOGGLE_CONTEXT_PANEL_MODE' })}
+            className={`relative p-1.5 sm:p-2 rounded-lg transition-all group ${
+              state.isContextPanelMode
+                ? 'bg-theme-primary text-white shadow-lg shadow-theme-primary/50 ring-2 ring-theme-primary scale-110'
+                : state.theme === 'dark' 
+                  ? 'text-gray-400 hover:bg-dark-100 hover:scale-110' 
+                  : 'text-gray-600 hover:bg-light-300 hover:scale-110'
+            }`}
+            title={`Context Panel - ${state.isContextPanelMode ? 'Click to close' : 'Add custom context snippets'}`}
+          >
+            <span className="text-base sm:text-lg transition-transform group-hover:animate-bounce">{state.isContextPanelMode ? '📋' : '📄'}</span>
+            {/* Creative spark indicator when active */}
+            {state.isContextPanelMode && (
+              <span className="absolute -top-1 -right-1 inline-flex h-3 w-3 rounded-full bg-theme-primary animate-pulse"></span>
+            )}
+          </button>
 
           {/* Divider - Hide on mobile */}
           {!isMobile && (
@@ -342,20 +344,29 @@ function AppContent() {
             <span className="text-base sm:text-lg">{state.isAdminPanelOpen ? '🛠️' : '⚙️'}</span>
           </button>
 
-          {/* Mobile Actions Menu */}
+          {/* Mobile Actions Menu - Creative Chevron with Smooth Animation */}
           {isMobile && (
             <button
               onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-              className={`p-1.5 rounded-lg transition-colors ${
+              className={`p-1.5 rounded-lg transition-all group relative ${
                 isDark
                   ? 'text-gray-200 hover:bg-dark-100'
                   : 'text-gray-700 hover:bg-light-300'
               }`}
               title="More actions"
             >
-              <svg className={`w-5 h-5 transition-transform ${isMobileMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <svg className={`w-5 h-5 transition-all duration-300 ease-out ${
+                isMobileMenuOpen 
+                  ? 'rotate-180 opacity-0' 
+                  : 'rotate-0 opacity-100'
+              }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
               </svg>
+              {isMobileMenuOpen && (
+                <svg className="absolute w-5 h-5 rotate-180 transition-all duration-300 ease-out" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
             </button>
           )}
         </div>
@@ -433,6 +444,44 @@ function AppContent() {
               </div>
               <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Customize colors and fonts</p>
             </button>
+
+            {/* LLM Provider Selector - Mobile */}
+            {state.providers.length > 0 && (
+              <div className={`w-full p-3 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300 text-gray-200' : 'border-light-400 bg-white text-gray-800'}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">🤖</span>
+                  <span className="font-medium text-sm">Select Provider</span>
+                </div>
+                <p className={`text-xs mb-3 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Choose LLM for this chat</p>
+                <select
+                  value={state.activeChat ? state.chats.find(c => c.id === state.activeChat)?.providerId || state.defaultProviderId || '' : state.defaultProviderId || ''}
+                  onChange={(e) => {
+                    if (state.activeChat) {
+                      const currentChat = state.chats.find(c => c.id === state.activeChat);
+                      if (currentChat) {
+                        dispatch({
+                          type: 'UPDATE_CHAT',
+                          payload: { ...currentChat, providerId: e.target.value },
+                        });
+                      }
+                    }
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full p-2 text-xs rounded border font-medium transition-colors ${
+                    isDark 
+                      ? 'bg-dark-200 border-dark-100 text-gray-200 hover:bg-dark-100' 
+                      : 'bg-white border-light-400 text-gray-800 hover:bg-light-100'
+                  }`}
+                >
+                  <option value="">Default Provider</option>
+                  {state.providers.filter(p => p.isEnabled).map(provider => (
+                    <option key={provider.id} value={provider.id}>
+                      {provider.name} — {provider.model}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
           </div>
         </div>
