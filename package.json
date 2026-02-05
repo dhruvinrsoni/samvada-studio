@@ -11,7 +11,10 @@
     "preview": "vite preview",
     "proxy": "node cors-proxy-server.js",
     "proxy:insecure": "node cors-proxy-server.js --insecure",
-    "proxy:custom": "node cors-proxy-server.js"
+    "proxy:custom": "node cors-proxy-server.js",
+    "backend": "cd backend && npm start",
+    "backend:dev": "cd backend && npm run dev",
+    "backend:install": "cd backend && npm install"
   },
   "dependencies": {
     "react": "^18.3.1",

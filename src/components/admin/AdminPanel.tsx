@@ -10,6 +10,7 @@ import DeveloperTools from './DeveloperTools';
 import LocalNetworkAccess from './LocalNetworkAccess';
 import PWAStatusPanel from './PWAStatusPanel';
 import PWAAdvancedControls from './PWAAdvancedControls';
+import { BackendProxySettings } from '../common/BackendProxySettings';
 import useProviderHealthMonitor from '../../hooks/useProviderHealthMonitor';
 import type { PWAStatus } from '../../hooks/usePWA';
 
@@ -498,6 +499,11 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
 
           {activeTab === 'settings' && (
             <div className="space-y-6">
+              {/* Backend Proxy Settings */}
+              <div className={`p-4 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300' : 'border-light-400 bg-light-200'}`}>
+                <BackendProxySettings />
+              </div>
+
               {/* Local Network Access */}
               <LocalNetworkAccess isDark={isDark} />
 

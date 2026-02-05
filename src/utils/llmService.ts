@@ -25,6 +25,25 @@ export class LLMError extends Error {
 }
 
 /**
+ * Get the backend proxy URL from localStorage
+ */
+const getBackendProxyUrl = (): string | null => {
+  return localStorage.getItem('backendProxyUrl');
+};
+
+/**
+ * Check if backend proxy is available and should be used
+ */
+const useBackendProxy = (providerType: string): boolean => {
+  const backendUrl = getBackendProxyUrl();
+  if (!backendUrl) return false;
+  
+  // Backend proxy is especially useful for providers that block direct browser access
+  const benefitsFromProxy = ['openai', 'anthropic', 'azure', 'custom'];
+  return benefitsFromProxy.includes(providerType.toLowerCase());
+};
+
+/**
  * Build the request URL applying CORS proxy if configured
  * For CORS proxy, the format is: {proxyUrl}/{targetUrl}
  * Example: https://your-worker.workers.dev/https://api.openai.com/v1/chat/completions
@@ -49,13 +68,37 @@ const buildProxiedUrl = (targetUrl: string, corsProxy?: string): string => {
 
 /**
  * Make a proxied fetch request
- * Applies CORS proxy if configured, otherwise makes direct request
+ * Supports both old CORS proxy and new backend proxy
  */
 const proxiedFetch = async (
   url: string,
   options: RequestInit,
-  corsProxy?: string
+  corsProxy?: string,
+  providerType?: string
 ): Promise<Response> => {
+  const backendUrl = getBackendProxyUrl();
+  
+  // Prefer backend proxy for compatible providers
+  if (backendUrl && providerType && useBackendProxy(providerType)) {
+    logDebug('Using backend proxy', { backend: backendUrl, target: url, provider: providerType });
+    
+    // Backend proxy expects:
+    // POST /api/proxy with X-Target-URL header
+    const proxyOptions: RequestInit = {
+      method: options.method || 'POST',
+      headers: {
+        ...options.headers,
+        'X-Target-URL': url,
+        'X-Provider': providerType.toLowerCase(),
+      },
+      body: options.body,
+    };
+    
+    const proxyEndpoint = `${backendUrl.replace(/\/+$/, '')}/api/proxy`;
+    return fetch(proxyEndpoint, proxyOptions);
+  }
+  
+  // Fallback to old CORS proxy
   const finalUrl = buildProxiedUrl(url, corsProxy);
   
   // When using a proxy, we may need to pass original headers differently
@@ -284,7 +327,7 @@ export const callLLMProvider = async (
             'Authorization': `Bearer ${provider.apiKey}`,
           },
           body: JSON.stringify(requestBody),
-        }, provider.corsProxy);
+        }, provider.corsProxy, 'openai');
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -315,7 +358,7 @@ export const callLLMProvider = async (
             temperature: provider.settings.temperature,
             max_tokens: provider.settings.maxTokens,
           }),
-        }, provider.corsProxy);
+        }, provider.corsProxy, 'azure');
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -347,7 +390,7 @@ export const callLLMProvider = async (
               messages: [{ role: 'user', content: prompt }],
               system: systemPrompt,
             }),
-          }, provider.corsProxy);
+          }, provider.corsProxy, 'anthropic');
 
           if (!response.ok) {
             const errorText = await response.text();
@@ -504,7 +547,7 @@ export const callLLMProvider = async (
             temperature: provider.settings.temperature,
             max_tokens: provider.settings.maxTokens,
           }),
-        }, provider.corsProxy);
+        }, provider.corsProxy, provider.type);
 
         if (!response.ok) {
           throw new Error(`Custom API error: ${response.status}`);

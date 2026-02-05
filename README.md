@@ -267,19 +267,24 @@ Connect to **6 providers** with unified interface:
 - Set defaults per chat
 - Run multiple providers simultaneously
 
-**🔧 CORS Proxy Support (NEW!):**
-- OpenAI & Anthropic require CORS proxy for browser use
+**� Secure Backend Proxy (NEW!):**
+- **Provider-agnostic CORS proxy** for Anthropic, OpenAI, and more
+- **Zero key storage** - BYOK (Bring Your Own Keys)
+- **Auto-discovery** of local backend or manual URL configuration
+- **Deploy anywhere**: Render, Railway, or run locally
+- **Security-first**: Rate limiting, SSRF protection, domain whitelist
+- **📖 [Backend Deployment Guide](docs/BACKEND_DEPLOYMENT.md)**
+- **📖 [Backend README](backend/README.md)**
+
+**🔧 Legacy CORS Proxy Support:**
 - Built-in local proxy server: `npm run proxy`
 - SSL bypass support for corporate networks: `npm run proxy:insecure`
-- Automatic proxy routing when configured
 - **📖 [Setup Guide](docs/CORS_PROXY.md)**
 
-**🌐 Local Network Access (NEW!):**
+**🌐 Local Network Access:**
 - One-click permission management for local LLM servers
 - Full control over localhost access (no browser settings needed)
 - Auto-detect Ollama and prompt for permission on first use
-- Grant, revoke, or reset permissions anytime
-- Test connections directly from Admin settings
 - **📖 [Complete Guide](docs/LOCAL_NETWORK_ACCESS.md)**
 
 </details>

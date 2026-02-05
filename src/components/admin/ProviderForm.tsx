@@ -487,12 +487,39 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
             value={formData.apiEndpoint}
             onChange={(e) => setFormData({ ...formData, apiEndpoint: e.target.value })}
             className={inputClass}
-            placeholder="https://api.example.com/v1/chat"
+            placeholder={DEFAULT_ENDPOINTS[formData.type]}
             required
           />
           
+          {/* URL Typo Warning for OpenAI */}
+          {formData.type === 'openai' && formData.apiEndpoint && 
+           (formData.apiEndpoint.includes('openapi.com') || formData.apiEndpoint.includes('api.openapi.')) && (
+            <div className={`mt-2 p-2 rounded-lg border text-xs ${
+              isDark 
+                ? 'bg-red-900/20 border-red-800 text-red-300' 
+                : 'bg-red-50 border-red-300 text-red-800'
+            }`}>
+              <div className="flex items-start gap-2">
+                <span className="flex-shrink-0">❌</span>
+                <div>
+                  <p className="font-semibold mb-1">Incorrect Domain</p>
+                  <p className="mb-1">
+                    The URL contains a typo. OpenAI's domain is <strong>openai.com</strong>, not "openapi.com".
+                  </p>
+                  <p className="font-mono text-xs">
+                    Current: {formData.apiEndpoint}
+                  </p>
+                  <p className="font-mono text-xs text-green-400 mt-1">
+                    Should be: https://api.openai.com/v1/chat/completions
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Incomplete Endpoint Warning for OpenAI */}
           {formData.type === 'openai' && formData.apiEndpoint && 
+           !formData.apiEndpoint.includes('openapi.com') &&
            !formData.apiEndpoint.includes('/v1/') && 
            !formData.apiEndpoint.endsWith('/v1') && (
             <div className={`mt-2 p-2 rounded-lg border text-xs ${
