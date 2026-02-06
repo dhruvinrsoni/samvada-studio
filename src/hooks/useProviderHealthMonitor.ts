@@ -310,7 +310,8 @@ export function useProviderHealthMonitor({
     return () => {
       stopMonitoring();
     };
-  }, [enabled, providers.length, startMonitoring, stopMonitoring]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, providers.length]);
 
   /**
    * Effect: Handle online/offline events
