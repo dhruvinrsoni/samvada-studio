@@ -259,7 +259,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
                     : 'bg-yellow-500 hover:bg-yellow-600 text-white'
                 }`}
               >
-                Disable Monitoring
+                Disable
               </button>
             </div>
           </div>
