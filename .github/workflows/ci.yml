@@ -33,7 +33,7 @@ jobs:
       run: npx eslint src --max-warnings 10
 
     - name: Build Project
-      run: npm run build
+      run: npm run build:clean
 
   # Extra validation before production deployment
   production-check:

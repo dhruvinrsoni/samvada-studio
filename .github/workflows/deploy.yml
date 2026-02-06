@@ -39,7 +39,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: 🏗️ Build
-        run: npm run build
+        run: npm run build:clean
         env:
           # Base URL for GitHub Pages (repo name)
           BASE_URL: /samvada-studio/
