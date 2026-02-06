@@ -578,6 +578,7 @@ export type ChatAction =
   | { type: 'UPDATE_PROVIDER'; payload: LLMProviderConfig }
   | { type: 'DELETE_PROVIDER'; payload: string }
   | { type: 'SET_DEFAULT_PROVIDER'; payload: string }
+  | { type: 'TOGGLE_PROVIDER_ENABLED'; payload: string }
   | { type: 'TEST_PROVIDER'; payload: { id: string; status: 'success' | 'failed' | 'pending'; message?: string; errorDetails?: any; rawResponse?: string } }
   // Admin Panel Actions
   | { type: 'TOGGLE_ADMIN_PANEL' }
