@@ -28,6 +28,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      disable: false, // Explicitly enable for all modes
       registerType: 'autoUpdate', // Changed back to autoUpdate for better UX
       injectRegister: 'auto',
       includeAssets: [
