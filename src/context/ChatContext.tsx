@@ -420,6 +420,16 @@ function chatReducer(state: AppState, action: ChatAction): AppState {
         ),
       };
 
+    case 'TOGGLE_PROVIDER_ENABLED':
+      return {
+        ...state,
+        providers: state.providers.map(p =>
+          p.id === action.payload
+            ? { ...p, isEnabled: !p.isEnabled }
+            : p
+        ),
+      };
+
     case 'DELETE_PROVIDER':
       return {
         ...state,

@@ -31,7 +31,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
   const lastCheckTimeRef = useRef<number>(Date.now());
 
   const { healthStatus, isChecking, refresh, showDisableWarning, currentPollInterval } = useProviderHealthMonitor({
-    providers: state.providers,
+    providers: state.providers.filter(p => p.isEnabled),
     enabled: state.healthMonitoringEnabled ?? true,
   });
 

@@ -24,7 +24,7 @@ export default function ProviderCard({
   onSetDefault,
   onTest,
 }: ProviderCardProps) {
-  const { state } = useChat();
+  const { state, dispatch } = useChat();
   const isDark = state.theme === 'dark';
   const [showTestDetails, setShowTestDetails] = useState(false);
 
@@ -56,11 +56,15 @@ export default function ProviderCard({
 
   return (
     <div className={`p-3 sm:p-4 rounded-lg border transition-colors ${
-      isDefault 
-        ? 'border-theme-primary bg-theme-primary/10' 
-        : isDark 
-          ? 'border-dark-100 bg-dark-300 hover:border-dark-50' 
-          : 'border-light-400 bg-light-200 hover:border-light-500'
+      !provider.isEnabled
+        ? isDark
+          ? 'border-gray-700 bg-dark-300/50 opacity-60'
+          : 'border-gray-300 bg-light-200/50 opacity-60'
+        : isDefault 
+          ? 'border-theme-primary bg-theme-primary/10' 
+          : isDark 
+            ? 'border-dark-100 bg-dark-300 hover:border-dark-50' 
+            : 'border-light-400 bg-light-200 hover:border-light-500'
     }`}>
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
@@ -73,6 +77,11 @@ export default function ProviderCard({
               {isDefault && (
                 <span className="px-2 py-0.5 text-xs bg-theme-primary text-white rounded-full whitespace-nowrap self-start">
                   Default
+                </span>
+              )}
+              {!provider.isEnabled && (
+                <span className="px-2 py-0.5 text-xs bg-gray-500/20 text-gray-400 rounded-full whitespace-nowrap self-start">
+                  Disabled
                 </span>
               )}
               <div className="self-start">
@@ -209,11 +218,22 @@ export default function ProviderCard({
 
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 sm:flex-shrink-0">
           <button
-            onClick={onTest}
-            disabled={provider.testStatus === 'pending'}
+            onClick={() => dispatch({ type: 'TOGGLE_PROVIDER_ENABLED', payload: provider.id })}
             className={`px-2.5 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-              provider.testStatus === 'pending'
-                ? 'bg-gray-500 cursor-not-allowed'
+              provider.isEnabled
+                ? 'bg-green-600 hover:bg-green-700 text-white'
+                : 'bg-gray-600 hover:bg-gray-700 text-white'
+            }`}
+            title={provider.isEnabled ? 'Disable provider' : 'Enable provider'}
+          >
+            {provider.isEnabled ? '✓' : '○'}
+          </button>
+          <button
+            onClick={onTest}
+            disabled={provider.testStatus === 'pending' || !provider.isEnabled}
+            className={`px-2.5 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+              provider.testStatus === 'pending' || !provider.isEnabled
+                ? 'bg-gray-500 cursor-not-allowed opacity-50'
                 : 'bg-theme-primary hover:bg-theme-primary-hover'
             } text-white`}
           >
@@ -222,7 +242,12 @@ export default function ProviderCard({
           {!isDefault && (
             <button
               onClick={onSetDefault}
+              disabled={!provider.isEnabled}
               className={`px-2.5 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                !provider.isEnabled
+                  ? 'cursor-not-allowed opacity-50'
+                  : ''
+              } ${
                 isDark 
                   ? 'bg-dark-100 hover:bg-dark-50 text-gray-300' 
                   : 'bg-light-300 hover:bg-light-400 text-gray-700'
