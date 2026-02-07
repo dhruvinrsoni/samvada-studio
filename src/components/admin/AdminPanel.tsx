@@ -28,6 +28,8 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
   const repoUrl = 'https://github.com/dhruvinrsoni/samvada-studio';
   const appVersion = import.meta.env.APP_VERSION || '0.0.0';
   const gitCommit = import.meta.env.GIT_COMMIT || 'unknown';
+  const gitCommitDate = (import.meta.env as any).GIT_COMMIT_DATE || 'unknown';
+  const buildTimestamp = (import.meta.env as any).BUILD_TIMESTAMP || 'unknown';
   const [ciStatus, setCiStatus] = useState<{
     status: 'loading' | 'success' | 'failure' | 'running' | 'error' | 'unknown';
     url?: string;
@@ -566,7 +568,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                         App Version
                       </p>
                       <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                        Release build and git commit
+                        Release build, git commit, commit date, and build timestamp (IST)
                       </p>
                     </div>
                     <div className={`text-right text-sm font-mono ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
@@ -595,6 +597,12 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                         ) : (
                           gitCommit
                         )}
+                      </div>
+                      <div className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                        Committed: {gitCommitDate}
+                      </div>
+                      <div className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                        Built: {buildTimestamp}
                       </div>
                     </div>
                   </div>

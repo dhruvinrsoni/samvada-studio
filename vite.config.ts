@@ -16,6 +16,18 @@ const gitCommit = (() => {
   }
 })()
 
+const gitCommitDate = (() => {
+  try {
+    // Get commit date in ISO format
+    const commitDateISO = execSync('git log -1 --format=%cd --date=iso').toString().trim()
+    const commitDate = new Date(commitDateISO)
+    // Format as IST
+    return commitDate.toISOString().replace('T', ' ').slice(0, -5) + ' IST'
+  } catch {
+    return 'unknown'
+  }
+})()
+
 // Get build timestamp in IST (Indian Standard Time)
 const buildTimestamp = (() => {
   const now = new Date()
@@ -33,6 +45,7 @@ export default defineConfig({
   define: {
     'import.meta.env.APP_VERSION': JSON.stringify(appVersion),
     'import.meta.env.GIT_COMMIT': JSON.stringify(gitCommit),
+    'import.meta.env.GIT_COMMIT_DATE': JSON.stringify(gitCommitDate),
     'import.meta.env.BUILD_TIMESTAMP': JSON.stringify(buildTimestamp)
   },
   plugins: [
