@@ -40,6 +40,47 @@ const buildTimestamp = (() => {
 // Use environment variable for base path (GitHub Pages needs /repo-name/)
 const base = process.env.BASE_URL || '/'
 
+// Determine if we're in development mode
+const isDev = process.env.NODE_ENV === 'development' || process.env.VITE_DEV_MODE === 'true'
+
+// PWA configuration based on environment
+const pwaConfig = {
+  name: isDev ? 'Samvada Studio (Dev)' : 'Samvada Studio',
+  short_name: isDev ? 'Samvada Dev' : 'Samvada',
+  description: isDev 
+    ? 'Development version - A power-user workspace for designing and managing conversational AI'
+    : 'A power-user workspace for designing and managing conversational AI',
+  theme_color: isDev ? '#ff6b6b' : '#1a1a2e', // Red for dev, blue for prod
+  background_color: isDev ? '#2d1b69' : '#1a1a2e', // Different background for dev
+  start_url: isDev ? `${base}?mode=dev` : base,
+  scope: base,
+  icons: [
+    {
+      src: isDev ? 'icon-dev.svg' : 'icon.svg',
+      sizes: 'any',
+      type: 'image/svg+xml',
+      purpose: 'any'
+    },
+    {
+      src: isDev ? 'icon-512-dev.svg' : 'icon-512.svg',
+      sizes: '512x512',
+      type: 'image/svg+xml',
+      purpose: 'any'
+    },
+    {
+      src: isDev ? 'maskable-icon-dev.svg' : 'maskable-icon.svg',
+      sizes: 'any',
+      type: 'image/svg+xml',
+      purpose: 'maskable'
+    },
+    {
+      src: isDev ? 'apple-touch-icon-dev.svg' : 'apple-touch-icon.svg',
+      sizes: '180x180',
+      type: 'image/svg+xml'
+    }
+  ]
+}
+
 export default defineConfig({
   base,
   define: {
@@ -59,68 +100,46 @@ export default defineConfig({
         'icon.svg',
         'icon-512.svg',
         'apple-touch-icon.svg',
-        'maskable-icon.svg'
+        'maskable-icon.svg',
+        // Include dev icons if in dev mode
+        ...(isDev ? ['icon-dev.svg', 'icon-512-dev.svg', 'maskable-icon-dev.svg', 'apple-touch-icon-dev.svg'] : [])
       ],
       manifest: {
-        name: 'Samvada Studio',
-        short_name: 'Samvada',
-        description: 'A power-user workspace for designing and managing conversational AI',
-        theme_color: '#1a1a2e',
-        background_color: '#1a1a2e',
+        name: pwaConfig.name,
+        short_name: pwaConfig.short_name,
+        description: pwaConfig.description,
+        theme_color: pwaConfig.theme_color,
+        background_color: pwaConfig.background_color,
         display: 'standalone',
         orientation: 'any',
-        scope: base,
-        start_url: base,
+        scope: pwaConfig.scope,
+        start_url: pwaConfig.start_url,
         lang: 'en',
         dir: 'ltr',
         categories: ['productivity', 'utilities', 'developer tools'],
         prefer_related_applications: false,
-        icons: [
-          {
-            src: 'icon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
-            purpose: 'any'
-          },
-          {
-            src: 'icon-512.svg',
-            sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'any'
-          },
-          {
-            src: 'maskable-icon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
-            purpose: 'maskable'
-          },
-          {
-            src: 'apple-touch-icon.svg',
-            sizes: '180x180',
-            type: 'image/svg+xml'
-          }
-        ],
+        icons: pwaConfig.icons,
         shortcuts: [
           {
             name: 'New Chat',
             short_name: 'New',
             description: 'Start a new chat conversation',
             url: base + '?action=new-chat',
-            icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml' }]
+            icons: [{ src: isDev ? 'icon-dev.svg' : 'icon.svg', sizes: 'any', type: 'image/svg+xml' }]
           },
           {
             name: 'Command Palette',
             short_name: 'Commands',
             description: 'Open command palette',
             url: base + '?action=command-palette',
-            icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml' }]
+            icons: [{ src: isDev ? 'icon-dev.svg' : 'icon.svg', sizes: 'any', type: 'image/svg+xml' }]
           },
           {
             name: 'Templates Library',
             short_name: 'Templates',
             description: 'Browse and use prompt templates',
             url: base + '?action=templates',
-            icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml' }]
+            icons: [{ src: isDev ? 'icon-dev.svg' : 'icon.svg', sizes: 'any', type: 'image/svg+xml' }]
           }
         ],
         share_target: {
