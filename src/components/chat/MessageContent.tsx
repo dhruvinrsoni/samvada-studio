@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useChat } from '../../context/ChatContext';
 
 interface MessageContentProps {
@@ -178,6 +179,7 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
   return (
     <div className={`prose ${isDark ? 'prose-invert' : ''} prose-sm max-w-none overflow-hidden`}>
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           code({ className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '');
@@ -248,7 +250,7 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
           table({ children }) {
             return (
               <div className="overflow-x-auto my-3 max-w-full">
-                <table className={`min-w-full divide-y ${isDark ? 'divide-dark-300' : 'divide-gray-200'}`}>
+                <table className={`min-w-full divide-y text-sm sm:text-base ${isDark ? 'divide-dark-300' : 'divide-gray-200'}`}>
                   {children}
                 </table>
               </div>
@@ -256,14 +258,14 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
           },
           th({ children }) {
             return (
-              <th className={`px-3 py-2 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'bg-dark-300 text-gray-400' : 'bg-gray-50 text-gray-500'}`}>
+              <th className={`px-2 sm:px-3 py-2 text-left text-xs sm:text-sm font-medium uppercase tracking-wider ${isDark ? 'bg-dark-300 text-gray-400' : 'bg-gray-50 text-gray-500'}`}>
                 {children}
               </th>
             );
           },
           td({ children }) {
             return (
-              <td className={`px-3 py-2 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+              <td className={`px-2 sm:px-3 py-2 text-sm sm:text-base ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                 {children}
               </td>
             );

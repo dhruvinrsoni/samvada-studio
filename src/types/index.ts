@@ -222,6 +222,32 @@ export const DEFAULT_FORMATTING_PROFILES: FormattingProfile[] = [
     responseFormat: 'code-only',
     stylePreferences: 'Code first, comments second. Minimal prose.',
   },
+  {
+    id: 'table-format',
+    name: 'Table Format',
+    description: 'Structured data in markdown tables',
+    isCustom: false,
+    rules: [
+      {
+        id: 'table-1',
+        type: 'response-format',
+        name: 'Response Format',
+        description: 'Use markdown tables',
+        value: 'Format all structured data as markdown tables. Use proper table headers and alignment.',
+        isEnabled: true,
+      },
+      {
+        id: 'table-2',
+        type: 'always-include',
+        name: 'Always Include',
+        description: 'Table elements',
+        value: 'Table headers, proper column alignment, consistent formatting',
+        isEnabled: true,
+      },
+    ],
+    responseFormat: 'table',
+    stylePreferences: 'Use markdown tables for any structured data, comparisons, or lists with multiple columns.',
+  },
 ];
 
 // Search Types
