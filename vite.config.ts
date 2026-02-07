@@ -243,6 +243,14 @@ export default defineConfig({
       }
     })
   ],
+  server: {
+    // Enable HTTPS for PWA installation on local networks
+    https: true,
+    // Allow access from local network
+    host: true,
+    // Show local network URLs
+    open: false
+  },
   resolve: {
     alias: {
       '@': __dirname + 'src'

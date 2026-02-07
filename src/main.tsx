@@ -5,6 +5,10 @@ import App from './App.tsx'
 import './utils/persistenceTest' // Load persistence test utilities for console use
 import './utils/errorLogger' // Load error logger utilities for console use
 import { ConfirmDialogProvider } from './context/ConfirmDialogContext'
+import { registerPWA } from './utils/pwaUtils'
+
+// Initialize PWA registration
+registerPWA().catch(console.error)
 
 // Global Error Handlers - Catch errors that escape ErrorBoundary
 window.onerror = (message, source, lineno, colno, error) => {

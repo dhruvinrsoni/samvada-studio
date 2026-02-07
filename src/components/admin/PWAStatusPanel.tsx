@@ -11,6 +11,7 @@
 
 import { useState, useEffect } from 'react';
 import type { PWAStatus } from '../../hooks/usePWA';
+import { pwaErrorHandler, getPWAStatus } from '../../utils/pwaUtils';
 
 interface PWAStatusPanelProps {
   pwaStatus: PWAStatus;
@@ -19,6 +20,7 @@ interface PWAStatusPanelProps {
 
 export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProps) {
   const [totalCacheSize, setTotalCacheSize] = useState(0);
+  const [pwaErrors, setPwaErrors] = useState<any[]>([]);
 
   const {
     isInstallable,
@@ -34,6 +36,12 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
   const appVersion = import.meta.env.APP_VERSION || '0.0.0';
   const gitCommit = import.meta.env.GIT_COMMIT || 'unknown';
   const repoUrl = 'https://github.com/dhruvinrsoni/samvada-studio';
+
+  // Fetch PWA errors
+  useEffect(() => {
+    const status = getPWAStatus();
+    setPwaErrors(status.errors);
+  }, []);
 
   // Fetch cache size summary
   useEffect(() => {
@@ -143,6 +151,56 @@ export default function PWAStatusPanel({ pwaStatus, isDark }: PWAStatusPanelProp
           </p>
         </div>
       </div>
+
+      {/* PWA Errors */}
+      {pwaErrors.length > 0 && (
+        <div className={`mb-4 p-3 rounded-lg border ${
+          isDark ? 'border-red-800 bg-red-900/20' : 'border-red-200 bg-red-50'
+        }`}>
+          <div className="flex items-center justify-between mb-2">
+            <h4 className={`font-medium text-sm ${isDark ? 'text-red-300' : 'text-red-800'}`}>
+              🚨 PWA Installation Issues
+            </h4>
+            <button
+              onClick={() => {
+                pwaErrorHandler.clearErrors();
+                setPwaErrors([]);
+              }}
+              className={`text-xs px-2 py-1 rounded ${
+                isDark ? 'bg-red-800 hover:bg-red-700 text-red-200' : 'bg-red-200 hover:bg-red-300 text-red-800'
+              }`}
+            >
+              Clear
+            </button>
+          </div>
+          <div className="space-y-2">
+            {pwaErrors.map((error, index) => (
+              <div key={index} className={`text-xs p-2 rounded ${
+                isDark ? 'bg-red-800/50' : 'bg-red-100'
+              }`}>
+                <div className={`font-medium ${isDark ? 'text-red-200' : 'text-red-800'}`}>
+                  {error.code}
+                </div>
+                <div className={isDark ? 'text-red-300' : 'text-red-700'}>
+                  {error.message}
+                </div>
+                {error.details && (
+                  <details className="mt-1">
+                    <summary className={`cursor-pointer text-xs ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                      Show details
+                    </summary>
+                    <pre className={`text-xs mt-1 p-1 rounded overflow-auto ${
+                      isDark ? 'bg-red-900/50 text-red-200' : 'bg-red-200 text-red-800'
+                    }`}>
+                      {JSON.stringify(error.details, null, 2)}
+                    </pre>
+                  </details>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Quick Stats */}
       <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 p-3 rounded-lg ${
