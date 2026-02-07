@@ -53,6 +53,10 @@
   /* Font Size - Responsive base */
   --font-size-base: 16px;
   
+  /* Prose colors for typography plugin */
+  --tw-prose-body: hsl(var(--theme-primary));
+  --tw-prose-pre-bg: hsl(224 71% 4% / 0.5); /* dark-100 with opacity */
+  
   /* Safe area insets for notched devices */
   --safe-area-inset-top: env(safe-area-inset-top, 0px);
   --safe-area-inset-right: env(safe-area-inset-right, 0px);

@@ -2,110 +2,6 @@ import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useChat } from '../../context/ChatContext';
 
-// Function to detect and wrap code blocks in markdown
-function preprocessContent(content: string): string {
-  if (!content) return content;
-
-  // Split content into paragraphs/lines
-  const paragraphs = content.split('\n\n');
-  const processedParagraphs: string[] = [];
-
-  for (const paragraph of paragraphs) {
-    // Skip if already contains code blocks
-    if (paragraph.includes('```')) {
-      processedParagraphs.push(paragraph);
-      continue;
-    }
-
-    const lines = paragraph.split('\n');
-    let processedLines: string[] = [];
-    let codeBlock: string[] = [];
-    let inCodeBlock = false;
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-
-      // Check if this line looks like code
-      const looksLikeCode = (
-        // HTML/XML tags
-        /<\/?[a-zA-Z][^>]*>/.test(trimmed) ||
-        // Programming keywords
-        /\b(function|const|let|var|def|class|import|export|if|for|while|return)\b/.test(trimmed) ||
-        // JSON-like structures
-        /^\s*[{[]/.test(trimmed) ||
-        // CSS selectors or properties
-        /^\s*\.[a-zA-Z-]|\s*#[a-zA-Z-]|\s*[a-zA-Z-]+:\s*[^;]+;/.test(trimmed) ||
-        // Indented code (4+ spaces or tab)
-        line.startsWith('    ') || line.startsWith('\t') ||
-        // Lines that are part of a code block (continuation)
-        (inCodeBlock && (trimmed === '' || trimmed.length > 0))
-      );
-
-      if (looksLikeCode && !inCodeBlock) {
-        // Start collecting code lines
-        inCodeBlock = true;
-        codeBlock = [line];
-      } else if (inCodeBlock) {
-        if (looksLikeCode || trimmed === '') {
-          // Continue collecting
-          codeBlock.push(line);
-        } else {
-          // End code block and process it
-          if (codeBlock.length > 0) {
-            const codeContent = codeBlock.join('\n');
-            let language = '';
-
-            // Detect language
-            if (/<html|<body|<head|<div|<span|<p\s/.test(codeContent)) {
-              language = 'html';
-            } else if (/import\s+.*from|export\s|const\s|let\s|function\s/.test(codeContent)) {
-              language = 'javascript';
-            } else if (/def\s|class\s|import\s|from\s/.test(codeContent)) {
-              language = 'python';
-            } else if (/public\s|private\s|class\s|void\s|int\s/.test(codeContent)) {
-              language = 'java';
-            }
-
-            processedLines.push('```' + language);
-            processedLines.push(...codeBlock);
-            processedLines.push('```');
-          }
-          inCodeBlock = false;
-          codeBlock = [];
-          processedLines.push(line);
-        }
-      } else {
-        processedLines.push(line);
-      }
-    }
-
-    // Handle any remaining code block
-    if (inCodeBlock && codeBlock.length > 0) {
-      const codeContent = codeBlock.join('\n');
-      let language = '';
-
-      // Detect language
-      if (/<html|<body|<head|<div|<span|<p\s/.test(codeContent)) {
-        language = 'html';
-      } else if (/import\s+.*from|export\s|const\s|let\s|function\s/.test(codeContent)) {
-        language = 'javascript';
-      } else if (/def\s|class\s|import\s|from\s/.test(codeContent)) {
-        language = 'python';
-      } else if (/public\s|private\s|class\s|void\s|int\s/.test(codeContent)) {
-        language = 'java';
-      }
-
-      processedLines.push('```' + language);
-      processedLines.push(...codeBlock);
-      processedLines.push('```');
-    }
-
-    processedParagraphs.push(processedLines.join('\n'));
-  }
-
-  return processedParagraphs.join('\n\n');
-}
-
 interface MessageContentProps {
   content: string;
   isStreaming?: boolean;
@@ -119,34 +15,102 @@ const KEYWORDS: Record<string, string[]> = {
   java: ['public', 'private', 'protected', 'class', 'interface', 'extends', 'implements', 'static', 'final', 'void', 'int', 'String', 'boolean', 'if', 'else', 'for', 'while', 'return', 'new', 'try', 'catch', 'throw', 'throws', 'import', 'package'],
 };
 
-function highlightCode(code: string, language: string): string {
-  const keywords = KEYWORDS[language] || KEYWORDS['javascript'];
-  let highlighted = code
-    // Escape HTML
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-  
-  // Highlight strings
-  highlighted = highlighted.replace(/(["'`])(?:(?!\1)[^\\]|\\.)*\1/g, '<span class="text-green-400">$&</span>');
-  
-  // Highlight comments
-  highlighted = highlighted.replace(/(\/\/.*$)/gm, '<span class="text-gray-500">$1</span>');
-  highlighted = highlighted.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="text-gray-500">$1</span>');
-  highlighted = highlighted.replace(/(#.*$)/gm, '<span class="text-gray-500">$1</span>');
-  
-  // Highlight keywords
-  if (keywords) {
-    keywords.forEach(keyword => {
-      const regex = new RegExp(`\\b(${keyword})\\b`, 'g');
-      highlighted = highlighted.replace(regex, '<span class="text-purple-400">$1</span>');
-    });
+function highlightCode(code: string, language: string): JSX.Element {
+  const keywords = KEYWORDS[language] || KEYWORDS['javascript'] || [];
+
+  // Split code into tokens (simple approach)
+  const tokens: Array<{ text: string; type: 'keyword' | 'string' | 'comment' | 'number' | 'normal' }> = [];
+  const lines = code.split('\n');
+
+  for (const line of lines) {
+    let remaining = line;
+
+    // Handle comments first
+    const commentMatch = remaining.match(/(\/\/.*$|\/\*[\s\S]*?\*\/|#.*$)/);
+    if (commentMatch && commentMatch.index !== undefined) {
+      const beforeComment = remaining.substring(0, commentMatch.index);
+      if (beforeComment) {
+        tokens.push(...parseLine(beforeComment, keywords));
+      }
+      if (commentMatch[1]) {
+        tokens.push({ text: commentMatch[1], type: 'comment' });
+      }
+      remaining = remaining.substring(commentMatch.index + (commentMatch[0]?.length || 0));
+    } else {
+      tokens.push(...parseLine(remaining, keywords));
+      remaining = '';
+    }
+
+    // Add newline
+    tokens.push({ text: '\n', type: 'normal' });
   }
-  
-  // Highlight numbers
-  highlighted = highlighted.replace(/\b(\d+\.?\d*)\b/g, '<span class="text-orange-400">$1</span>');
-  
-  return highlighted;
+
+  return (
+    <>
+      {tokens.map((token, index) => {
+        if (token.type === 'keyword') {
+          return <span key={index} className="text-purple-400">{token.text}</span>;
+        } else if (token.type === 'string') {
+          return <span key={index} className="text-green-400">{token.text}</span>;
+        } else if (token.type === 'comment') {
+          return <span key={index} className="text-gray-500">{token.text}</span>;
+        } else if (token.type === 'number') {
+          return <span key={index} className="text-orange-400">{token.text}</span>;
+        } else {
+          return <span key={index}>{token.text}</span>;
+        }
+      })}
+    </>
+  );
+}
+
+function parseLine(line: string, keywords: string[]): Array<{ text: string; type: 'keyword' | 'string' | 'comment' | 'number' | 'normal' }> {
+  const tokens: Array<{ text: string; type: 'keyword' | 'string' | 'comment' | 'number' | 'normal' }> = [];
+  let remaining = line;
+
+  // Simple tokenization
+  while (remaining.length > 0) {
+    // Strings
+    const stringMatch = remaining.match(/^(["'`])(?:(?!\1)[^\\]|\\.)*\1/);
+    if (stringMatch) {
+      tokens.push({ text: stringMatch[0], type: 'string' });
+      remaining = remaining.substring(stringMatch[0].length);
+      continue;
+    }
+
+    // Numbers
+    const numberMatch = remaining.match(/^\d+\.?\d*/);
+    if (numberMatch) {
+      tokens.push({ text: numberMatch[0], type: 'number' });
+      remaining = remaining.substring(numberMatch[0].length);
+      continue;
+    }
+
+    // Keywords
+    let foundKeyword = false;
+    for (const keyword of keywords) {
+      if (remaining.startsWith(keyword) && !/\w/.test(remaining[keyword.length] || '')) {
+        tokens.push({ text: keyword, type: 'keyword' });
+        remaining = remaining.substring(keyword.length);
+        foundKeyword = true;
+        break;
+      }
+    }
+    if (foundKeyword) continue;
+
+    // Regular characters
+    if (remaining.length > 0) {
+      const char = remaining[0];
+      if (char !== undefined) {
+        tokens.push({ text: char, type: 'normal' });
+      }
+      remaining = remaining.substring(1);
+    } else {
+      break;
+    }
+  }
+
+  return tokens;
 }
 
 function CodeBlock({ language, code }: { language: string; code: string }) {
@@ -195,10 +159,9 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
       {/* Code */}
       <div className="overflow-x-auto">
         <pre className="p-4 min-w-0">
-          <code 
-            className="text-sm font-mono text-gray-300 block whitespace-pre"
-            dangerouslySetInnerHTML={{ __html: highlighted }}
-          />
+          <code className="text-sm font-mono text-gray-300 block whitespace-pre">
+            {highlighted}
+          </code>
         </pre>
       </div>
     </div>
@@ -210,7 +173,7 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
   const isDark = state.theme === 'dark';
 
   // Preprocess content to detect and wrap code blocks
-  const processedContent = preprocessContent(content);
+  const processedContent = content;
 
   return (
     <div className={`prose ${isDark ? 'prose-invert' : ''} prose-sm max-w-none overflow-hidden`}>

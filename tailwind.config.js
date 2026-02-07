@@ -53,7 +53,35 @@ export default {
         'xl': ['1.25rem', { lineHeight: '1.75rem' }],
         '2xl': ['1.5rem', { lineHeight: '2rem' }],
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            color: 'inherit',
+            a: {
+              color: 'hsl(var(--theme-primary))',
+              '&:hover': {
+                color: 'hsl(var(--theme-primary-hover))',
+              },
+            },
+            code: {
+              color: 'inherit',
+              backgroundColor: 'hsl(var(--tw-prose-pre-bg))',
+              borderRadius: '0.25rem',
+              padding: '0.125rem 0.25rem',
+            },
+            pre: {
+              backgroundColor: 'hsl(var(--tw-prose-pre-bg))',
+              color: 'inherit',
+            },
+            blockquote: {
+              borderLeftColor: 'hsl(var(--theme-primary))',
+            },
+          },
+        },
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
 }
