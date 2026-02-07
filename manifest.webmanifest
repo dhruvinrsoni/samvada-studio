@@ -2,7 +2,7 @@
   "name": "Samvada Studio",
   "short_name": "Samvada",
   "description": "A power-user workspace for designing and managing conversational AI",
-  "start_url": "/",
+  "start_url": "/samvada-studio",
   "display": "standalone",
   "background_color": "#1a1a2e",
   "theme_color": "#1a1a2e",
