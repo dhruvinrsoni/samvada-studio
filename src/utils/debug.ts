@@ -149,6 +149,11 @@ export const endTiming = (label: string): number => {
 // System diagnostics
 export const getSystemInfo = () => {
   return {
+    // App information
+    appVersion: (import.meta.env as any).APP_VERSION || 'unknown',
+    gitCommit: (import.meta.env as any).GIT_COMMIT || 'unknown',
+    buildTimestamp: (import.meta.env as any).BUILD_TIMESTAMP || 'unknown',
+    // Browser information
     userAgent: navigator.userAgent,
     platform: navigator.platform,
     language: navigator.language,

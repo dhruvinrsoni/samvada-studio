@@ -16,6 +16,15 @@ const gitCommit = (() => {
   }
 })()
 
+// Get build timestamp in IST (Indian Standard Time)
+const buildTimestamp = (() => {
+  const now = new Date()
+  // IST is UTC+5:30
+  const istOffset = 5.5 * 60 * 60 * 1000 // 5.5 hours in milliseconds
+  const istTime = new Date(now.getTime() + istOffset)
+  return istTime.toISOString().replace('T', ' ').slice(0, -5) + ' IST'
+})()
+
 // Use environment variable for base path (GitHub Pages needs /repo-name/)
 const base = process.env.BASE_URL || '/'
 
@@ -23,7 +32,8 @@ export default defineConfig({
   base,
   define: {
     'import.meta.env.APP_VERSION': JSON.stringify(appVersion),
-    'import.meta.env.GIT_COMMIT': JSON.stringify(gitCommit)
+    'import.meta.env.GIT_COMMIT': JSON.stringify(gitCommit),
+    'import.meta.env.BUILD_TIMESTAMP': JSON.stringify(buildTimestamp)
   },
   plugins: [
     react(),

@@ -266,6 +266,9 @@ export default function DeveloperTools() {
     lines.push(hr2);
     lines.push('SYSTEM INFORMATION');
     lines.push(hr2);
+    lines.push(`App Version: ${r.system.appVersion}`);
+    lines.push(`Git Commit: ${r.system.gitCommit}`);
+    lines.push(`Build Time: ${r.system.buildTimestamp}`);
     lines.push(`Platform: ${r.system.platform}`);
     lines.push(`User Agent: ${r.system.userAgent}`);
     lines.push(`Language: ${r.system.language}`);
@@ -575,6 +578,15 @@ export default function DeveloperTools() {
                 icon="💻"
                 label="Platform"
                 value={systemInfo.platform}
+                status="info"
+                isDark={isDark}
+              />
+            )}
+            {systemInfo && (
+              <StatusCard
+                icon="🏷️"
+                label="Version"
+                value={`${systemInfo.appVersion} (${systemInfo.gitCommit})`}
                 status="info"
                 isDark={isDark}
               />
