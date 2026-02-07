@@ -35,6 +35,7 @@ export interface OllamaConfiguration {
   networkDetection: {
     enableLANScan: boolean;
     enablePortScan: boolean;
+    enableWiFiScan: boolean;
     scanTimeout: number;
   };
 }
@@ -53,6 +54,7 @@ const DEFAULT_CONFIG: OllamaConfiguration = {
   networkDetection: {
     enableLANScan: true,
     enablePortScan: true,
+    enableWiFiScan: true,
     scanTimeout: 2000,
   },
 };
@@ -106,11 +108,66 @@ class OllamaDiscoveryService {
   }
 
   /**
+   * Validate and normalize a custom Ollama endpoint
+   * Ensures proper API conventions are followed
+   */
+  private validateAndNormalizeEndpoint(endpoint: Omit<OllamaEndpoint, 'priority'>): OllamaEndpoint {
+    const normalized: OllamaEndpoint = { ...endpoint, priority: 0 }; // Default priority
+
+    // Validate host
+    if (!normalized.host || normalized.host.trim() === '') {
+      throw new Error('Host is required');
+    }
+
+    // Normalize host (remove protocol if present)
+    normalized.host = normalized.host.replace(/^https?:\/\//, '');
+
+    // Validate port
+    if (!normalized.port || normalized.port < 1 || normalized.port > 65535) {
+      normalized.port = 11434; // Default Ollama port
+    }
+
+    // Ensure protocol
+    if (!normalized.protocol) {
+      normalized.protocol = 'http';
+    }
+
+    // Normalize basePath - ensure it starts with / and includes /api if not present
+    if (!normalized.basePath) {
+      normalized.basePath = '/api';
+    } else if (!normalized.basePath.startsWith('/')) {
+      normalized.basePath = '/' + normalized.basePath;
+    }
+
+    // Ensure basePath includes /api for Ollama API compatibility
+    if (!normalized.basePath.includes('/api')) {
+      if (normalized.basePath === '/') {
+        normalized.basePath = '/api';
+      } else {
+        normalized.basePath = normalized.basePath.replace(/\/$/, '') + '/api';
+      }
+    }
+
+    // Validate protocol
+    if (!['http', 'https'].includes(normalized.protocol)) {
+      normalized.protocol = 'http';
+    }
+
+    // Generate a default label if not provided
+    if (!normalized.label) {
+      normalized.label = `${normalized.protocol}://${normalized.host}:${normalized.port}${normalized.basePath}`;
+    }
+
+    return normalized;
+  }
+
+  /**
    * Add a custom endpoint (Spring-style manual configuration)
    */
   addEndpoint(endpoint: Omit<OllamaEndpoint, 'priority'>): void {
+    const validatedEndpoint = this.validateAndNormalizeEndpoint(endpoint);
     const priority = this.config.endpoints.length;
-    const newEndpoint: OllamaEndpoint = { ...endpoint, priority };
+    const newEndpoint: OllamaEndpoint = { ...validatedEndpoint, priority };
     this.config.endpoints.push(newEndpoint);
     this.saveConfiguration(this.config);
   }
@@ -204,9 +261,215 @@ class OllamaDiscoveryService {
   }
 
   /**
+   * Perform comprehensive LAN network scan for Ollama endpoints
+   * Scans common ports and IP ranges in the local network
+   */
+  private async performLANScan(): Promise<OllamaEndpoint[]> {
+    const candidates: OllamaEndpoint[] = [];
+    const commonPorts = [11434, 11435, 8080, 3000, 5000]; // Ollama default + common alternatives
+
+    try {
+      // Get local network information
+      const localIPs = await this.getLocalNetworkIPs();
+      const networkRanges = this.generateNetworkRanges(localIPs);
+
+      console.log(`🔍 LAN Scan: Scanning ${networkRanges.length} network ranges with ${commonPorts.length} ports each`);
+
+      // Scan network ranges
+      for (const networkRange of networkRanges) {
+        for (const port of commonPorts) {
+          // Limit concurrent requests to avoid overwhelming the network
+          const batchSize = 10;
+          const rangeCandidates: OllamaEndpoint[] = [];
+
+          for (let i = networkRange.start; i <= networkRange.end; i++) {
+            const ip = `${networkRange.prefix}.${i}`;
+            rangeCandidates.push({
+              host: ip,
+              port,
+              protocol: 'http',
+              priority: 100 + (i * 10) + port, // Lower priority for LAN scans
+              label: `LAN: ${ip}:${port}`,
+            });
+
+            // Process in batches
+            if (rangeCandidates.length >= batchSize) {
+              candidates.push(...rangeCandidates);
+              rangeCandidates.length = 0;
+            }
+          }
+
+          // Add remaining candidates
+          candidates.push(...rangeCandidates);
+        }
+      }
+
+      console.log(`📡 Generated ${candidates.length} LAN scan candidates`);
+    } catch (error) {
+      console.warn('LAN scan failed:', error);
+    }
+
+    return candidates;
+  }
+
+  /**
+   * Get local network IP addresses and information
+   */
+  private async getLocalNetworkIPs(): Promise<string[]> {
+    const ips: string[] = [];
+
+    try {
+      // Try to get network information from WebRTC (works in browsers)
+      if (typeof window !== 'undefined' && window.RTCPeerConnection) {
+        const pc = new RTCPeerConnection({ iceServers: [] });
+        pc.createDataChannel('');
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        // Wait for ICE candidates
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(() => resolve(), 1000);
+          pc.onicecandidate = (event) => {
+            if (event.candidate) {
+              const candidate = event.candidate.candidate;
+              const ipMatch = candidate.match(/(\d+\.\d+\.\d+\.\d+)/);
+              if (ipMatch && ipMatch[1]) {
+                const ip = ipMatch[1];
+                if (!ips.includes(ip) && !ip.startsWith('127.')) {
+                  ips.push(ip);
+                }
+              }
+            } else {
+              clearTimeout(timeout);
+              resolve();
+            }
+          };
+        });
+
+        pc.close();
+      }
+
+      // Fallback: use current hostname to infer network
+      if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        if (hostname.match(/^\d+\.\d+\.\d+\.\d+$/)) {
+          ips.push(hostname);
+        }
+      }
+
+      // Add localhost as fallback
+      if (!ips.includes('127.0.0.1')) {
+        ips.push('127.0.0.1');
+      }
+
+    } catch (error) {
+      console.warn('Failed to get local IPs:', error);
+      ips.push('127.0.0.1');
+    }
+
+    return ips;
+  }
+
+  /**
+   * Generate network ranges to scan based on local IPs
+   */
+  private generateNetworkRanges(localIPs: string[]): Array<{ prefix: string; start: number; end: number }> {
+    const ranges: Array<{ prefix: string; start: number; end: number }> = [];
+
+    for (const ip of localIPs) {
+      const parts = ip.split('.');
+      if (parts.length === 4) {
+        const prefix = `${parts[0]}.${parts[1]}.${parts[2]}`;
+
+        // For home networks, scan common ranges
+        // 192.168.x.x networks: scan 1-254
+        // 10.x.x.x networks: scan 1-254
+        // 172.16-31.x.x networks: scan 1-254
+        if (parts[0] === '192' && parts[1] === '168') {
+          ranges.push({ prefix, start: 1, end: 254 });
+        } else if (parts[0] === '10') {
+          ranges.push({ prefix, start: 1, end: 254 });
+        } else if (parts[0] === '172' && parts[1] && parseInt(parts[1]) >= 16 && parseInt(parts[1]) <= 31) {
+          ranges.push({ prefix, start: 1, end: 254 });
+        } else {
+          // For other networks, scan a smaller range around the current IP
+          const currentOctet = parts[3] ? parseInt(parts[3]) : 100;
+          const start = Math.max(1, currentOctet - 10);
+          const end = Math.min(254, currentOctet + 10);
+          ranges.push({ prefix, start, end });
+        }
+      }
+    }
+
+    // Remove duplicates
+    const seen = new Set<string>();
+    return ranges.filter(range => {
+      const key = `${range.prefix}.${range.start}-${range.end}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  /**
+   * Perform port scanning on discovered hosts
+   */
+  private async performPortScan(hosts: string[]): Promise<OllamaEndpoint[]> {
+    const candidates: OllamaEndpoint[] = [];
+    const commonPorts = [11434, 11435, 8080, 3000, 5000, 8000, 9000];
+
+    console.log(`🔍 Port Scan: Scanning ${hosts.length} hosts with ${commonPorts.length} ports each`);
+
+    for (const host of hosts) {
+      for (const port of commonPorts) {
+        candidates.push({
+          host,
+          port,
+          protocol: 'http',
+          priority: 200 + port, // Higher priority than LAN scan
+          label: `Port Scan: ${host}:${port}`,
+        });
+      }
+    }
+
+    return candidates;
+  }
+  private async performWiFiScan(): Promise<OllamaEndpoint[]> {
+    const candidates: OllamaEndpoint[] = [];
+    const commonPorts = [11434, 11435, 8080, 3000, 5000];
+
+    // Common WiFi network patterns and device IPs
+    const wifiPatterns = [
+      // Router gateway IPs (common defaults)
+      '192.168.0.1', '192.168.1.1', '192.168.1.254', '192.168.0.254',
+      '10.0.0.1', '10.0.0.138', // Common for mobile hotspots
+      // Common device IPs in WiFi networks
+      '192.168.1.100', '192.168.1.101', '192.168.1.102', '192.168.1.103', '192.168.1.104', '192.168.1.105',
+      '192.168.0.100', '192.168.0.101', '192.168.0.102', '192.168.0.103', '192.168.0.104', '192.168.0.105',
+    ];
+
+    console.log(`📶 WiFi Scan: Scanning ${wifiPatterns.length} common WiFi IPs with ${commonPorts.length} ports each`);
+
+    for (const ip of wifiPatterns) {
+      for (const port of commonPorts) {
+        candidates.push({
+          host: ip,
+          port,
+          protocol: 'http',
+          priority: 150 + (wifiPatterns.indexOf(ip) * 10) + port, // Medium priority
+          label: `WiFi: ${ip}:${port}`,
+        });
+      }
+    }
+
+    return candidates;
+  }
+
+  /**
    * Generate candidate endpoints for auto-discovery
    */
-  private generateCandidateEndpoints(): OllamaEndpoint[] {
+  private async generateCandidateEndpoints(): Promise<OllamaEndpoint[]> {
     const candidates: OllamaEndpoint[] = [];
     let priority = 0;
 
@@ -251,51 +514,36 @@ class OllamaDiscoveryService {
       label: 'Localhost IP',
     });
 
-    // 5. Common LAN patterns (if enabled) - DHCP-aware
-    if (this.config.networkDetection.enableLANScan && typeof window !== 'undefined') {
-      const currentHost = window.location.hostname;
-      
-      // Extract network prefix from current host (DHCP-aware)
-      const ipParts = currentHost.match(/^(\d+\.\d+\.\d+)\.\d+$/);
-      if (ipParts) {
-        const networkPrefix = ipParts[1];
-        // Only scan a few common IPs to reduce resource usage
-        // On DHCP networks, your PC's IP changes, so we detect from window.location
-        [1, 100].forEach(lastOctet => {
-          candidates.push({
-            host: `${networkPrefix}.${lastOctet}`,
-            port: 11434,
-            protocol: 'http',
-            priority: priority++,
-            label: `LAN ${lastOctet}`,
-          });
-        });
+    // 5. Comprehensive LAN scanning (if enabled)
+    if (this.config.networkDetection.enableLANScan) {
+      try {
+        const lanCandidates = await this.performLANScan();
+        candidates.push(...lanCandidates);
+      } catch (error) {
+        console.warn('LAN scan failed:', error);
       }
     }
 
-    // 6. Common alternative ports (if enabled) - Limited for performance
-    if (this.config.networkDetection.enablePortScan) {
-      const commonPorts = [11435]; // Only scan one alternative port for performance
-      const hosts = ['localhost'];
-      
-      if (typeof window !== 'undefined') {
-        const currentHost = window.location.hostname;
-        if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-          hosts.push(currentHost); // DHCP-aware: Use current hostname
-        }
+    // 6. WiFi network scanning (if enabled)
+    if (this.config.networkDetection.enableWiFiScan) {
+      try {
+        const wifiCandidates = await this.performWiFiScan();
+        candidates.push(...wifiCandidates);
+      } catch (error) {
+        console.warn('WiFi scan failed:', error);
       }
+    }
 
-      hosts.forEach(host => {
-        commonPorts.forEach(port => {
-          candidates.push({
-            host,
-            port,
-            protocol: 'http',
-            priority: priority++,
-            label: `${host}:${port}`,
-          });
-        });
-      });
+    // 7. Port scanning on discovered hosts (if enabled)
+    if (this.config.networkDetection.enablePortScan) {
+      try {
+        const discoveredHosts = candidates.map(c => c.host);
+        const uniqueHosts = [...new Set(discoveredHosts)];
+        const portCandidates = await this.performPortScan(uniqueHosts);
+        candidates.push(...portCandidates);
+      } catch (error) {
+        console.warn('Port scan failed:', error);
+      }
     }
 
     // Remove duplicates
@@ -332,7 +580,7 @@ class OllamaDiscoveryService {
       return null;
     }
 
-    const candidates = this.generateCandidateEndpoints();
+    const candidates = await this.generateCandidateEndpoints();
     console.log(`🔍 Ollama Discovery: Testing ${candidates.length} candidate endpoints`);
 
     // Sort by priority

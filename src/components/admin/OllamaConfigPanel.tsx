@@ -272,6 +272,19 @@ export const OllamaConfigPanel: React.FC = () => {
         </label>
 
         <label className="flex items-center justify-between">
+          <span className="text-sm text-gray-300">Enable WiFi Scan</span>
+          <input
+            type="checkbox"
+            checked={config.networkDetection.enableWiFiScan}
+            onChange={(e) => handleConfigChange('networkDetection', {
+              ...config.networkDetection,
+              enableWiFiScan: e.target.checked,
+            })}
+            className="rounded"
+          />
+        </label>
+
+        <label className="flex items-center justify-between">
           <span className="text-sm text-gray-300">Scan Timeout (ms)</span>
           <input
             type="number"
@@ -365,9 +378,12 @@ export const OllamaConfigPanel: React.FC = () => {
                 type="text"
                 value={newEndpoint.basePath}
                 onChange={(e) => setNewEndpoint({ ...newEndpoint, basePath: e.target.value })}
-                placeholder="/api"
+                placeholder="/api (auto-added if empty)"
                 className="w-full bg-gray-800 text-white px-3 py-2 rounded text-sm"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Ollama API endpoints automatically include /api path. Leave empty for auto-configuration.
+              </p>
             </div>
 
             <div>
