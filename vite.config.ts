@@ -21,8 +21,8 @@ const gitCommitDate = (() => {
     // Get commit date in ISO format
     const commitDateISO = execSync('git log -1 --format=%cd --date=iso').toString().trim()
     const commitDate = new Date(commitDateISO)
-    // Format as IST
-    return commitDate.toISOString().replace('T', ' ').slice(0, -5) + ' IST'
+    // Format as IST with +05:30
+    return commitDate.toISOString().replace('T', ' ').slice(0, -5) + '+05:30'
   } catch {
     return 'unknown'
   }
@@ -34,7 +34,7 @@ const buildTimestamp = (() => {
   // IST is UTC+5:30
   const istOffset = 5.5 * 60 * 60 * 1000 // 5.5 hours in milliseconds
   const istTime = new Date(now.getTime() + istOffset)
-  return istTime.toISOString().replace('T', ' ').slice(0, -5) + ' IST'
+  return istTime.toISOString().replace('T', ' ').slice(0, -5) + '+05:30'
 })()
 
 // Use environment variable for base path (GitHub Pages needs /repo-name/)

@@ -562,17 +562,12 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                   System Settings
                 </h3>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
                       <p className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                         App Version
                       </p>
-                      <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                        Release build, git commit, commit date, and build timestamp (IST)
-                      </p>
-                    </div>
-                    <div className={`text-right text-sm font-mono ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
-                      <div>
+                      <div className={`text-sm font-mono ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
                         <a
                           href={`${repoUrl}/releases/tag/v${appVersion}`}
                           target="_blank"
@@ -583,7 +578,13 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                           v{appVersion}
                         </a>
                       </div>
-                      <div className={`${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Git Commit
+                      </p>
+                      <div className={`text-sm font-mono ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                         {gitCommit !== 'unknown' ? (
                           <a
                             href={`${repoUrl}/commit/${gitCommit}`}
@@ -598,12 +599,30 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                           gitCommit
                         )}
                       </div>
-                      <div className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                        Committed: {gitCommitDate}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Committed
+                      </p>
+                      <div className={`text-sm font-mono ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {gitCommitDate}
                       </div>
-                      <div className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                        Built: {buildTimestamp}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Built
+                      </p>
+                      <div className={`text-sm font-mono ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {buildTimestamp}
                       </div>
+                    </div>
+
+                    <div className="mt-2">
+                      <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                        Release build, git commit, commit date, and build timestamp (IST +05:30)
+                      </p>
                     </div>
                   </div>
 
