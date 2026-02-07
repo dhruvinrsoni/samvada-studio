@@ -38,15 +38,22 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
   const defaultProvider = enabledProviders.find(p => p.isDefault) || enabledProviders[0] || null;
   const [selectedProvider, setSelectedProvider] = useState<LLMProviderConfig | null>(chatProvider || defaultProvider);
 
-  // Update selected provider when providers change or chat changes
+  // Close dropdowns when clicking outside
   useEffect(() => {
-    const newChatProvider = activeChat?.providerId ? enabledProviders.find(p => p.id === activeChat.providerId) : null;
-    const newDefault = enabledProviders.find(p => p.isDefault) || enabledProviders[0] || null;
-    const newProvider = newChatProvider || newDefault;
-    if (!selectedProvider || selectedProvider.id !== newProvider?.id) {
-      setSelectedProvider(newProvider);
+    if (isProviderDropdownOpen || isChatMenuOpen) {
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as Element;
+        if (!target.closest('.provider-dropdown') && !target.closest('.chat-menu-dropdown')) {
+          setIsProviderDropdownOpen(false);
+          setIsChatMenuOpen(false);
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [state.providers, enabledProviders, selectedProvider, activeChat]);
+    return undefined;
+  }, [isProviderDropdownOpen, isChatMenuOpen]);
 
   // Reset loading state when switching chats
   useEffect(() => {
@@ -330,6 +337,25 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
                       Export Chat
                     </button>
 
+                    {/* Change Provider - Mobile Only */}
+                    {isMobile && enabledProviders.length > 1 && (
+                      <button
+                        onClick={() => {
+                          setIsChatMenuOpen(false);
+                          // Open provider selection modal/submenu
+                          setTimeout(() => setIsProviderDropdownOpen(true), 100);
+                        }}
+                        className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
+                          isDark ? 'hover:bg-dark-100 text-purple-400' : 'hover:bg-light-200 text-purple-600'
+                        }`}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        Change Provider ({selectedProvider?.name || 'None'})
+                      </button>
+                    )}
+
                     {/* Divider */}
                     <div className={`my-1 h-px ${isDark ? 'bg-dark-100' : 'bg-light-300'}`} />
 
@@ -412,22 +438,19 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
               </button>
             </div>
           )}
-          {/* Provider Selector - Hide on mobile, simplified on tablet */}
-          {enabledProviders.length > 0 && !isMobile && (
-            <div 
-              className="relative provider-dropdown flex-shrink-0 hidden md:block"
-              onMouseEnter={() => setIsProviderDropdownOpen(true)}
-              onMouseLeave={() => setIsProviderDropdownOpen(false)}
-            >
-              <div
-                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm border transition-colors cursor-pointer ${
+          {/* Provider Selector - Mobile-friendly */}
+          {enabledProviders.length > 0 && (
+            <div className="relative provider-dropdown flex-shrink-0">
+              <button
+                onClick={() => setIsProviderDropdownOpen(!isProviderDropdownOpen)}
+                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm border transition-colors ${
                   isDark
                     ? 'bg-dark-100 border-dark-300 text-gray-300 hover:bg-dark-200'
                     : 'bg-light-100 border-light-400 text-gray-700 hover:bg-light-200'
-                }`}
+                } ${isMobile ? 'block' : 'hidden md:flex'}`}
                 title="Select LLM Provider"
               >
-                <span className="truncate max-w-[100px] lg:max-w-[150px]">
+                <span className="truncate max-w-[80px] sm:max-w-[100px] lg:max-w-[150px]">
                   {selectedProvider ? `${selectedProvider.name}` : 'Provider'}
                 </span>
                 <svg
@@ -438,15 +461,14 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
-              </div>
+              </button>
               
-              {/* Dropdown Options - positioned with NO gap to prevent collapse */}
+              {/* Dropdown Options - Mobile responsive */}
               {isProviderDropdownOpen && (
                 <div 
-                  className={`absolute top-full left-0 w-48 sm:w-56 md:w-64 rounded-lg border shadow-lg z-50 max-h-[60vh] overflow-y-auto ${
+                  className={`absolute ${isMobile ? 'top-full right-0' : 'top-full left-0'} mt-1 w-48 sm:w-56 md:w-64 rounded-lg border shadow-lg z-50 max-h-[60vh] overflow-y-auto ${
                     isDark ? 'bg-dark-200 border-dark-300' : 'bg-light-100 border-light-400'
                   }`}
-                  style={{ marginTop: '0px' }}
                 >
                   {enabledProviders.map(provider => (
                     <div
