@@ -352,59 +352,44 @@ class OllamaDiscoveryService {
 
   /**
    * Get comprehensive local network information for multi-network scanning
-   * Enhanced with better fallback mechanisms for out-of-the-box functionality
    */
   private async getLocalNetworkIPs(): Promise<string[]> {
     const networks: string[] = [];
-    let webRTCSuccess = false;
 
     try {
-      // Method 1: Enhanced WebRTC-based IP detection with better error handling
+      // Method 1: WebRTC-based IP detection (works in browsers)
       if (typeof window !== 'undefined' && window.RTCPeerConnection) {
-        try {
-          const pc = new RTCPeerConnection({
-            iceServers: [
-              { urls: 'stun:stun.l.google.com:19302' },
-              { urls: 'stun:stun1.l.google.com:19302' }
-            ]
-          });
-          pc.createDataChannel('');
+        const pc = new RTCPeerConnection({ iceServers: [] });
+        pc.createDataChannel('');
 
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
 
-          // Wait for ICE candidates with extended timeout for better detection
-          await new Promise<void>((resolve) => {
-            const timeout = setTimeout(() => resolve(), 3000); // Increased timeout
-            let candidateCount = 0;
-
-            pc.onicecandidate = (event) => {
-              if (event.candidate) {
-                candidateCount++;
-                const candidate = event.candidate.candidate;
-                const ipMatch = candidate.match(/(\d+\.\d+\.\d+\.\d+)/);
-                if (ipMatch && ipMatch[1]) {
-                  const ip = ipMatch[1];
-                  if (!networks.includes(ip) && !ip.startsWith('127.')) {
-                    networks.push(ip);
-                    console.log(`🌐 WebRTC detected network IP: ${ip}`);
-                    webRTCSuccess = true;
-                  }
+        // Wait for ICE candidates with timeout
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(() => resolve(), 2000);
+          pc.onicecandidate = (event) => {
+            if (event.candidate) {
+              const candidate = event.candidate.candidate;
+              const ipMatch = candidate.match(/(\d+\.\d+\.\d+\.\d+)/);
+              if (ipMatch && ipMatch[1]) {
+                const ip = ipMatch[1];
+                if (!networks.includes(ip) && !ip.startsWith('127.')) {
+                  networks.push(ip);
+                  console.log(`🌐 Detected network IP via WebRTC: ${ip}`);
                 }
-              } else {
-                clearTimeout(timeout);
-                resolve();
               }
-            };
-          });
+            } else {
+              clearTimeout(timeout);
+              resolve();
+            }
+          };
+        });
 
-          pc.close();
-        } catch (webRTCError) {
-          console.warn('WebRTC IP detection failed:', webRTCError);
-        }
+        pc.close();
       }
 
-      // Method 2: Current hostname analysis with better detection
+      // Method 2: Current hostname analysis
       if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
         if (hostname.match(/^\d+\.\d+\.\d+\.\d+$/)) {
@@ -413,185 +398,46 @@ class OllamaDiscoveryService {
             console.log(`🌐 Detected hostname IP: ${hostname}`);
           }
         }
-
-        // Try to infer local network from current location
-        if (hostname === 'localhost' || hostname === '127.0.0.1') {
-          // If running on localhost, likely testing - add common local network IPs
-          const commonLocalIPs = ['192.168.1.100', '192.168.0.100', '10.0.0.100'];
-          networks.push(...commonLocalIPs.filter(ip => !networks.includes(ip)));
-          console.log('🏠 Localhost detected, adding common local network IPs for testing');
-        }
       }
 
-      // Method 3: Enhanced common private network ranges with more comprehensive coverage
+      // Method 3: Common private network ranges (auto-generate subnets)
       const commonSubnets = [
         '192.168.1.0/24',   // Most common home network
         '192.168.0.0/24',   // Alternative home network
-        '192.168.2.0/24',   // Another common home network
-        '192.168.10.0/24',  // Common router default
-        '192.168.100.0/24', // Some ISP networks
         '10.0.0.0/24',      // Private network range
-        '10.0.1.0/24',      // Docker networks
         '172.16.0.0/24',    // Private network range
-        '172.17.0.0/24',    // Docker networks
-        '172.18.0.0/24',    // Docker networks
       ];
 
-      // If we have detected IPs, generate their subnets and add variations
+      // If we have detected IPs, generate their subnets
       if (networks.length > 0) {
         for (const detectedIp of networks) {
           const subnet = this.generateSubnetFromIP(detectedIp);
           if (subnet && !commonSubnets.includes(subnet)) {
             commonSubnets.push(subnet);
-            // Also add adjacent subnets (common in larger networks)
-            const adjacentSubnets = this.generateAdjacentSubnets(subnet);
-            commonSubnets.push(...adjacentSubnets.filter(s => !commonSubnets.includes(s)));
           }
         }
       }
 
-      // Method 4: Generate candidate IPs from all subnets with smart selection
+      // Method 4: Generate candidate IPs from all subnets
       const allCandidateIPs: string[] = [];
       for (const subnet of commonSubnets) {
         const ips = this.generateIPsFromSubnet(subnet);
         allCandidateIPs.push(...ips);
       }
 
-      // Method 5: Add most likely Ollama locations first (prioritize for faster discovery)
-      const priorityIPs = [
-        'localhost',        // Always check localhost first
-        '127.0.0.1',        // IPv4 localhost
-        '0.0.0.0',          // All interfaces (sometimes used in Docker)
-        'host.docker.internal', // Docker for Mac/Windows
-        '172.17.0.1',       // Docker bridge
-        '192.168.65.1',     // Docker Desktop
-      ];
-
-      // Add priority IPs that aren't already included
-      for (const ip of priorityIPs) {
-        if (!allCandidateIPs.includes(ip) && !networks.includes(ip)) {
-          allCandidateIPs.unshift(ip); // Add to front for priority
-        }
-      }
-
-      // Remove duplicates and invalid IPs, but keep priority ones
+      // Remove duplicates and localhost
       const uniqueIPs = [...new Set(allCandidateIPs)].filter(ip =>
-        !ip.endsWith('.0') && !ip.endsWith('.255') && ip !== '0.0.0.0'
+        !ip.startsWith('127.') && !ip.endsWith('.0') && !ip.endsWith('.255')
       );
-
-      // If WebRTC failed, log a helpful message
-      if (!webRTCSuccess && uniqueIPs.length > 0) {
-        console.log('ℹ️ WebRTC IP detection limited, using fallback network scanning');
-        console.log('💡 For best results, ensure Ollama is accessible on your local network');
-      }
 
       console.log(`🌐 Comprehensive network scan: Found ${uniqueIPs.length} potential IPs across ${commonSubnets.length} subnets`);
       return uniqueIPs.length > 0 ? uniqueIPs : ['127.0.0.1'];
 
     } catch (error) {
       console.warn('Failed to get comprehensive network info:', error);
-      // Ultimate fallback - try the most common locations
-      return ['localhost', '127.0.0.1', '192.168.1.100', '192.168.0.100'];
+      // Fallback to basic localhost
+      return ['127.0.0.1'];
     }
-  }
-
-  /**
-   * Generate adjacent subnets for more comprehensive scanning
-   */
-  private generateAdjacentSubnets(subnet: string): string[] {
-    try {
-      const [base, mask] = subnet.split('/');
-      if (mask !== '24' || !base) return [];
-
-      const parts = base.split('.').map(Number);
-      if (parts.length !== 3 || parts.some(isNaN)) return [];
-
-      const a = parts[0]!;
-      const b = parts[1]!;
-      const c = parts[2]!;
-      const adjacent: string[] = [];
-
-      // Generate adjacent subnets (e.g., if we have 192.168.1.0/24, also try 192.168.0.0/24 and 192.168.2.0/24)
-      if (c > 0) adjacent.push(`${a}.${b}.${c - 1}.0/24`);
-      if (c < 255) adjacent.push(`${a}.${b}.${c + 1}.0/24`);
-
-      return adjacent;
-    } catch (error) {
-      return [];
-    }
-  }
-
-  /**
-   * Check if local network access appears to be restricted
-   */
-  private async checkLocalNetworkAccess(): Promise<{ restricted: boolean; reason?: string }> {
-    try {
-      // Try to access a common local IP that should fail if network access is restricted
-      const testController = new AbortController();
-      const timeoutId = setTimeout(() => testController.abort(), 1000);
-
-      try {
-        await fetch('http://192.168.1.1:80/test', {
-          method: 'HEAD',
-          signal: testController.signal,
-          mode: 'no-cors' // Avoid CORS issues for this test
-        });
-        clearTimeout(timeoutId);
-        return { restricted: false };
-      } catch (error) {
-        clearTimeout(timeoutId);
-
-        // If we get a network error, local access might be restricted
-        if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-          return {
-            restricted: true,
-            reason: 'Browser local network access appears restricted. Try enabling local network access or add Ollama endpoint manually.'
-          };
-        }
-
-        // Other errors might be expected (like connection refused)
-        return { restricted: false };
-      }
-    } catch (error) {
-      return { restricted: false };
-    }
-  }
-
-  /**
-   * Perform a quick scan of the most likely Ollama locations
-   */
-  private async performQuickScan(): Promise<OllamaEndpoint[]> {
-    const candidates: OllamaEndpoint[] = [];
-    const priorityLocations = [
-      // Most likely locations first
-      { host: 'localhost', port: 11434, priority: 1, label: 'Localhost (Primary)' },
-      { host: '127.0.0.1', port: 11434, priority: 2, label: 'Localhost IPv4' },
-      { host: '0.0.0.0', port: 11434, priority: 3, label: 'All Interfaces' },
-      { host: 'host.docker.internal', port: 11434, priority: 4, label: 'Docker Host' },
-
-      // Common local network locations
-      { host: '192.168.1.100', port: 11434, priority: 10, label: 'Common LAN IP' },
-      { host: '192.168.0.100', port: 11434, priority: 11, label: 'Alt LAN IP' },
-      { host: '10.0.0.100', port: 11434, priority: 12, label: 'Private Network' },
-
-      // Alternative ports on localhost
-      { host: 'localhost', port: 8080, priority: 20, label: 'Localhost Alt Port' },
-      { host: 'localhost', port: 3000, priority: 21, label: 'Localhost Dev Port' },
-      { host: 'localhost', port: 5000, priority: 22, label: 'Localhost API Port' },
-    ];
-
-    for (const location of priorityLocations) {
-      candidates.push({
-        host: location.host,
-        port: location.port,
-        protocol: 'http',
-        priority: location.priority,
-        label: location.label,
-      });
-    }
-
-    console.log(`⚡ Quick Scan: Testing ${candidates.length} priority locations first`);
-    return candidates;
   }
 
   /**
@@ -882,25 +728,6 @@ class OllamaDiscoveryService {
     this.emitDiscoveryEvent('discovery-start');
 
     try {
-      // Step 1: Check for local network access restrictions
-      const networkAccess = await this.checkLocalNetworkAccess();
-      if (networkAccess.restricted) {
-        console.warn('🚫 Local network access appears restricted:', networkAccess.reason);
-        this.emitDiscoveryEvent('discovery-warning', { message: networkAccess.reason });
-      }
-
-      // Step 2: Quick scan of most likely locations first (OOTB optimization)
-      console.log('⚡ Starting quick scan of priority locations...');
-      const quickCandidates = await this.performQuickScan();
-      const quickResult = await this.findFirstHealthyEndpoint(quickCandidates);
-
-      if (quickResult && quickResult.isHealthy) {
-        console.log('✅ Found Ollama via quick scan - skipping comprehensive scan');
-        return quickResult;
-      }
-
-      // Step 3: Comprehensive scan if quick scan failed
-      console.log('🔍 Quick scan failed, starting comprehensive discovery...');
       const candidates = await this.generateCandidateEndpoints();
       console.log(`🔍 Ollama Discovery: Testing ${candidates.length} candidate endpoints`);
 
