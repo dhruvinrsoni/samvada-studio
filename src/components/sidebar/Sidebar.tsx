@@ -20,6 +20,9 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
   const isDark = state.themeSettings.mode === 'dark' ||
     (state.themeSettings.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
+  // Check if there are any enabled providers
+  const hasEnabledProviders = state.providers.some(p => p.isEnabled);
+
   const filteredChats = state.chats.filter(chat => {
     const matchesArchive = localShowArchived ? chat.isArchived : !chat.isArchived;
     const matchesSearch = state.searchQuery
@@ -92,8 +95,13 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
           <div className="flex items-stretch">
             <button
               onClick={() => createChat()}
-              className="py-2 px-2 sm:px-3 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-l-lg transition-colors flex items-center text-xs sm:text-sm flex-1 min-h-[44px]"
-              title="Create new chat (Ctrl+N)"
+              disabled={!hasEnabledProviders}
+              className={`py-2 px-2 sm:px-3 text-white rounded-l-lg transition-colors flex items-center text-xs sm:text-sm flex-1 min-h-[44px] ${
+                hasEnabledProviders
+                  ? 'bg-theme-primary hover:bg-theme-primary-hover'
+                  : 'bg-gray-400 cursor-not-allowed'
+              }`}
+              title={hasEnabledProviders ? "Create new chat (Ctrl+N)" : "No enabled providers available"}
             >
               <span className="flex items-center gap-1 sm:gap-2">
                 <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,8 +113,13 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
             <button
               onClick={() => setIsNewChatDropdownOpen(!isNewChatDropdownOpen)}
               onMouseEnter={() => setIsNewChatDropdownOpen(true)}
-              className="py-2 px-2 bg-theme-primary hover:bg-theme-primary-hover text-white rounded-r-lg transition-colors border-l border-white/20 flex items-center justify-center min-h-[44px] min-w-[36px]"
-              title="More new chat options"
+              disabled={!hasEnabledProviders}
+              className={`py-2 px-2 rounded-r-lg transition-colors border-l border-white/20 flex items-center justify-center min-h-[44px] min-w-[36px] ${
+                hasEnabledProviders
+                  ? 'bg-theme-primary hover:bg-theme-primary-hover text-white'
+                  : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+              }`}
+              title={hasEnabledProviders ? "More new chat options" : "No enabled providers available"}
             >
               <svg className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${isNewChatDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -122,44 +135,56 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
               onMouseEnter={() => setIsNewChatDropdownOpen(true)}
               onMouseLeave={() => setIsNewChatDropdownOpen(false)}
             >
-              <button
-                onClick={() => {
-                  createChat();
-                  setIsNewChatDropdownOpen(false);
-                }}
-                className={`w-full px-3 sm:px-4 py-2.5 sm:py-2 text-left hover:bg-theme-primary hover:text-white transition-colors rounded-t-lg text-sm ${
-                  isDark ? 'text-gray-300' : 'text-gray-700'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              {hasEnabledProviders ? (
+                <>
+                  <button
+                    onClick={() => {
+                      createChat();
+                      setIsNewChatDropdownOpen(false);
+                    }}
+                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-2 text-left hover:bg-theme-primary hover:text-white transition-colors rounded-t-lg text-sm ${
+                      isDark ? 'text-gray-300' : 'text-gray-700'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span className="truncate">New Chat (Default)</span>
+                    </span>
+                  </button>
+                  
+                  {/* Provider Options */}
+                  {state.providers.filter(p => p.isEnabled).map(provider => (
+                    <button
+                      key={provider.id}
+                      onClick={() => {
+                        createChat(undefined, provider);
+                        setIsNewChatDropdownOpen(false);
+                      }}
+                      className={`w-full px-3 sm:px-4 py-2.5 sm:py-2 text-left hover:bg-theme-primary hover:text-white transition-colors text-sm ${
+                        isDark ? 'text-gray-300' : 'text-gray-700'
+                      } ${provider.id === state.providers.find(p => p.isDefault)?.id ? 'border-l-4 border-theme-primary' : ''}`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <span className="truncate">{provider.name} ({provider.model})</span>
+                        {provider.isDefault && <span className="text-xs text-theme-secondary flex-shrink-0">(Default)</span>}
+                      </span>
+                    </button>
+                  ))}
+                </>
+              ) : (
+                <div className="p-3 text-center text-sm text-gray-500">
+                  <svg className="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                   </svg>
-                  <span className="truncate">New Chat (Default)</span>
-                </span>
-              </button>
-              
-              {/* Provider Options */}
-              {state.providers.filter(p => p.isEnabled).map(provider => (
-                <button
-                  key={provider.id}
-                  onClick={() => {
-                    createChat(undefined, provider);
-                    setIsNewChatDropdownOpen(false);
-                  }}
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-2 text-left hover:bg-theme-primary hover:text-white transition-colors text-sm ${
-                    isDark ? 'text-gray-300' : 'text-gray-700'
-                  } ${provider.id === state.providers.find(p => p.isDefault)?.id ? 'border-l-4 border-theme-primary' : ''}`}
-                >
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <span className="truncate">{provider.name} ({provider.model})</span>
-                    {provider.isDefault && <span className="text-xs text-theme-secondary flex-shrink-0">(Default)</span>}
-                  </span>
-                </button>
-              ))}
+                  <p className="font-medium">No Providers Available</p>
+                  <p className="text-xs mt-1">Please add and enable a provider in Admin Settings</p>
+                </div>
+              )}
             </div>
           )}
         </div>

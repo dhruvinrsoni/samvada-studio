@@ -578,9 +578,11 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
                 : "Type message... (Enter to send)"
           }
           className={`w-full p-2 sm:p-3 md:p-4 pr-20 sm:pr-24 md:pr-28 border rounded-lg focus:outline-none focus:border-theme-primary resize-none min-h-[48px] sm:min-h-[56px] md:min-h-[60px] max-h-[200px] sm:max-h-[250px] md:max-h-[300px] font-mono text-xs sm:text-sm ${
-            isDark 
-              ? 'bg-dark-100 border-dark-300 text-gray-200 placeholder-gray-500' 
-              : 'bg-white border-light-400 text-gray-800 placeholder-gray-400'
+            !hasProvider
+              ? 'bg-red-50 border-red-300 text-red-700 placeholder-red-500 focus:border-red-500 focus:ring-red-500'
+              : isDark 
+                ? 'bg-dark-100 border-dark-300 text-gray-200 placeholder-gray-500' 
+                : 'bg-white border-light-400 text-gray-800 placeholder-gray-400'
           }`}
           rows={1}
         />

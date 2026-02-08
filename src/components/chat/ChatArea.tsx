@@ -38,6 +38,17 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
   const defaultProvider = enabledProviders.find(p => p.isDefault) || enabledProviders[0] || null;
   const [selectedProvider, setSelectedProvider] = useState<LLMProviderConfig | null>(chatProvider || defaultProvider);
 
+  // Update selectedProvider when activeChat or providers change
+  useEffect(() => {
+    const newChatProvider = activeChat?.providerId ? enabledProviders.find(p => p.id === activeChat.providerId) : null;
+    const newDefaultProvider = enabledProviders.find(p => p.isDefault) || enabledProviders[0] || null;
+    const newSelectedProvider = newChatProvider || newDefaultProvider;
+    
+    if (newSelectedProvider?.id !== selectedProvider?.id) {
+      setSelectedProvider(newSelectedProvider);
+    }
+  }, [activeChat?.providerId, enabledProviders, selectedProvider?.id]);
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     if (isProviderDropdownOpen || isChatMenuOpen) {
