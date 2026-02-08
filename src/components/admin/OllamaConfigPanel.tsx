@@ -20,47 +20,7 @@ export const OllamaConfigPanel: React.FC = () => {
 
   useEffect(() => {
     setConfig(ollamaDiscovery.getConfiguration());
-    
-    // Listen for discovery events
-    const handleDiscoveryStart = () => {
-      setIsDiscovering(true);
-    };
-    
-    const handleDiscoveryEnd = () => {
-      setIsDiscovering(false);
-      setDiscoveryResults(ollamaDiscovery.getDiscoveryResults());
-    };
-    
-    const handleDiscoverySuccess = (event: CustomEvent) => {
-      const result = event.detail;
-      if (result && result.isHealthy) {
-        addToast('success', 'Ollama Found!', `Discovered healthy endpoint at ${result.endpoint.host}:${result.endpoint.port}`);
-      }
-    };
-    
-    const handleDiscoveryError = () => {
-      addToast('error', 'Discovery Failed', 'No Ollama endpoints found on the network');
-    };
-    
-    const handleDiscoveryCancelled = () => {
-      setIsDiscovering(false);
-      addToast('info', 'Discovery Cancelled', 'Endpoint discovery was stopped');
-    };
-    
-    window.addEventListener('ollama-discovery-start', handleDiscoveryStart);
-    window.addEventListener('ollama-discovery-end', handleDiscoveryEnd);
-    window.addEventListener('ollama-discovery-success', handleDiscoverySuccess as EventListener);
-    window.addEventListener('ollama-discovery-error', handleDiscoveryError);
-    window.addEventListener('ollama-discovery-cancelled', handleDiscoveryCancelled);
-    
-    return () => {
-      window.removeEventListener('ollama-discovery-start', handleDiscoveryStart);
-      window.removeEventListener('ollama-discovery-end', handleDiscoveryEnd);
-      window.removeEventListener('ollama-discovery-success', handleDiscoverySuccess as EventListener);
-      window.removeEventListener('ollama-discovery-error', handleDiscoveryError);
-      window.removeEventListener('ollama-discovery-cancelled', handleDiscoveryCancelled);
-    };
-  }, [addToast]);
+  }, []);
 
   const handleDiscovery = async () => {
     setIsDiscovering(true);
@@ -90,8 +50,7 @@ export const OllamaConfigPanel: React.FC = () => {
         }
         
         // Store discovered base URL for use when adding new Ollama providers
-        // Include /api/generate for proper Ollama API endpoint
-        const baseUrl = `${result.endpoint.protocol}://${result.endpoint.host}:${result.endpoint.port}/api/generate`;
+        const baseUrl = `${result.endpoint.protocol}://${result.endpoint.host}:${result.endpoint.port}${result.endpoint.basePath || ''}`;
         localStorage.setItem('ollama-discovered-base-url', baseUrl);
         
         // Trigger provider auto-configuration through event
@@ -116,32 +75,6 @@ export const OllamaConfigPanel: React.FC = () => {
       addToast('error', 'Discovery Error', error.message);
     } finally {
       setIsDiscovering(false);
-    }
-  };
-
-  const handleCancelDiscovery = () => {
-    ollamaDiscovery.cancelDiscovery();
-    setIsDiscovering(false);
-    addToast('info', 'Discovery Cancelled', 'Ollama endpoint discovery has been stopped.');
-  };
-
-  const handleCopyUrl = async (url: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      addToast('success', 'Copied!', 'URL copied to clipboard');
-    } catch (error) {
-      // Fallback for older browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = url;
-      document.body.appendChild(textArea);
-      textArea.select();
-      try {
-        document.execCommand('copy');
-        addToast('success', 'Copied!', 'URL copied to clipboard');
-      } catch (fallbackError) {
-        addToast('error', 'Copy Failed', 'Unable to copy URL to clipboard');
-      }
-      document.body.removeChild(textArea);
     }
   };
 
@@ -244,56 +177,44 @@ export const OllamaConfigPanel: React.FC = () => {
           </label>
         </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={handleDiscovery}
-            disabled={isDiscovering}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-          >
-            {isDiscovering ? (
-              <>
-                <span className="animate-spin">🔍</span>
-                Discovering...
-              </>
-            ) : (
-              <>
-                <span>🔍</span>
-                Run Discovery
-              </>
-            )}
-          </button>
-
-          {isDiscovering && (
-            <button
-              onClick={handleCancelDiscovery}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-              title="Cancel Discovery"
-            >
-              <span>⏹️</span>
-              Stop
-            </button>
+        <button
+          onClick={handleDiscovery}
+          disabled={isDiscovering}
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+        >
+          {isDiscovering ? (
+            <>
+              <span className="animate-spin">🔍</span>
+              Discovering...
+            </>
+          ) : (
+            <>
+              <span>🔍</span>
+              Run Discovery
+            </>
           )}
-        </div>
+        </button>
 
         {discoveryResults.size > 0 && (
           <div className="mt-4 space-y-2">
             <h5 className="text-sm font-semibold text-gray-300">Discovery Results:</h5>
             <p className="text-xs text-blue-400 mb-2">
-              💡 Only successful discoveries are shown. Failed attempts are hidden for clarity.
+              💡 Discovered endpoints are automatically added to Custom Endpoints below and an LLM Provider is created!
             </p>
-            <div className="max-h-48 overflow-y-auto space-y-2">
-              {Array.from(discoveryResults.entries())
-                .filter(([_, result]) => result.isHealthy) // Only show healthy results
-                .map(([url, result]) => (
+            <div className="max-h-48 overflow-y-auto space-y-2">{Array.from(discoveryResults.entries()).map(([url, result]) => (
                 <div
                   key={url}
-                  className="p-3 rounded text-sm bg-green-900/30 border border-green-700"
+                  className={`p-3 rounded text-sm ${
+                    result.isHealthy
+                      ? 'bg-green-900/30 border border-green-700'
+                      : 'bg-red-900/30 border border-red-700'
+                  }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-mono text-xs text-gray-300">Base URL:</span>
                     <button
-                      onClick={() => handleCopyUrl(url)}
-                      className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-white transition-colors"
+                      onClick={() => navigator.clipboard.writeText(url)}
+                      className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-white"
                       title="Copy URL"
                     >
                       📋 Copy
@@ -303,25 +224,18 @@ export const OllamaConfigPanel: React.FC = () => {
                     {url}
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-green-400">
-                      ✅ Healthy • {result.responseTime}ms
+                    <span className={result.isHealthy ? 'text-green-400' : 'text-red-400'}>
+                      {result.isHealthy ? '✅ Healthy' : '❌ Failed'} • {result.responseTime}ms
                     </span>
                     {result.version && (
                       <span className="text-xs text-gray-400">v{result.version}</span>
                     )}
                   </div>
-                  {result.models && result.models.length > 0 && (
-                    <div className="text-xs text-gray-400 mt-1">
-                      Models: {result.models.slice(0, 3).join(', ')}{result.models.length > 3 ? '...' : ''}
-                    </div>
+                  {result.error && (
+                    <div className="text-xs text-red-400 mt-1">Error: {result.error}</div>
                   )}
                 </div>
               ))}
-              {Array.from(discoveryResults.entries()).filter(([_, result]) => result.isHealthy).length === 0 && (
-                <div className="text-sm text-gray-400 text-center py-4">
-                  No healthy Ollama endpoints found. Try adding a custom endpoint manually.
-                </div>
-              )}
             </div>
           </div>
         )}

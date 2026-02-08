@@ -46,51 +46,36 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
   useEffect(() => {
     const handleOllamaDiscovered = (event: CustomEvent) => {
       const { baseUrl, models, endpoint } = event.detail;
-
-      // Check if any Ollama provider already exists (be more conservative)
-      const existingOllamaProviders = state.providers.filter(p => p.type === 'ollama');
-
-      // If there are existing Ollama providers, don't auto-create
-      if (existingOllamaProviders.length > 0) {
-        console.log('Ollama providers already exist, skipping auto-creation');
-        return;
-      }
-
-      // Check for exact endpoint match (more comprehensive check)
-      const exactMatch = state.providers.find(
-        p => p.type === 'ollama' &&
-             p.apiEndpoint &&
-             (p.apiEndpoint === baseUrl ||
-              p.apiEndpoint.replace('/api/generate', '') === baseUrl.replace('/api/generate', ''))
+      
+      // Check if Ollama provider already exists with this endpoint
+      const existingProvider = state.providers.find(
+        p => p.type === 'ollama' && p.apiEndpoint === baseUrl
       );
-
-      if (exactMatch) {
-        console.log('Ollama provider with this endpoint already exists:', exactMatch.name);
+      
+      if (existingProvider) {
+        console.log('Ollama provider already exists:', existingProvider.name);
         return;
       }
-
-      // Only auto-create if this is genuinely a new discovery and no Ollama providers exist
-      console.log('Auto-creating first Ollama provider for discovered endpoint');
-
-      // Use existing provider creation patterns (DRY principle)
+      
+      // Auto-create Ollama provider
       const newProvider: LLMProviderConfig = {
         id: generateId(),
-        name: `Ollama (${endpoint.host}:${endpoint.port})`,
+        name: `Ollama (${endpoint.host})`,
         type: 'ollama',
         apiEndpoint: baseUrl,
-        model: models && models.length > 0 ? models[0] : 'llama2', // Default to llama2 as mentioned
+        model: models && models.length > 0 ? models[0] : 'llama2',
         isEnabled: true,
-        isDefault: state.providers.length === 0, // Only set as default if no providers exist
+        isDefault: state.providers.length === 0, // Set as default if no other providers
         settings: {
           temperature: 0.7,
           maxTokens: 4096,
         },
       };
-
+      
       dispatch({ type: 'ADD_PROVIDER', payload: newProvider });
-
-      // Show success notification
-      console.log('✅ Auto-created Ollama provider:', newProvider.name);
+      
+      // Show notification
+      console.log('Auto-created Ollama provider:', newProvider.name);
     };
     
     window.addEventListener('ollama-discovered', handleOllamaDiscovered as EventListener);
