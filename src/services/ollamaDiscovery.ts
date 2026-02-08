@@ -20,6 +20,7 @@ export interface OllamaDiscoveryResult {
   isHealthy: boolean;
   lastChecked: Date;
   error?: string;
+  cancelled?: boolean; // Add cancellation flag
 }
 
 export interface OllamaConfiguration {
@@ -37,6 +38,8 @@ export interface OllamaConfiguration {
     enablePortScan: boolean;
     enableWiFiScan: boolean;
     scanTimeout: number;
+    maxConcurrentScans: number; // Limit concurrent requests
+    enableSmartScan: boolean; // Smart scanning based on current network
   };
 }
 
@@ -56,6 +59,8 @@ const DEFAULT_CONFIG: OllamaConfiguration = {
     enablePortScan: true,
     enableWiFiScan: true,
     scanTimeout: 2000,
+    maxConcurrentScans: 5, // Limit to 5 concurrent requests
+    enableSmartScan: true, // Smart scanning enabled by default
   },
 };
 
@@ -67,6 +72,8 @@ class OllamaDiscoveryService {
   private cachedEndpoint: OllamaEndpoint | null = null;
   private discoveryResults: Map<string, OllamaDiscoveryResult> = new Map();
   private lastDiscoveryTime = 0; // Timestamp for debouncing rapid calls
+  private abortController: AbortController | null = null; // For cancelling discovery
+  private isDiscovering = false; // Track discovery state
 
   constructor() {
     this.config = this.loadConfiguration();
@@ -203,15 +210,20 @@ class OllamaDiscoveryService {
   /**
    * Test if an endpoint is healthy
    */
-  private async testEndpoint(endpoint: OllamaEndpoint): Promise<OllamaDiscoveryResult> {
+  private async testEndpoint(endpoint: OllamaEndpoint, abortSignal?: AbortSignal): Promise<OllamaDiscoveryResult> {
     const startTime = Date.now();
     const url = this.getEndpointUrl(endpoint);
     const timeout = endpoint.timeout || this.config.networkDetection.scanTimeout;
 
     try {
-      // Use AbortController for timeout
+      // Use AbortController for timeout and cancellation
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      // Combine with external abort signal if provided
+      if (abortSignal) {
+        abortSignal.addEventListener('abort', () => controller.abort());
+      }
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -228,6 +240,19 @@ class OllamaDiscoveryService {
       });
 
       clearTimeout(timeoutId);
+
+      // Check if cancelled
+      if (controller.signal.aborted) {
+        return {
+          endpoint,
+          responseTime: Date.now() - startTime,
+          isHealthy: false,
+          lastChecked: new Date(),
+          error: 'Cancelled',
+          cancelled: true,
+        };
+      }
+
       const responseTime = Date.now() - startTime;
 
       if (response.ok) {
@@ -250,6 +275,19 @@ class OllamaDiscoveryService {
       }
     } catch (error: any) {
       const responseTime = Date.now() - startTime;
+      
+      // Check if this was a cancellation
+      if (error.name === 'AbortError' || (this.abortController && this.abortController.signal.aborted)) {
+        return {
+          endpoint,
+          responseTime,
+          isHealthy: false,
+          lastChecked: new Date(),
+          error: 'Cancelled',
+          cancelled: true,
+        };
+      }
+      
       return {
         endpoint,
         responseTime,
@@ -313,13 +351,13 @@ class OllamaDiscoveryService {
   }
 
   /**
-   * Get local network IP addresses and information
+   * Get comprehensive local network information for multi-network scanning
    */
   private async getLocalNetworkIPs(): Promise<string[]> {
-    const ips: string[] = [];
+    const networks: string[] = [];
 
     try {
-      // Try to get network information from WebRTC (works in browsers)
+      // Method 1: WebRTC-based IP detection (works in browsers)
       if (typeof window !== 'undefined' && window.RTCPeerConnection) {
         const pc = new RTCPeerConnection({ iceServers: [] });
         pc.createDataChannel('');
@@ -327,17 +365,18 @@ class OllamaDiscoveryService {
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
 
-        // Wait for ICE candidates
+        // Wait for ICE candidates with timeout
         await new Promise<void>((resolve) => {
-          const timeout = setTimeout(() => resolve(), 1000);
+          const timeout = setTimeout(() => resolve(), 2000);
           pc.onicecandidate = (event) => {
             if (event.candidate) {
               const candidate = event.candidate.candidate;
               const ipMatch = candidate.match(/(\d+\.\d+\.\d+\.\d+)/);
               if (ipMatch && ipMatch[1]) {
                 const ip = ipMatch[1];
-                if (!ips.includes(ip) && !ip.startsWith('127.')) {
-                  ips.push(ip);
+                if (!networks.includes(ip) && !ip.startsWith('127.')) {
+                  networks.push(ip);
+                  console.log(`🌐 Detected network IP via WebRTC: ${ip}`);
                 }
               }
             } else {
@@ -350,25 +389,94 @@ class OllamaDiscoveryService {
         pc.close();
       }
 
-      // Fallback: use current hostname to infer network
+      // Method 2: Current hostname analysis
       if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
         if (hostname.match(/^\d+\.\d+\.\d+\.\d+$/)) {
-          ips.push(hostname);
+          if (!networks.includes(hostname)) {
+            networks.push(hostname);
+            console.log(`🌐 Detected hostname IP: ${hostname}`);
+          }
         }
       }
 
-      // Add localhost as fallback
-      if (!ips.includes('127.0.0.1')) {
-        ips.push('127.0.0.1');
+      // Method 3: Common private network ranges (auto-generate subnets)
+      const commonSubnets = [
+        '192.168.1.0/24',   // Most common home network
+        '192.168.0.0/24',   // Alternative home network
+        '10.0.0.0/24',      // Private network range
+        '172.16.0.0/24',    // Private network range
+      ];
+
+      // If we have detected IPs, generate their subnets
+      if (networks.length > 0) {
+        for (const detectedIp of networks) {
+          const subnet = this.generateSubnetFromIP(detectedIp);
+          if (subnet && !commonSubnets.includes(subnet)) {
+            commonSubnets.push(subnet);
+          }
+        }
       }
 
-    } catch (error) {
-      console.warn('Failed to get local IPs:', error);
-      ips.push('127.0.0.1');
-    }
+      // Method 4: Generate candidate IPs from all subnets
+      const allCandidateIPs: string[] = [];
+      for (const subnet of commonSubnets) {
+        const ips = this.generateIPsFromSubnet(subnet);
+        allCandidateIPs.push(...ips);
+      }
 
-    return ips;
+      // Remove duplicates and localhost
+      const uniqueIPs = [...new Set(allCandidateIPs)].filter(ip =>
+        !ip.startsWith('127.') && !ip.endsWith('.0') && !ip.endsWith('.255')
+      );
+
+      console.log(`🌐 Comprehensive network scan: Found ${uniqueIPs.length} potential IPs across ${commonSubnets.length} subnets`);
+      return uniqueIPs.length > 0 ? uniqueIPs : ['127.0.0.1'];
+
+    } catch (error) {
+      console.warn('Failed to get comprehensive network info:', error);
+      // Fallback to basic localhost
+      return ['127.0.0.1'];
+    }
+  }
+
+  /**
+   * Generate subnet notation from an IP address
+   */
+  private generateSubnetFromIP(ip: string): string | null {
+    try {
+      const parts = ip.split('.');
+      if (parts.length === 4) {
+        return `${parts[0]}.${parts[1]}.${parts[2]}.0/24`;
+      }
+    } catch (error) {
+      console.warn('Failed to generate subnet from IP:', ip, error);
+    }
+    return null;
+  }
+
+  /**
+   * Generate IP addresses from subnet notation
+   */
+  private generateIPsFromSubnet(subnet: string): string[] {
+    try {
+      const [base, mask] = subnet.split('/');
+      if (!base) return [];
+
+      const [a, b, c] = base.split('.').map(Number);
+
+      if (mask === '24') {
+        const ips: string[] = [];
+        // Generate IPs in the subnet (skip .0 and .255)
+        for (let i = 1; i < 255; i++) {
+          ips.push(`${a}.${b}.${c}.${i}`);
+        }
+        return ips;
+      }
+    } catch (error) {
+      console.warn('Failed to generate IPs from subnet:', subnet, error);
+    }
+    return [];
   }
 
   /**
@@ -417,7 +525,8 @@ class OllamaDiscoveryService {
    */
   private async performPortScan(hosts: string[]): Promise<OllamaEndpoint[]> {
     const candidates: OllamaEndpoint[] = [];
-    const commonPorts = [11434, 11435, 8080, 3000, 5000, 8000, 9000];
+    // Remove port 3000 as it's not relevant for Ollama (which uses 11434)
+    const commonPorts = [11434, 11435, 8080, 5000, 8000, 9000];
 
     console.log(`🔍 Port Scan: Scanning ${hosts.length} hosts with ${commonPorts.length} ports each`);
 
@@ -437,30 +546,57 @@ class OllamaDiscoveryService {
   }
   private async performWiFiScan(): Promise<OllamaEndpoint[]> {
     const candidates: OllamaEndpoint[] = [];
-    const commonPorts = [11434, 11435, 8080, 3000, 5000];
+    // Remove port 3000 as it's not relevant for Ollama
+    const commonPorts = [11434, 11435, 8080, 5000];
 
-    // Common WiFi network patterns and device IPs
-    const wifiPatterns = [
-      // Router gateway IPs (common defaults)
-      '192.168.0.1', '192.168.1.1', '192.168.1.254', '192.168.0.254',
-      '10.0.0.1', '10.0.0.138', // Common for mobile hotspots
-      // Common device IPs in WiFi networks
-      '192.168.1.100', '192.168.1.101', '192.168.1.102', '192.168.1.103', '192.168.1.104', '192.168.1.105',
-      '192.168.0.100', '192.168.0.101', '192.168.0.102', '192.168.0.103', '192.168.0.104', '192.168.0.105',
-    ];
+    console.log(`📶 WiFi Scan: Performing smart scan of current network for Ollama endpoints`);
 
-    console.log(`📶 WiFi Scan: Scanning ${wifiPatterns.length} common WiFi IPs with ${commonPorts.length} ports each`);
+    try {
+      // Get current network information
+      const localIPs = await this.getLocalNetworkIPs();
+      const networkRanges = this.generateNetworkRanges(localIPs);
 
-    for (const ip of wifiPatterns) {
-      for (const port of commonPorts) {
-        candidates.push({
-          host: ip,
-          port,
-          protocol: 'http',
-          priority: 150 + (wifiPatterns.indexOf(ip) * 10) + port, // Medium priority
-          label: `WiFi: ${ip}:${port}`,
-        });
+      // For WiFi/mobile hotspot networks, scan more aggressively around the current IP
+      for (const networkRange of networkRanges) {
+        // Scan a wider range for WiFi networks (more devices likely)
+        const start = Math.max(1, networkRange.start - 20);
+        const end = Math.min(254, networkRange.end + 20);
+
+        for (let i = start; i <= end; i++) {
+          const ip = `${networkRange.prefix}.${i}`;
+          for (const port of commonPorts) {
+            candidates.push({
+              host: ip,
+              port,
+              protocol: 'http',
+              priority: 150 + (Math.abs(i - (networkRange.start + networkRange.end) / 2) * 5) + port, // Closer IPs get higher priority
+              label: `WiFi Network: ${ip}:${port}`,
+            });
+          }
+        }
       }
+
+      // Also include common router/gateway IPs that might be running Ollama
+      const gatewayIPs = [
+        '192.168.0.1', '192.168.1.1', '192.168.1.254', '192.168.0.254',
+        '10.0.0.1', '10.0.0.138', // Common for mobile hotspots
+      ];
+
+      for (const ip of gatewayIPs) {
+        for (const port of commonPorts) {
+          candidates.push({
+            host: ip,
+            port,
+            protocol: 'http',
+            priority: 140 + port, // Slightly lower priority than network scan
+            label: `Gateway: ${ip}:${port}`,
+          });
+        }
+      }
+
+      console.log(`📶 WiFi Scan: Generated ${candidates.length} smart network scan candidates`);
+    } catch (error) {
+      console.warn('WiFi scan failed:', error);
     }
 
     return candidates;
@@ -561,6 +697,12 @@ class OllamaDiscoveryService {
    * Performance: Debounced to prevent rapid re-discovery within 5 seconds
    */
   async discoverEndpoint(): Promise<OllamaDiscoveryResult | null> {
+    // Check if already discovering
+    if (this.isDiscovering) {
+      console.log('[Ollama Discovery] Discovery already in progress');
+      return null;
+    }
+
     // Performance optimization: Debounce rapid discovery calls
     const now = Date.now();
     if (this.lastDiscoveryTime > 0 && now - this.lastDiscoveryTime < 5000) {
@@ -580,35 +722,60 @@ class OllamaDiscoveryService {
       return null;
     }
 
-    const candidates = await this.generateCandidateEndpoints();
-    console.log(`🔍 Ollama Discovery: Testing ${candidates.length} candidate endpoints`);
+    // Set discovery state
+    this.isDiscovering = true;
+    this.abortController = new AbortController();
+    this.emitDiscoveryEvent('discovery-start');
 
-    // Sort by priority
-    candidates.sort((a, b) => a.priority - b.priority);
+    try {
+      const candidates = await this.generateCandidateEndpoints();
+      console.log(`🔍 Ollama Discovery: Testing ${candidates.length} candidate endpoints`);
 
-    // Test endpoints based on fallback behavior
-    if (this.config.fallbackBehavior === 'fastest') {
-      // Race all candidates to find fastest
-      return this.findFastestEndpoint(candidates);
-    } else {
-      // Test in priority order until first healthy
-      return this.findFirstHealthyEndpoint(candidates);
+      // Sort by priority
+      candidates.sort((a, b) => a.priority - b.priority);
+
+      // Test endpoints based on fallback behavior
+      if (this.config.fallbackBehavior === 'fastest') {
+        // Race all candidates to find fastest
+        return this.findFastestEndpoint(candidates);
+      } else {
+        // Test in priority order until first healthy
+        return this.findFirstHealthyEndpoint(candidates);
+      }
+    } finally {
+      this.isDiscovering = false;
+      this.abortController = null;
+      this.emitDiscoveryEvent('discovery-end');
     }
   }
 
   /**
    * Find the fastest responding healthy endpoint
    */
-  private async findFastestEndpoint(
-    candidates: OllamaEndpoint[]
-  ): Promise<OllamaDiscoveryResult | null> {
-    const results = await Promise.allSettled(
-      candidates.map(endpoint => this.testEndpoint(endpoint))
-    );
+  private async findFastestEndpoint(candidates: OllamaEndpoint[]): Promise<OllamaDiscoveryResult | null> {
+    const maxConcurrent = this.config.networkDetection.maxConcurrentScans;
+    const results: Array<PromiseSettledResult<OllamaDiscoveryResult>> = [];
+    
+    // Process candidates in batches to limit concurrent requests
+    for (let i = 0; i < candidates.length; i += maxConcurrent) {
+      const batch = candidates.slice(i, i + maxConcurrent);
+      const batchPromises = batch.map(endpoint => 
+        this.testEndpoint(endpoint, this.abortController?.signal)
+      );
+      
+      const batchResults = await Promise.allSettled(batchPromises);
+      results.push(...batchResults);
+      
+      // Check if cancelled
+      if (this.abortController?.signal.aborted) {
+        console.log('🛑 Fastest endpoint discovery cancelled');
+        return null;
+      }
+    }
 
     const healthyResults = results
       .filter((result): result is PromiseFulfilledResult<OllamaDiscoveryResult> => 
-        result.status === 'fulfilled' && result.value.isHealthy
+        result.status === 'fulfilled' && result.value.isHealthy && !result.value.cancelled
       )
       .map(result => result.value)
       .sort((a, b) => a.responseTime - b.responseTime);
@@ -619,32 +786,44 @@ class OllamaDiscoveryService {
         this.cacheSuccessfulEndpoint(fastest.endpoint);
         this.discoveryResults.set(this.getEndpointUrl(fastest.endpoint), fastest);
         console.log(`✅ Fastest Ollama endpoint: ${this.getEndpointUrl(fastest.endpoint)} (${fastest.responseTime}ms)`);
+        this.emitDiscoveryEvent('discovery-success', fastest);
         return fastest;
       }
     }
 
     console.warn('❌ No healthy Ollama endpoints found');
+    this.emitDiscoveryEvent('discovery-failed');
     return null;
   }
 
   /**
    * Find the first healthy endpoint in priority order
    */
-  private async findFirstHealthyEndpoint(
-    candidates: OllamaEndpoint[]
-  ): Promise<OllamaDiscoveryResult | null> {
+  private async findFirstHealthyEndpoint(candidates: OllamaEndpoint[]): Promise<OllamaDiscoveryResult | null> {
     for (const endpoint of candidates) {
-      const result = await this.testEndpoint(endpoint);
+      // Check if cancelled before testing each endpoint
+      if (this.abortController?.signal.aborted) {
+        console.log('🛑 First healthy endpoint discovery cancelled');
+        return null;
+      }
+      
+      const result = await this.testEndpoint(endpoint, this.abortController?.signal);
       this.discoveryResults.set(this.getEndpointUrl(endpoint), result);
+
+      if (result.cancelled) {
+        continue; // Skip cancelled results
+      }
 
       if (result.isHealthy) {
         this.cacheSuccessfulEndpoint(endpoint);
         console.log(`✅ Found healthy Ollama endpoint: ${this.getEndpointUrl(endpoint)} (${result.responseTime}ms)`);
+        this.emitDiscoveryEvent('discovery-success', result);
         return result;
       }
     }
 
     console.warn('❌ No healthy Ollama endpoints found');
+    this.emitDiscoveryEvent('discovery-failed');
     return null;
   }
 
@@ -663,10 +842,23 @@ class OllamaDiscoveryService {
   }
 
   /**
-   * Get all discovery results
+   * Check if discovery is currently running
    */
-  getDiscoveryResults(): Map<string, OllamaDiscoveryResult> {
-    return new Map(this.discoveryResults);
+  isDiscoveryRunning(): boolean {
+    return this.isDiscovering;
+  }
+
+  /**
+   * Cancel any ongoing discovery
+   */
+  cancelDiscovery(): void {
+    if (this.abortController) {
+      console.log('🛑 Cancelling Ollama discovery...');
+      this.abortController.abort();
+      this.abortController = null;
+      this.isDiscovering = false;
+      this.emitDiscoveryEvent('discovery-cancelled');
+    }
   }
 
   /**
@@ -726,6 +918,20 @@ class OllamaDiscoveryService {
       console.error('Failed to import configuration:', error);
       return false;
     }
+  }
+
+  /**
+   * Get all discovery results
+   */
+  getDiscoveryResults(): Map<string, OllamaDiscoveryResult> {
+    return new Map(this.discoveryResults);
+  }
+
+  /**
+   * Emit discovery events for UI feedback
+   */
+  private emitDiscoveryEvent(eventType: string, data?: any) {
+    window.dispatchEvent(new CustomEvent(`ollama-${eventType}`, { detail: data }));
   }
 }
 
