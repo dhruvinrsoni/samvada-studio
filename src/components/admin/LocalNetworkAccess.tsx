@@ -149,41 +149,66 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
     setTestResult({ status: null, message: '' });
 
     try {
-      const testEndpoint = 'http://localhost:11434/api/version';
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      // Use smart network detection like Ollama discovery
+      const testEndpoints = [
+        'http://localhost:11434/api/version',
+        'http://127.0.0.1:11434/api/version',
+        'http://192.168.1.100:11434/api/version', // Common LAN IP
+        'http://192.168.0.100:11434/api/version', // Alt LAN IP
+        'http://10.0.0.100:11434/api/version',    // Private network
+        'http://host.docker.internal:11434/api/version', // Docker host
+      ];
 
-      const response = await fetch(testEndpoint, {
-        signal: controller.signal,
-      });
+      let foundConnection = false;
+      let lastError = '';
 
-      clearTimeout(timeoutId);
+      for (const endpoint of testEndpoints) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 2000); // Shorter timeout per endpoint
 
-      if (response.ok) {
-        const data = await response.json();
-        setTestResult({
-          status: 'success',
-          message: `✅ Connected to Ollama ${data.version || 'server'}`,
-        });
-      } else {
-        setTestResult({
-          status: 'error',
-          message: '⚠️ Connection made but Ollama returned an error',
-        });
+          const response = await fetch(endpoint, {
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          if (response.ok) {
+            const data = await response.json().catch(() => ({}));
+            const host = new URL(endpoint).host;
+            setTestResult({
+              status: 'success',
+              message: `✅ Connected to Ollama ${data.version || 'server'} at ${host}`,
+            });
+            foundConnection = true;
+            break;
+          }
+        } catch (error) {
+          if (error instanceof Error && error.name !== 'AbortError') {
+            lastError = error.message;
+          }
+          // Continue to next endpoint
+        }
+      }
+
+      if (!foundConnection) {
+        if (lastError.includes('Failed to fetch') || lastError.includes('NetworkError')) {
+          setTestResult({
+            status: 'error',
+            message: '❌ Cannot connect to local network. Check firewall settings or try enabling local network access.',
+          });
+        } else {
+          setTestResult({
+            status: 'error',
+            message: '⏱️ No Ollama server found on local network. Make sure Ollama is running.',
+          });
+        }
       }
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        setTestResult({
-          status: 'error',
-          message: '⏱️ Connection timeout. Make sure Ollama is running on port 11434.',
-        });
-      } else {
-        setTestResult({
-          status: 'error',
-          message: '❌ Cannot connect. Check if Ollama is running.',
-        });
-      }
+      setTestResult({
+        status: 'error',
+        message: '❌ Network test failed. Check your connection.',
+      });
     } finally {
       setIsLoading(false);
     }

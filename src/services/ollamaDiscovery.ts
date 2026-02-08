@@ -313,36 +313,29 @@ class OllamaDiscoveryService {
 
       console.log(`🔍 LAN Scan: Scanning ${networkRanges.length} network ranges with ${commonPorts.length} ports each`);
 
-      // Scan network ranges
+      // For LAN scan, be more conservative - only scan a few IPs around detected addresses
+      // instead of full subnet ranges to avoid overwhelming networks
       for (const networkRange of networkRanges) {
-        for (const port of commonPorts) {
-          // Limit concurrent requests to avoid overwhelming the network
-          const batchSize = 10;
-          const rangeCandidates: OllamaEndpoint[] = [];
+        // Only scan a small range around the detected IP (±2 addresses)
+        const baseOctet = networkRange.start;
+        const scanRange = [baseOctet - 2, baseOctet - 1, baseOctet, baseOctet + 1, baseOctet + 2]
+          .filter(octet => octet >= 1 && octet <= 254);
 
-          for (let i = networkRange.start; i <= networkRange.end; i++) {
-            const ip = `${networkRange.prefix}.${i}`;
-            rangeCandidates.push({
+        for (const octet of scanRange) {
+          const ip = `${networkRange.prefix}.${octet}`;
+          for (const port of commonPorts) {
+            candidates.push({
               host: ip,
               port,
               protocol: 'http',
-              priority: 100 + (i * 10) + port, // Lower priority for LAN scans
+              priority: 100 + (Math.abs(octet - baseOctet) * 10) + port, // Closer IPs get higher priority
               label: `LAN: ${ip}:${port}`,
             });
-
-            // Process in batches
-            if (rangeCandidates.length >= batchSize) {
-              candidates.push(...rangeCandidates);
-              rangeCandidates.length = 0;
-            }
           }
-
-          // Add remaining candidates
-          candidates.push(...rangeCandidates);
         }
       }
 
-      console.log(`📡 Generated ${candidates.length} LAN scan candidates`);
+      console.log(`📡 Generated ${candidates.length} conservative LAN scan candidates`);
     } catch (error) {
       console.warn('LAN scan failed:', error);
     }
