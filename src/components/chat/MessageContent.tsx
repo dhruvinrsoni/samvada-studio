@@ -130,11 +130,11 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
   return (
     <div className={`relative group rounded-lg overflow-hidden my-3 max-w-full ${isDark ? 'bg-dark-100' : 'bg-gray-800'}`}>
       {/* Header */}
-      <div className={`flex items-center justify-between px-4 py-2 border-b ${isDark ? 'bg-dark-200 border-dark-300' : 'bg-gray-700 border-gray-600'}`}>
+      <div className={`flex items-center justify-between px-3 sm:px-4 py-2 border-b ${isDark ? 'bg-dark-200 border-dark-300' : 'bg-gray-700 border-gray-600'}`}>
         <span className="text-xs font-mono text-gray-400 uppercase">{language || 'code'}</span>
         <button
           onClick={handleCopy}
-          className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium transition-colors ${
+          className={`flex items-center gap-1.5 px-2 py-1.5 sm:px-2 sm:py-1 rounded text-xs font-medium transition-colors touch-manipulation ${
             copied
               ? 'text-green-400 bg-green-400/10'
               : 'text-gray-400 hover:text-white hover:bg-white/10'
@@ -159,8 +159,8 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
       </div>
       {/* Code */}
       <div className="overflow-x-auto">
-        <pre className="p-4 min-w-0">
-          <code className="text-sm font-mono text-gray-300 block whitespace-pre">
+        <pre className="p-3 sm:p-4 min-w-0">
+          <code className="text-sm sm:text-base font-mono text-gray-300 block whitespace-pre">
             {highlighted}
           </code>
         </pre>
@@ -192,7 +192,7 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
             // Inline code
             return (
               <code 
-                className={`px-1.5 py-0.5 rounded font-mono text-sm ${
+                className={`px-1.5 py-0.5 rounded font-mono text-sm sm:text-base ${
                   isDark 
                     ? 'bg-dark-100 text-theme-primary' 
                     : 'bg-gray-100 text-theme-primary'
@@ -208,29 +208,29 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
             return <>{children}</>;
           },
           p({ children }) {
-            return <p className={`mb-2 last:mb-0 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{children}</p>;
+            return <p className={`mb-2 last:mb-0 text-sm sm:text-base ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{children}</p>;
           },
           ul({ children }) {
-            return <ul className={`list-disc list-inside mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{children}</ul>;
+            return <ul className={`list-disc list-inside mb-2 text-sm sm:text-base ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{children}</ul>;
           },
           ol({ children }) {
-            return <ol className={`list-decimal list-inside mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{children}</ol>;
+            return <ol className={`list-decimal list-inside mb-2 text-sm sm:text-base ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{children}</ol>;
           },
           li({ children }) {
-            return <li className="mb-1">{children}</li>;
+            return <li className="mb-1 text-sm sm:text-base">{children}</li>;
           },
           h1({ children }) {
-            return <h1 className={`text-xl font-bold mb-2 ${isDark ? 'text-gray-200' : 'text-gray-900'}`}>{children}</h1>;
+            return <h1 className={`text-lg sm:text-xl font-bold mb-2 ${isDark ? 'text-gray-200' : 'text-gray-900'}`}>{children}</h1>;
           },
           h2({ children }) {
-            return <h2 className={`text-lg font-bold mb-2 ${isDark ? 'text-gray-200' : 'text-gray-900'}`}>{children}</h2>;
+            return <h2 className={`text-base sm:text-lg font-bold mb-2 ${isDark ? 'text-gray-200' : 'text-gray-900'}`}>{children}</h2>;
           },
           h3({ children }) {
-            return <h3 className={`text-base font-bold mb-2 ${isDark ? 'text-gray-200' : 'text-gray-900'}`}>{children}</h3>;
+            return <h3 className={`text-sm sm:text-base font-bold mb-2 ${isDark ? 'text-gray-200' : 'text-gray-900'}`}>{children}</h3>;
           },
           blockquote({ children }) {
             return (
-              <blockquote className={`border-l-4 border-theme-primary pl-4 italic my-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              <blockquote className={`border-l-4 border-theme-primary pl-3 sm:pl-4 italic my-2 text-sm sm:text-base ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 {children}
               </blockquote>
             );
