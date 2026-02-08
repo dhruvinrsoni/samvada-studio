@@ -177,18 +177,6 @@ export const OllamaConfigPanel: React.FC = () => {
     ollamaDiscovery.saveConfiguration(newConfig);
   };
 
-  const handleNetworkDetectionChange = (key: keyof OllamaConfiguration['networkDetection'], value: boolean) => {
-    const newConfig = {
-      ...config,
-      networkDetection: {
-        ...config.networkDetection,
-        [key]: value
-      }
-    };
-    setConfig(newConfig);
-    ollamaDiscovery.saveConfiguration(newConfig);
-  };
-
   const handleExport = () => {
     const json = ollamaDiscovery.exportConfiguration();
     const blob = new Blob([json], { type: 'application/json' });
@@ -548,80 +536,38 @@ export const OllamaConfigPanel: React.FC = () => {
         )}
       </div>
 
-      {/* Network Detection Settings */}
-      <div className="bg-gray-800 rounded-lg p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="font-semibold text-white mb-1">Network Detection</h4>
-            <p className="text-sm text-gray-400">Configure how Ollama discovery scans your network</p>
+      {/* Discovery Priority Order */}
+      <div className="bg-gray-800 rounded-lg p-4">
+        <h4 className="font-semibold text-white mb-3">🔄 Discovery Priority Order</h4>
+        <div className="text-sm text-gray-300 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-400 font-mono">1.</span>
+            <span>Cached successful endpoint (instant)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-blue-400 font-mono">2.</span>
+            <span>Custom endpoints (in order added)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-blue-400 font-mono">3.</span>
+            <span>Current hostname (DHCP-aware)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-blue-400 font-mono">4.</span>
+            <span>localhost:11434</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-blue-400 font-mono">5.</span>
+            <span>LAN scan (if enabled)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-blue-400 font-mono">6.</span>
+            <span>Port scan (if enabled)</span>
           </div>
         </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-300">LAN Scan</p>
-              <p className="text-xs text-gray-500">Scan local network for Ollama servers</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={config.networkDetection.enableLANScan}
-                onChange={(e) => handleNetworkDetectionChange('enableLANScan', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-300">WiFi Scan</p>
-              <p className="text-xs text-gray-500">Aggressively scan WiFi/mobile networks</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={config.networkDetection.enableWiFiScan}
-                onChange={(e) => handleNetworkDetectionChange('enableWiFiScan', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-300">Port Scan</p>
-              <p className="text-xs text-gray-500">Scan additional ports on discovered hosts</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={config.networkDetection.enablePortScan}
-                onChange={(e) => handleNetworkDetectionChange('enablePortScan', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-300">Smart Scan</p>
-              <p className="text-xs text-gray-500">Use current network context for better detection</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={config.networkDetection.enableSmartScan}
-                onChange={(e) => handleNetworkDetectionChange('enableSmartScan', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
-        </div>
+        <p className="text-xs text-gray-500 mt-3">
+          First healthy endpoint found is used. Copy URLs from discovery results above.
+        </p>
       </div>
 
       {/* Action Buttons */}
