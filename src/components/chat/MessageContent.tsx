@@ -173,41 +173,28 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
   const { state } = useChat();
   const isDark = state.theme === 'dark';
 
-  // Preprocess content to detect and wrap code blocks
-  // Normalize and preprocess content so that any standalone backtick-wrapped
-  // blocks (single or triple backticks) on their own lines are converted into
-  // fenced code blocks. This helps avoid stray literal backticks appearing
-  // in the rendered output while leaving inline code untouched.
-  let processedContent = content || '';
-
-  // Helper: convert standalone backtick-wrapped blocks to fenced blocks.
-  const normalizeBacktickBlocks = (text: string) => {
-    // Match groups of backticks (1-3) that wrap content when they appear
-    // on their own line(s). This respects leading/trailing whitespace/newlines.
-    // Uses a non-greedy capture so multiple blocks are handled.
-    return text.replace(/(^|\n)\s*`{1,3}([\s\S]*?)`{1,3}\s*(?=\n|$)/g, (_m, p1, p2) => {
-      const inner = String(p2).replace(/^\n+|\n+$/g, '');
-      return `${p1}\n\`\`\`\n${inner}\n\`\`\`\n`;
-    });
-  };
-
-  // Apply normalization globally
-  processedContent = normalizeBacktickBlocks(processedContent);
-
   return (
     <div className={`prose ${isDark ? 'prose-invert' : ''} prose-sm max-w-none overflow-hidden`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
           code({ className, children, ...props }) {
-            const match = /language-(\w+)/.exec(className || '');
             const codeString = String(children).replace(/\n$/, '');
             
-            if (match) {
-              return <CodeBlock language={match[1] || 'javascript'} code={codeString} />
+            // Check if this is a code block (has language class or multiline)
+            // Fenced code blocks have "language-xxx" class
+            // OR if content has newlines, it's likely a block
+            const hasLanguageClass = className && className.startsWith('language-');
+            const isMultiline = codeString.includes('\n');
+            
+            if (hasLanguageClass || isMultiline) {
+              // Extract language from className or default to plaintext
+              const match = /language-(\w+)/.exec(className || '');  
+              const language = match?.[1] || 'plaintext';
+              return <CodeBlock language={language} code={codeString} />
             }
             
-            // Inline code
+            // Inline code (single line, no language class)
             return (
               <code 
                 className={`px-1.5 py-0.5 rounded font-mono text-sm sm:text-base ${
@@ -290,7 +277,7 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
           },
         }}
       >
-        {processedContent}
+        {content || ''}
       </ReactMarkdown>
       {isStreaming && (
         <span className="inline-block w-2 h-4 ml-1 bg-theme-primary animate-pulse" />
