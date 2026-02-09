@@ -17,8 +17,26 @@ const KEYWORDS: Record<string, string[]> = {
   c: ['int', 'char', 'void', 'float', 'double', 'if', 'else', 'for', 'while', 'return', 'struct', 'typedef', 'include', 'define', 'stdio', 'stdlib', 'string', 'const', 'static', 'unsigned', 'signed', 'switch', 'case', 'break', 'continue', 'do', 'default'],
 };
 
-function highlightCode(code: string, language: string): JSX.Element {
+function highlightCode(code: string, language: string, theme: 'dark' | 'light' = 'dark'): JSX.Element {
   const keywords = KEYWORDS[language] || KEYWORDS['javascript'] || [];
+
+  // Define color scheme based on theme
+  const colorScheme = {
+    dark: {
+      keyword: '#c084fc',   // purple-400
+      string: '#86efac',    // green-400
+      comment: '#6b7280',   // gray-500
+      number: '#fb923c'     // orange-400
+    },
+    light: {
+      keyword: '#7c3aed',   // purple-600
+      string: '#16a34a',    // green-600
+      comment: '#6b7280',   // gray-500
+      number: '#ea580c'     // orange-600
+    }
+  };
+
+  const colors = colorScheme[theme];
 
   // Split code into tokens (simple approach)
   const tokens: Array<{ text: string; type: 'keyword' | 'string' | 'comment' | 'number' | 'normal' }> = [];
@@ -50,17 +68,18 @@ function highlightCode(code: string, language: string): JSX.Element {
   return (
     <>
       {tokens.map((token, index) => {
+        let style = {};
         if (token.type === 'keyword') {
-          return <span key={index} className="text-purple-400">{token.text}</span>;
+          style = { color: colors.keyword };
         } else if (token.type === 'string') {
-          return <span key={index} className="text-green-400">{token.text}</span>;
+          style = { color: colors.string };
         } else if (token.type === 'comment') {
-          return <span key={index} className="text-gray-500">{token.text}</span>;
+          style = { color: colors.comment };
         } else if (token.type === 'number') {
-          return <span key={index} className="text-orange-400">{token.text}</span>;
-        } else {
-          return <span key={index}>{token.text}</span>;
+          style = { color: colors.number };
         }
+        
+        return <span key={index} style={style}>{token.text}</span>;
       })}
     </>
   );
@@ -182,21 +201,25 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const highlighted = highlightCode(code, language);
+  const highlighted = highlightCode(code, language, theme);
 
-  // Theme colors
+  // Theme colors with inline styles for reliability
   const themes = {
     dark: {
-      background: 'bg-dark-400',
-      header: 'bg-dark-500 border-dark-400',
-      text: 'text-gray-300',
-      label: 'text-gray-400'
+      containerBg: '#121226',
+      headerBg: '#0e0e22',
+      codeBg: '#121226',
+      borderColor: '#374151',
+      textClass: 'text-gray-300',
+      labelClass: 'text-gray-400'
     },
     light: {
-      background: 'bg-gray-50',
-      header: 'bg-gray-100 border-gray-200',
-      text: 'text-gray-800',
-      label: 'text-gray-600'
+      containerBg: '#ffffff',
+      headerBg: '#f3f4f6',
+      codeBg: '#f9fafb',
+      borderColor: '#e5e7eb',
+      textClass: 'text-gray-900',
+      labelClass: 'text-gray-600'
     }
   };
 
@@ -204,10 +227,10 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
 
   // Code blocks always use dark theme, independent of app theme
   return (
-    <div className={`relative group rounded-lg overflow-hidden my-3 max-w-full ${currentTheme.background}`}>
+    <div className="relative group rounded-lg my-3 max-w-full border" style={{ borderColor: currentTheme.borderColor }}>
       {/* Header */}
-      <div className={`flex items-center justify-between px-3 sm:px-4 py-2 border-b ${currentTheme.header}`}>
-        <span className={`text-xs font-mono uppercase ${currentTheme.label}`}>{language || 'code'}</span>
+      <div className="flex items-center justify-between px-3 sm:px-4 py-2 border-b" style={{ backgroundColor: currentTheme.headerBg, borderColor: currentTheme.borderColor }}>
+        <span className={`text-xs font-mono uppercase ${currentTheme.labelClass}`}>{language || 'code'}</span>
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Theme Toggle Button */}
           <button
@@ -232,7 +255,7 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
             }`}
             title={isWrapped ? 'Disable wrap' : 'Enable wrap'}
           >
-            {isWrapped ? '⤴️' : '↔️'}
+            {isWrapped ? '↔️' : '⤴️'}
           </button>
 
           {/* Copy Button */}
@@ -263,9 +286,9 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
         </div>
       </div>
       {/* Code */}
-      <div className={isWrapped ? "" : "overflow-x-auto"}>
-        <pre className={`p-3 sm:p-4 ${isWrapped ? "whitespace-pre-wrap break-words" : "min-w-0"}`}>
-          <code className={`text-sm sm:text-base font-mono block code-block-${theme} ${currentTheme.text}`}>
+      <div className={isWrapped ? "overflow-hidden" : "overflow-x-auto overflow-y-hidden"} style={{ backgroundColor: currentTheme.codeBg }}>
+        <pre className={`p-3 sm:p-4 m-0 ${isWrapped ? "whitespace-pre-wrap break-words overflow-hidden" : "whitespace-pre overflow-x-auto"}`} style={{ backgroundColor: currentTheme.codeBg }}>
+          <code className={`text-sm sm:text-base font-mono code-block-${theme} ${currentTheme.textClass}`}>
             {highlighted}
           </code>
         </pre>

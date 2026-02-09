@@ -208,22 +208,40 @@ html:not(.dark) .prose pre {
   @apply bg-transparent p-0;
 }
 
-/* Code block syntax highlighting - Light theme color overrides */
-.code-block-light {
-  /* Override keyword color from purple to purple-600 */
-  --code-keyword-color: #7c3aed;
-  /* Override string color from green to green-600 */
-  --code-string-color: #16a34a;
-  /* Override number color from orange to orange-600 */
-  --code-number-color: #ea580c;
-  /* Keep comment color same */
+/* Code block syntax highlighting - Dark theme (default colors work) */
+.code-block-dark {
+  /* Keywords in purple */
+  --code-keyword-color: #c084fc;
+  /* Strings in green */
+  --code-string-color: #86efac;
+  /* Numbers in orange */
+  --code-number-color: #fb923c;
+  /* Comments in gray */
   --code-comment-color: #6b7280;
 }
 
-.code-block-light .text-purple-400 { color: var(--code-keyword-color); }
-.code-block-light .text-green-400 { color: var(--code-string-color); }
-.code-block-light .text-orange-400 { color: var(--code-number-color); }
-.code-block-light .text-gray-500 { color: var(--code-comment-color); }
+.code-block-dark .text-purple-400 { color: var(--code-keyword-color) !important; }
+.code-block-dark .text-green-400 { color: var(--code-string-color) !important; }
+.code-block-dark .text-orange-400 { color: var(--code-number-color) !important; }
+.code-block-dark .text-gray-500 { color: var(--code-comment-color) !important; }
+
+/* Code block syntax highlighting - Light theme color overrides */
+.code-block-light {
+  /* Keywords in darker purple for contrast */
+  --code-keyword-color: #7c3aed;
+  /* Strings in darker green */
+  --code-string-color: #16a34a;
+  /* Numbers in darker orange */
+  --code-number-color: #ea580c;
+  /* Comments in medium gray */
+  --code-comment-color: #6b7280;
+}
+
+.code-block-light .text-purple-400 { color: var(--code-keyword-color) !important; }
+.code-block-light .text-green-400 { color: var(--code-string-color) !important; }
+.code-block-light .text-orange-400 { color: var(--code-number-color) !important; }
+.code-block-light .text-gray-500 { color: var(--code-comment-color) !important; }
+
 
 /* Animation */
 @keyframes spin {
