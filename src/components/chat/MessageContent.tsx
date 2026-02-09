@@ -128,9 +128,9 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
   const highlighted = highlightCode(code, language);
 
   return (
-    <div className={`relative group rounded-lg overflow-hidden my-3 max-w-full ${isDark ? 'bg-dark-100' : 'bg-gray-800'}`}>
+    <div className={`relative group rounded-lg overflow-hidden my-3 max-w-full ${isDark ? 'bg-dark-400' : 'bg-gray-900'}`}>
       {/* Header */}
-      <div className={`flex items-center justify-between px-3 sm:px-4 py-2 border-b ${isDark ? 'bg-dark-200 border-dark-300' : 'bg-gray-700 border-gray-600'}`}>
+      <div className={`flex items-center justify-between px-3 sm:px-4 py-2 border-b ${isDark ? 'bg-dark-500 border-dark-400' : 'bg-gray-950 border-gray-800'}`}>
         <span className="text-xs font-mono text-gray-400 uppercase">{language || 'code'}</span>
         <button
           onClick={handleCopy}
