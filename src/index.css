@@ -208,6 +208,23 @@ html:not(.dark) .prose pre {
   @apply bg-transparent p-0;
 }
 
+/* Code block syntax highlighting - Light theme color overrides */
+.code-block-light {
+  /* Override keyword color from purple to purple-600 */
+  --code-keyword-color: #7c3aed;
+  /* Override string color from green to green-600 */
+  --code-string-color: #16a34a;
+  /* Override number color from orange to orange-600 */
+  --code-number-color: #ea580c;
+  /* Keep comment color same */
+  --code-comment-color: #6b7280;
+}
+
+.code-block-light .text-purple-400 { color: var(--code-keyword-color); }
+.code-block-light .text-green-400 { color: var(--code-string-color); }
+.code-block-light .text-orange-400 { color: var(--code-number-color); }
+.code-block-light .text-gray-500 { color: var(--code-comment-color); }
+
 /* Animation */
 @keyframes spin {
   from {

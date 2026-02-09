@@ -173,6 +173,8 @@ function detectLanguage(code: string): string {
 
 function CodeBlock({ language, code }: { language: string; code: string }) {
   const [copied, setCopied] = useState(false);
+  const [isWrapped, setIsWrapped] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(code);
@@ -182,41 +184,88 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
 
   const highlighted = highlightCode(code, language);
 
+  // Theme colors
+  const themes = {
+    dark: {
+      background: 'bg-dark-400',
+      header: 'bg-dark-500 border-dark-400',
+      text: 'text-gray-300',
+      label: 'text-gray-400'
+    },
+    light: {
+      background: 'bg-gray-50',
+      header: 'bg-gray-100 border-gray-200',
+      text: 'text-gray-800',
+      label: 'text-gray-600'
+    }
+  };
+
+  const currentTheme = themes[theme];
+
   // Code blocks always use dark theme, independent of app theme
   return (
-    <div className="relative group rounded-lg overflow-hidden my-3 max-w-full bg-dark-400">
+    <div className={`relative group rounded-lg overflow-hidden my-3 max-w-full ${currentTheme.background}`}>
       {/* Header */}
-      <div className="flex items-center justify-between px-3 sm:px-4 py-2 border-b bg-dark-500 border-dark-400">
-        <span className="text-xs font-mono text-gray-400 uppercase">{language || 'code'}</span>
-        <button
-          onClick={handleCopy}
-          className={`flex items-center gap-1.5 px-2 py-1.5 sm:px-2 sm:py-1 rounded text-xs font-medium transition-colors touch-manipulation ${
-            copied
-              ? 'text-green-400 bg-green-400/10'
-              : 'text-gray-400 hover:text-white hover:bg-white/10'
-          }`}
-        >
-          {copied ? (
-            <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Copied!
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              Copy
-            </>
-          )}
-        </button>
+      <div className={`flex items-center justify-between px-3 sm:px-4 py-2 border-b ${currentTheme.header}`}>
+        <span className={`text-xs font-mono uppercase ${currentTheme.label}`}>{language || 'code'}</span>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Theme Toggle Button */}
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className={`flex items-center gap-1 px-2 py-1.5 sm:px-2 sm:py-1 rounded text-xs font-medium transition-colors touch-manipulation ${
+              theme === 'dark'
+                ? 'text-yellow-400 hover:bg-yellow-400/10'
+                : 'text-blue-600 hover:bg-blue-600/10'
+            }`}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+
+          {/* Wrap Toggle Button */}
+          <button
+            onClick={() => setIsWrapped(!isWrapped)}
+            className={`flex items-center px-2 py-1.5 sm:px-2 sm:py-1 rounded text-xs font-medium transition-colors touch-manipulation ${
+              isWrapped
+                ? 'text-blue-400 hover:bg-blue-400/10'
+                : 'text-gray-400 hover:bg-white/10'
+            }`}
+            title={isWrapped ? 'Disable wrap' : 'Enable wrap'}
+          >
+            {isWrapped ? '⤴️' : '↔️'}
+          </button>
+
+          {/* Copy Button */}
+          <button
+            onClick={handleCopy}
+            className={`flex items-center gap-1.5 px-2 py-1.5 sm:px-2 sm:py-1 rounded text-xs font-medium transition-colors touch-manipulation ${
+              copied
+                ? 'text-green-400 bg-green-400/10'
+                : 'text-gray-400 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            {copied ? (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Copied!
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Copy
+              </>
+            )}
+          </button>
+        </div>
       </div>
       {/* Code */}
-      <div className="overflow-x-auto">
-        <pre className="p-3 sm:p-4 min-w-0">
-          <code className="text-sm sm:text-base font-mono text-gray-300 block whitespace-pre">
+      <div className={isWrapped ? "" : "overflow-x-auto"}>
+        <pre className={`p-3 sm:p-4 ${isWrapped ? "whitespace-pre-wrap break-words" : "min-w-0"}`}>
+          <code className={`text-sm sm:text-base font-mono block code-block-${theme} ${currentTheme.text}`}>
             {highlighted}
           </code>
         </pre>
