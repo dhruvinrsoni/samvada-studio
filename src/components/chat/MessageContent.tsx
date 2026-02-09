@@ -20,19 +20,21 @@ const KEYWORDS: Record<string, string[]> = {
 function highlightCode(code: string, language: string, theme: 'dark' | 'light' = 'dark'): JSX.Element {
   const keywords = KEYWORDS[language] || KEYWORDS['javascript'] || [];
 
-  // Define color scheme based on theme
+  // Define color scheme based on theme - optimized for contrast
   const colorScheme = {
     dark: {
-      keyword: '#c084fc',   // purple-400
-      string: '#86efac',    // green-400
-      comment: '#6b7280',   // gray-500
-      number: '#fb923c'     // orange-400
+      keyword: '#a78bfa',   // purple-400 - bright for dark bg
+      string: '#34d399',    // emerald-400 - bright green
+      comment: '#9ca3af',   // gray-400 - lighter gray
+      number: '#fbbf24',    // amber-400 - bright yellow-orange
+      normal: '#e5e7eb'     // gray-200 - light text
     },
     light: {
-      keyword: '#7c3aed',   // purple-600
-      string: '#16a34a',    // green-600
-      comment: '#6b7280',   // gray-500
-      number: '#ea580c'     // orange-600
+      keyword: '#7c3aed',   // purple-600 - dark for light bg
+      string: '#059669',    // emerald-600 - dark green
+      comment: '#6b7280',   // gray-500 - medium gray
+      number: '#d97706',    // amber-600 - dark orange
+      normal: '#1f2937'     // gray-800 - dark text
     }
   };
 
@@ -77,6 +79,8 @@ function highlightCode(code: string, language: string, theme: 'dark' | 'light' =
           style = { color: colors.comment };
         } else if (token.type === 'number') {
           style = { color: colors.number };
+        } else {
+          style = { color: colors.normal };
         }
         
         return <span key={index} style={style}>{token.text}</span>;
@@ -210,16 +214,16 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
       headerBg: '#0e0e22',
       codeBg: '#121226',
       borderColor: '#374151',
-      textClass: 'text-gray-300',
-      labelClass: 'text-gray-400'
+      textColor: '#e5e7eb',
+      labelColor: '#9ca3af'
     },
     light: {
       containerBg: '#ffffff',
       headerBg: '#f3f4f6',
       codeBg: '#f9fafb',
       borderColor: '#e5e7eb',
-      textClass: 'text-gray-900',
-      labelClass: 'text-gray-600'
+      textColor: '#1f2937',
+      labelColor: '#6b7280'
     }
   };
 
@@ -230,7 +234,7 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
     <div className="relative group rounded-lg my-3 max-w-full border" style={{ borderColor: currentTheme.borderColor }}>
       {/* Header */}
       <div className="flex items-center justify-between px-3 sm:px-4 py-2 border-b" style={{ backgroundColor: currentTheme.headerBg, borderColor: currentTheme.borderColor }}>
-        <span className={`text-xs font-mono uppercase ${currentTheme.labelClass}`}>{language || 'code'}</span>
+        <span className="text-xs font-mono uppercase" style={{ color: currentTheme.labelColor }}>{language || 'code'}</span>
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Theme Toggle Button */}
           <button
@@ -288,7 +292,7 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
       {/* Code */}
       <div className={isWrapped ? "overflow-hidden" : "overflow-x-auto overflow-y-hidden"} style={{ backgroundColor: currentTheme.codeBg }}>
         <pre className={`p-3 sm:p-4 m-0 ${isWrapped ? "whitespace-pre-wrap break-words overflow-hidden" : "whitespace-pre overflow-x-auto"}`} style={{ backgroundColor: currentTheme.codeBg }}>
-          <code className={`text-sm sm:text-base font-mono code-block-${theme} ${currentTheme.textClass}`}>
+          <code className="text-sm sm:text-base font-mono" style={{ color: currentTheme.textColor }}>
             {highlighted}
           </code>
         </pre>

@@ -197,7 +197,7 @@ html.dark .prose pre {
 
 /* Prose overrides for markdown - Light */
 html:not(.dark) .prose code {
-  @apply bg-light-400 px-1.5 py-0.5 rounded text-theme-primary;
+  @apply px-1.5 py-0.5 rounded text-theme-primary;
 }
 
 html:not(.dark) .prose pre {
