@@ -329,8 +329,8 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
         cursorOffset = selectedText ? newText.length : 1;
         break;
       case 'link':
-        newText = `[${selectedText || 'link text'}](url)`;
-        cursorOffset = selectedText ? newText.length - 1 : 1;
+        newText = `[${selectedText || 'link'}](url)`;
+        cursorOffset = selectedText ? newText.length - 1 : 7; // Position at start of 'url'
         break;
       case 'strikethrough':
         newText = `~~${selectedText || 'strikethrough'}~~`;
@@ -365,6 +365,10 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
       textarea.focus();
       if (type === 'clear' || selectedText) {
         textarea.selectionStart = textarea.selectionEnd = start + newText.length;
+      } else if (type === 'link') {
+        // For links, select only the URL part
+        textarea.selectionStart = start + 7; // Position of 'u' in '[link](url)'
+        textarea.selectionEnd = start + 10; // Position after 'l' in 'url'
       } else {
         textarea.selectionStart = start + cursorOffset;
         textarea.selectionEnd = start + newText.length - cursorOffset;
