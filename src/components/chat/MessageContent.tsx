@@ -14,6 +14,7 @@ const KEYWORDS: Record<string, string[]> = {
   typescript: ['const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while', 'class', 'import', 'export', 'from', 'async', 'await', 'try', 'catch', 'throw', 'new', 'this', 'true', 'false', 'null', 'undefined', 'interface', 'type', 'enum', 'implements', 'extends'],
   python: ['def', 'class', 'if', 'elif', 'else', 'for', 'while', 'return', 'import', 'from', 'as', 'try', 'except', 'finally', 'with', 'True', 'False', 'None', 'and', 'or', 'not', 'in', 'is', 'lambda', 'yield', 'async', 'await'],
   java: ['public', 'private', 'protected', 'class', 'interface', 'extends', 'implements', 'static', 'final', 'void', 'int', 'String', 'boolean', 'if', 'else', 'for', 'while', 'return', 'new', 'try', 'catch', 'throw', 'throws', 'import', 'package'],
+  c: ['int', 'char', 'void', 'float', 'double', 'if', 'else', 'for', 'while', 'return', 'struct', 'typedef', 'include', 'define', 'stdio', 'stdlib', 'string', 'const', 'static', 'unsigned', 'signed', 'switch', 'case', 'break', 'continue', 'do', 'default'],
 };
 
 function highlightCode(code: string, language: string): JSX.Element {
@@ -114,10 +115,64 @@ function parseLine(line: string, keywords: string[]): Array<{ text: string; type
   return tokens;
 }
 
+/**
+ * Detect programming language from code content
+ * Used when language class is not provided
+ */
+function detectLanguage(code: string): string {
+  const lines = code.split('\n').slice(0, 5); // Check first 5 lines
+  const content = lines.join('\n').toLowerCase();
+
+  // C/C++ patterns
+  if (/#include|int main|printf|void|char\*|uint32|struct\s+\w+|typedef|stdio\.h|stdlib\.h/.test(content)) {
+    return 'c';
+  }
+  
+  // Python patterns
+  if (/^import |^from |def |:\s*$|elif |except |class .*:|@|lambda|yield/.test(content)) {
+    return 'python';
+  }
+
+  // JavaScript/TypeScript patterns
+  if (/const |let |var |function |=>|async |await |import \{|export |class \w+|interface /.test(content)) {
+    return /interface |type \w+|as --|: \w+/.test(content) ? 'typescript' : 'javascript';
+  }
+
+  // Java patterns
+  if (/public class |private |static |void |new |import java|@Override|throw new|catch \(/.test(content)) {
+    return 'java';
+  }
+
+  // HTML/XML patterns
+  if (/<html|<body|<div|<!DOCTYPE|<head>/.test(content)) {
+    return 'html';
+  }
+
+  // CSS patterns
+  if (/\{\s*color:|\.[\w-]+\s*\{|@media|@keyframes|background:|border:/.test(content)) {
+    return 'css';
+  }
+
+  // SQL patterns
+  if (/SELECT |FROM |WHERE |INSERT INTO|UPDATE |DELETE |CREATE TABLE|DROP/.test(content)) {
+    return 'sql';
+  }
+
+  // JSON patterns
+  if (/^\s*[{[]|":\s*["\d\[\{]/.test(content)) {
+    return 'json';
+  }
+
+  // Bash/Shell patterns
+  if (/^#!\/bin|^\$\s|&&|\s\.sh|curl|grep|sed|awk/.test(content)) {
+    return 'bash';
+  }
+
+  return 'plaintext';
+}
+
 function CodeBlock({ language, code }: { language: string; code: string }) {
   const [copied, setCopied] = useState(false);
-  const { state } = useChat();
-  const isDark = state.theme === 'dark';
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(code);
@@ -127,10 +182,11 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
 
   const highlighted = highlightCode(code, language);
 
+  // Code blocks always use dark theme, independent of app theme
   return (
-    <div className={`relative group rounded-lg overflow-hidden my-3 max-w-full ${isDark ? 'bg-dark-400' : 'bg-gray-900'}`}>
+    <div className="relative group rounded-lg overflow-hidden my-3 max-w-full bg-dark-400">
       {/* Header */}
-      <div className={`flex items-center justify-between px-3 sm:px-4 py-2 border-b ${isDark ? 'bg-dark-500 border-dark-400' : 'bg-gray-950 border-gray-800'}`}>
+      <div className="flex items-center justify-between px-3 sm:px-4 py-2 border-b bg-dark-500 border-dark-400">
         <span className="text-xs font-mono text-gray-400 uppercase">{language || 'code'}</span>
         <button
           onClick={handleCopy}
@@ -188,9 +244,15 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
             const isMultiline = codeString.includes('\n');
             
             if (hasLanguageClass || isMultiline) {
-              // Extract language from className or default to plaintext
-              const match = /language-(\w+)/.exec(className || '');  
-              const language = match?.[1] || 'plaintext';
+              // Extract language from className or detect from code content
+              let language = 'plaintext';
+              if (hasLanguageClass) {
+                const match = /language-(\w+)/.exec(className || '');  
+                language = match?.[1] || 'plaintext';
+              } else {
+                // Auto-detect language from code content
+                language = detectLanguage(codeString);
+              }
               return <CodeBlock language={language} code={codeString} />
             }
             
