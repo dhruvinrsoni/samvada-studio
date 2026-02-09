@@ -62,7 +62,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
         id: generateId(),
         name: `Ollama (${endpoint.host})`,
         type: 'ollama',
-        apiEndpoint: baseUrl,
+        apiEndpoint: baseUrl, // This should already include /api/generate from the event
         model: models && models.length > 0 ? models[0] : 'llama2',
         isEnabled: true,
         isDefault: state.providers.length === 0, // Set as default if no other providers

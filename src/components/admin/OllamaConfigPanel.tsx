@@ -50,7 +50,8 @@ export const OllamaConfigPanel: React.FC = () => {
         }
         
         // Store discovered base URL for use when adding new Ollama providers
-        const baseUrl = `${result.endpoint.protocol}://${result.endpoint.host}:${result.endpoint.port}${result.endpoint.basePath || ''}`;
+        // Include /api/generate for proper Ollama API endpoint
+        const baseUrl = `${result.endpoint.protocol}://${result.endpoint.host}:${result.endpoint.port}/api/generate`;
         localStorage.setItem('ollama-discovered-base-url', baseUrl);
         
         // Trigger provider auto-configuration through event
