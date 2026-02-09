@@ -78,6 +78,7 @@ const initialState: AppState = {
   streamingMessageId: null,
   // NEW: Health Monitoring
   healthMonitoringEnabled: true,
+  showDisableWarning: false,
   // NEW: Mobile/Responsive
   isSidebarOpen: true, // Desktop default: open, will be false on mobile
   // NEW: Prompt Navigation
@@ -679,6 +680,11 @@ function chatReducer(state: AppState, action: ChatAction): AppState {
       return {
         ...state,
         healthMonitoringEnabled: action.payload,
+      };
+    case 'SET_SHOW_DISABLE_WARNING':
+      return {
+        ...state,
+        showDisableWarning: action.payload,
       };
 
     // NEW: Mobile/Responsive

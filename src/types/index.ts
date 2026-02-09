@@ -523,6 +523,7 @@ export interface AppState {
   streamingMessageId: string | null;
   // NEW: Health Monitoring
   healthMonitoringEnabled?: boolean;
+  showDisableWarning?: boolean;
   // NEW: Mobile/Responsive
   isSidebarOpen: boolean; // For mobile sidebar toggle
   // NEW: Prompt Navigation
@@ -641,6 +642,7 @@ export type ChatAction =
   | { type: 'SET_STREAMING'; payload: { isStreaming: boolean; messageId: string | null } }
   // NEW: Health Monitoring
   | { type: 'TOGGLE_HEALTH_MONITORING'; payload: boolean }
+  | { type: 'SET_SHOW_DISABLE_WARNING'; payload: boolean }
   // NEW: Mobile/Responsive
   | { type: 'TOGGLE_SIDEBAR' }
   | { type: 'SET_SIDEBAR_OPEN'; payload: boolean }

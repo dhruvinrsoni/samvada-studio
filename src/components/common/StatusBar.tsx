@@ -58,6 +58,11 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
     }
   }, [showDisableWarning]);
 
+  // Update global state when showDisableWarning changes
+  useEffect(() => {
+    dispatch({ type: 'SET_SHOW_DISABLE_WARNING', payload: showDisableWarning });
+  }, [showDisableWarning, dispatch]);
+
   const dismissWarning = () => {
     setWarningDismissed(true);
     localStorage.setItem('healthWarningDismissed', Date.now().toString());
@@ -213,7 +218,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
       {/* Disable Warning Banner */}
       {showDisableWarning && !warningDismissed && (
         <div 
-          className={`fixed bottom-0 left-0 right-0 z-50 px-3 sm:px-4 py-2 sm:py-2.5 border-t-2 border-yellow-500 ${
+          className={`fixed bottom-0 left-0 right-0 z-40 px-3 sm:px-4 py-2 sm:py-2.5 border-t-2 border-yellow-500 ${
             state.theme === 'dark' ? 'bg-yellow-900/20' : 'bg-yellow-100'
           }`}
         >
@@ -235,17 +240,17 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <button
                 onClick={dismissWarning}
-                className={`p-1.5 rounded-lg transition-colors ${
+                className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
                   state.theme === 'dark'
                     ? 'hover:bg-yellow-800/50 text-yellow-300 hover:text-yellow-200'
                     : 'hover:bg-yellow-200 text-yellow-700 hover:text-yellow-900'
                 }`}
                 title="Dismiss for 4 hours"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -253,7 +258,7 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
                 onClick={() => {
                   dispatch({ type: 'TOGGLE_HEALTH_MONITORING', payload: false });
                 }}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
                   state.theme === 'dark'
                     ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
                     : 'bg-yellow-500 hover:bg-yellow-600 text-white'

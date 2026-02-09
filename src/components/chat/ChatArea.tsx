@@ -197,8 +197,10 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
   const unpinnedPnRs = activeChat.promptResponses.filter(pnr => !pnr.isPinned);
 
   return (
-    <div className={`chat-area flex-1 flex flex-col h-full overflow-hidden pb-10 sm:pb-8 ${isDark ? 'bg-dark-300' : 'bg-light-200'}`}>
-      {/* pb-10 on mobile (~40px), pb-8 on desktop (~32px) to account for fixed StatusBar at bottom */}
+    <div className={`chat-area flex-1 flex flex-col h-full overflow-hidden ${
+      state.showDisableWarning ? 'pb-20 sm:pb-16' : 'pb-10 sm:pb-8'
+    } ${isDark ? 'bg-dark-300' : 'bg-light-200'}`}>
+      {/* Dynamic padding: pb-20/pb-16 when disable warning shown (~80px/64px), pb-10/pb-8 normally (~40px/32px) */}
       {/* Header */}
       <div className={`flex items-center justify-between p-2 sm:p-3 md:p-4 border-b gap-2 flex-shrink-0 ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
         <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-1 min-w-0">
