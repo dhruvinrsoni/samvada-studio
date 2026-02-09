@@ -124,27 +124,31 @@ export const buildSystemPromptWithFormatting = (
     systemPrompt += `\n\n${chatSettings.customInstructions}`;
   }
   
-  // Add formatting profile instructions
+  // Add formatting profile instructions (avoid emitting internal bracketed tags)
   if (chatSettings.formattingProfile) {
     const profile = chatSettings.formattingProfile;
-    
+
     systemPrompt += `\n\n## FORMATTING REQUIREMENTS`;
     systemPrompt += `\nProfile: ${profile.name}`;
-    
+
+    // Instruct the model not to echo any internal metadata tags
+    systemPrompt += `\n\nIMPORTANT: Do not print or include any internal tag markers such as [STYLE-GUIDE] or [ALWAYS-INCLUDE] in your response. These are internal metadata markers only.`;
+
     if (profile.responseFormat) {
       systemPrompt += `\nResponse Format: ${profile.responseFormat}`;
     }
-    
+
     if (profile.stylePreferences) {
-      systemPrompt += `\n\nStyle: ${profile.stylePreferences}`;
+      systemPrompt += `\n\nStyle Preferences: ${profile.stylePreferences}`;
     }
-    
-    // Add enabled rules
+
+    // Add enabled rules (avoid square-bracket markers to reduce echo risk)
     const enabledRules = profile.rules.filter(r => r.isEnabled);
     if (enabledRules.length > 0) {
       systemPrompt += `\n\nFormatting Rules:`;
       enabledRules.forEach((rule, index) => {
-        systemPrompt += `\n${index + 1}. [${rule.type.toUpperCase()}] ${rule.name}: ${rule.value}`;
+        // Use a colon-based type label instead of bracketed tags
+        systemPrompt += `\n${index + 1}. ${rule.type.toUpperCase()}: ${rule.name} — ${rule.value}`;
       });
     }
   }
@@ -193,6 +197,17 @@ const sanitizeLLMResponse = (content: string | null | undefined): string => {
   
   // Remove control characters except common whitespace
   text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+
+  // Remove formatting-profile tag markers that may be prepended by system prompts
+  // These are bracketed uppercase tags like [STYLE-GUIDE], [ALWAYS-INCLUDE], etc.
+  // Only remove occurrences at the start of the response (or lines at start)
+  // to avoid stripping legitimate inline bracketed content.
+  try {
+    // Remove one or more bracketed tags at the very beginning (possibly separated by whitespace/newlines)
+    text = text.replace(/^\s*(?:\[[A-Z0-9\- ]+\]\s*)+/m, '');
+  } catch (e) {
+    // If regex fails for any reason, ignore and keep text as-is
+  }
   
   return text;
 };
