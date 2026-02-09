@@ -174,7 +174,25 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
   const isDark = state.theme === 'dark';
 
   // Preprocess content to detect and wrap code blocks
-  const processedContent = content;
+  // Normalize and preprocess content so that any standalone backtick-wrapped
+  // blocks (single or triple backticks) on their own lines are converted into
+  // fenced code blocks. This helps avoid stray literal backticks appearing
+  // in the rendered output while leaving inline code untouched.
+  let processedContent = content || '';
+
+  // Helper: convert standalone backtick-wrapped blocks to fenced blocks.
+  const normalizeBacktickBlocks = (text: string) => {
+    // Match groups of backticks (1-3) that wrap content when they appear
+    // on their own line(s). This respects leading/trailing whitespace/newlines.
+    // Uses a non-greedy capture so multiple blocks are handled.
+    return text.replace(/(^|\n)\s*`{1,3}([\s\S]*?)`{1,3}\s*(?=\n|$)/g, (_m, p1, p2) => {
+      const inner = String(p2).replace(/^\n+|\n+$/g, '');
+      return `${p1}\n\`\`\`\n${inner}\n\`\`\`\n`;
+    });
+  };
+
+  // Apply normalization globally
+  processedContent = normalizeBacktickBlocks(processedContent);
 
   return (
     <div className={`prose ${isDark ? 'prose-invert' : ''} prose-sm max-w-none overflow-hidden`}>
