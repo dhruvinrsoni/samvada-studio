@@ -155,9 +155,25 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = code;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch (error) {
+      console.error('Copy failed:', error);
+      alert('Failed to copy. Please try again.');
+    }
   };
 
   const highlighted = highlightCode(code, language, theme);
