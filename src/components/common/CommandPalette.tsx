@@ -16,7 +16,9 @@ export default function CommandPalette() {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const isDark = state.theme === 'dark';
+  const isDark =
+    state.themeSettings.mode === 'dark' ||
+    (state.themeSettings.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   const commands: Command[] = useMemo(() => [
     // Chat Commands
@@ -30,7 +32,7 @@ export default function CommandPalette() {
     
     // Settings Commands
     { id: 'admin', name: 'Open Settings', description: 'Configure LLM providers and preferences', icon: '⚙️', category: 'settings', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_ADMIN_PANEL' }); } },
-    { id: 'theme-toggle', name: 'Toggle Dark/Light Mode', description: 'Switch between themes', icon: '🌓', category: 'settings', action: () => { dispatch({ type: 'SET_THEME', payload: state.theme === 'dark' ? 'light' : 'dark' }); dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); } },
+    { id: 'theme-toggle', name: 'Toggle Dark/Light Mode', description: 'Switch between themes', icon: '🌓', category: 'settings', action: () => { const newMode = state.themeSettings.mode === 'dark' ? 'light' : 'dark'; dispatch({ type: 'UPDATE_THEME_SETTINGS', payload: { mode: newMode } }); dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); } },
     { id: 'shortcuts', name: 'Keyboard Shortcuts', description: 'View all keyboard shortcuts', icon: '⌨️', category: 'settings', shortcut: '?', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_SHORTCUTS_HELP' }); } },
     
     // Export Commands
@@ -40,7 +42,7 @@ export default function CommandPalette() {
     
     // Template Commands
     { id: 'templates', name: 'Prompt Templates', description: 'Browse and use saved templates', icon: '📚', category: 'templates', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_TEMPLATES_MODAL' }); } },
-  ], [state.theme, activeChat, createChat, dispatch, exportChat]);
+  ], [state.themeSettings, activeChat, createChat, dispatch, exportChat]);
 
   const filteredCommands = useMemo(() => {
     if (!query) return commands;

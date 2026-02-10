@@ -7,8 +7,7 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({ value, onChange, placeholder = 'Search...' }: SearchBarProps) {
-  const { state } = useChat();
-  const isDark = state.theme === 'dark';
+  const { isDark } = useChat();
 
   return (
     <div className="relative">

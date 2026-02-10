@@ -19,12 +19,12 @@ interface TemplatesLibraryProps {
 }
 
 export default function TemplatesLibrary({ onSelectTemplate }: TemplatesLibraryProps) {
-  const { state, dispatch } = useChat();
+  const { state, dispatch, isDark } = useChat();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<PromptTemplate | null>(null);
-  const isDark = state.theme === 'dark';
+  
 
   // Initialize with default templates if empty
   const templates = state.templates.length > 0 ? state.templates : DEFAULT_TEMPLATES.map(t => ({

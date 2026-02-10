@@ -29,11 +29,11 @@ interface VoiceInputProps {
 }
 
 export default function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
-  const { state } = useChat();
+  const { state, isDark } = useChat();
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState<SpeechRecognitionType | null>(null);
   const [interimTranscript, setInterimTranscript] = useState('');
-  const isDark = state.theme === 'dark';
+  
 
   // Initialize speech recognition
   useEffect(() => {

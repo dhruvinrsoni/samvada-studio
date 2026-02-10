@@ -13,7 +13,7 @@ interface PromptResponseItemProps {
 }
 
 export default function PromptResponseItem({ chatId, promptResponse, onQuote }: PromptResponseItemProps) {
-  const { state, dispatch, getChat } = useChat();
+  const { state, dispatch, getChat, isDark } = useChat();
   const { addToast } = useToast();
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isEditingPrompt, setIsEditingPrompt] = useState(false);
@@ -25,7 +25,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(promptResponse.name || '');
 
-  const isDark = state.theme === 'dark';
+  
   const activeResponse = promptResponse.responses[promptResponse.activeResponseIndex];
 
   const handleToggleCollapse = () => {

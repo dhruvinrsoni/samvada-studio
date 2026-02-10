@@ -14,9 +14,8 @@ interface DebugModeProps {
  * Features: Draggable, Expandable/Collapsible, Theme-compliant, Mobile-friendly
  */
 export const DebugMode: React.FC<DebugModeProps> = ({ className = '' }) => {
-  const { state } = useChat();
+  const { state, isDark } = useChat();
   const isMobile = useIsMobile();
-  const isDark = state.theme === 'dark';
   
   const [isVisible, setIsVisible] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);

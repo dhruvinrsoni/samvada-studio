@@ -24,8 +24,7 @@ export default function ProviderCard({
   onSetDefault,
   onTest,
 }: ProviderCardProps) {
-  const { state, dispatch } = useChat();
-  const isDark = state.theme === 'dark';
+  const { state, dispatch, isDark } = useChat();
   const [showTestDetails, setShowTestDetails] = useState(false);
 
   // Health status is passed from parent (AdminPanel) to avoid duplicate API calls

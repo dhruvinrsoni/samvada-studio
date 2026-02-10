@@ -716,6 +716,7 @@ interface ChatContextType {
   state: AppState;
   dispatch: React.Dispatch<ChatAction>;
   activeChat: Chat | null;
+  isDark: boolean;
   createChat: (title?: string, provider?: LLMProviderConfig) => void;
   getChat: (id: string) => Chat | undefined;
   getPnR: (chatId: string, pnrId: string) => PromptResponse | undefined;
@@ -796,6 +797,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }, [state.themeSettings]);
 
   const activeChat = state.chats.find(chat => chat.id === state.activeChat) || null;
+
+  const isDark =
+    state.themeSettings.mode === 'dark' ||
+    (state.themeSettings.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   const createChat = (title?: string, provider?: LLMProviderConfig) => {
     const newChat = createNewChat(title, provider);
@@ -1000,6 +1005,7 @@ h1{border-bottom:1px solid #333;padding-bottom:8px}</style></head><body>`;
       state, 
       dispatch, 
       activeChat, 
+      isDark,
       createChat, 
       getChat, 
       getPnR,

@@ -3,9 +3,8 @@ import { useChat } from '../../context/ChatContext';
 import { formatDate } from '../../utils/helpers';
 
 export default function GlobalSearch() {
-  const { state, dispatch, searchGlobal } = useChat();
+  const { state, dispatch, searchGlobal, isDark } = useChat();
   const inputRef = useRef<HTMLInputElement>(null);
-  const isDark = state.theme === 'dark';
   const { globalSearch } = state;
 
   // Check if global search should be open

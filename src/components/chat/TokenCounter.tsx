@@ -18,8 +18,7 @@ const TOKEN_COSTS: Record<string, { input: number; output: number }> = {
 };
 
 export default function TokenCounter({ text, showCost = false }: TokenCounterProps) {
-  const { state, getDefaultProvider, estimateTokens } = useChat();
-  const isDark = state.theme === 'dark';
+  const { state, getDefaultProvider, estimateTokens, isDark } = useChat();
   const provider = getDefaultProvider();
 
   const tokenCount = useMemo(() => estimateTokens(text), [text, estimateTokens]);
@@ -60,8 +59,7 @@ interface ChatStatsProps {
 }
 
 export function ChatStats({ compact = false }: ChatStatsProps) {
-  const { state, activeChat, estimateTokens } = useChat();
-  const isDark = state.theme === 'dark';
+  const { state, activeChat, estimateTokens, isDark } = useChat();
 
   const stats = useMemo(() => {
     if (!activeChat) return null;

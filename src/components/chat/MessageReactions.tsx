@@ -16,8 +16,7 @@ export default function MessageReactions({
   currentReaction,
   onSpeak 
 }: MessageReactionsProps) {
-  const { state, dispatch } = useChat();
-  const isDark = state.theme === 'dark';
+  const { state, dispatch, isDark } = useChat();
 
   const handleReaction = (reaction: ReactionType) => {
     dispatch({

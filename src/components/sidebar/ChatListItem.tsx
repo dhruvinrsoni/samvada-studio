@@ -9,11 +9,10 @@ interface ChatListItemProps {
 }
 
 export default function ChatListItem({ chat }: ChatListItemProps) {
-  const { state, dispatch } = useChat();
+  const { state, dispatch, isDark } = useChat();
   const isMobile = useIsMobile();
   const isActive = state.activeChat === chat.id;
   const isSelected = state.selectedChatIds.includes(chat.id);
-  const isDark = state.theme === 'dark';
   const [isRenaming, setIsRenaming] = useState(false);
   const [newTitle, setNewTitle] = useState(chat.title);
   const [isDeleteHover, setIsDeleteHover] = useState(false);

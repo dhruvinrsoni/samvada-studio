@@ -11,14 +11,14 @@ interface ChatSettingsProps {
   onClose: () => void;
 }
 export default function ChatSettings({ chat, onClose }: ChatSettingsProps) {
-  const { state, dispatch } = useChat();
+  const { state, dispatch, isDark } = useChat();
   const [settings, setSettings] = useState(chat.settings);
   const [title, setTitle] = useState(chat.title);
   const [showFormattingSection, setShowFormattingSection] = useState(false);
   const [selectedPresetId, setSelectedPresetId] = useState<string>(
     settings.formattingProfile?.id || 'none'
   );
-  const isDark = state.theme === 'dark';
+  
 
   const handleSave = () => {
     dispatch({

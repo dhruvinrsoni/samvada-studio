@@ -4,10 +4,10 @@ import { useIsMobile } from '../../hooks/useMediaQuery';
 import { createContextPanel } from '../../utils/helpers';
 
 export default function ContextPanel() {
-  const { state, dispatch } = useChat();
+  const { state, dispatch, isDark } = useChat();
   const [newPanelTitle, setNewPanelTitle] = useState('');
   const isMobile = useIsMobile();
-  const isDark = state.theme === 'dark';
+  
 
   const handleAddPanel = () => {
     if (newPanelTitle.trim()) {

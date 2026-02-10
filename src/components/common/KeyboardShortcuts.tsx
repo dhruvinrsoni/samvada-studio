@@ -52,8 +52,7 @@ const SHORTCUTS: ShortcutGroup[] = [
 ];
 
 export default function KeyboardShortcuts() {
-  const { state, dispatch } = useChat();
-  const isDark = state.theme === 'dark';
+  const { state, dispatch, isDark } = useChat();
 
   // Open with ? key
   useEffect(() => {

@@ -3,11 +3,10 @@ import { useChat } from '../../context/ChatContext';
 import type { ExportFormat } from '../../types';
 
 export default function ExportModal() {
-  const { state, dispatch, activeChat, exportChat } = useChat();
+  const { state, dispatch, activeChat, exportChat, isDark } = useChat();
   const [format, setFormat] = useState<ExportFormat>('markdown');
   const [includeTimestamps, setIncludeTimestamps] = useState(true);
   const [selectedChats, setSelectedChats] = useState<string[]>(activeChat ? [activeChat.id] : []);
-  const isDark = state.theme === 'dark';
 
   if (!state.isExportModalOpen) return null;
 

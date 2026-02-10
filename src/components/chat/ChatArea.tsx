@@ -20,7 +20,7 @@ interface ChatAreaProps {
 }
 
 export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templateContent = '', onClearTemplate }: ChatAreaProps) {
-  const { state, activeChat, dispatch } = useChat();
+  const { state, activeChat, dispatch, isDark } = useChat();
   const { addToast } = useToast();
   const isMobile = useIsMobile();
   const [isLoading, setIsLoading] = useState(false);
@@ -179,7 +179,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
     // Plain Enter adds newline (default behavior) - handled by PromptInput
   }, []);
 
-  const isDark = state.theme === 'dark';
+  
 
   if (!activeChat) {
     return (

@@ -21,11 +21,11 @@ interface FoldersSectionProps {
 }
 
 export default function FoldersSection({ renderChatItem }: FoldersSectionProps) {
-  const { state, dispatch } = useChat();
+  const { state, dispatch, isDark } = useChat();
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [editingFolder, setEditingFolder] = useState<ChatFolder | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
-  const isDark = state.theme === 'dark';
+  
 
   const handleCreateFolder = (name: string, color: string, icon: string) => {
     dispatch({

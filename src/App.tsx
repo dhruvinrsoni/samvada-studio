@@ -26,12 +26,11 @@ import BRAND from './constants/brand';
 import { HealthService } from './utils/healthService';
 
 function AppContent() {
-  const { state, dispatch, createChat } = useChat();
+  const { state, dispatch, createChat, isDark } = useChat();
   const { toasts, removeToast } = useToast();
   const pwaStatus = usePWA();
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
-  const isDark = state.theme === 'dark';
   
   // Local network permission hook - prompts on first use with Ollama
   useLocalNetworkPermission();
@@ -141,10 +140,10 @@ function AppContent() {
 
   return (
     <>
-      <div className={`flex flex-col h-screen-safe overflow-hidden ${state.theme === 'dark' ? 'bg-dark-300 text-gray-200' : 'bg-light-200 text-gray-800'}`}>
+      <div className={`flex flex-col h-screen-safe overflow-hidden ${isDark ? 'bg-dark-300 text-gray-200' : 'bg-light-200 text-gray-800'}`}>
       {/* Top Bar with Global Search - Theme-colored */}
       <div className={`flex items-center justify-between px-2 sm:px-3 md:px-4 py-2 sm:py-3 border-b relative overflow-hidden flex-shrink-0 ${
-        state.theme === 'dark' ? 'bg-dark-200 border-dark-100' : 'bg-light-100 border-light-400'
+        isDark ? 'bg-dark-200 border-dark-100' : 'bg-light-100 border-light-400'
       }`}>
         {/* Theme color accent strip */}
         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-theme-primary via-theme-accent to-theme-primary opacity-80"></div>
@@ -154,7 +153,7 @@ function AppContent() {
               <button
                 onClick={() => dispatch({ type: 'TOGGLE_SIDEBAR' })}
                 className={`p-2 rounded-lg transition-colors touch-target ${
-                  state.theme === 'dark' 
+                    isDark 
                     ? 'text-gray-400 hover:bg-dark-100' 
                     : 'text-gray-600 hover:bg-light-300'
                 }`}
@@ -182,9 +181,9 @@ function AppContent() {
           <button
             onClick={() => dispatch({ type: 'TOGGLE_GLOBAL_SEARCH' })}
             className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex-1 mx-2 sm:mx-3 md:mx-4 max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg ${
-              state.theme === 'dark'
-                ? 'bg-dark-100 text-gray-400 hover:bg-dark-200 border border-dark-300'
-                : 'bg-light-200 text-gray-600 hover:bg-light-300 border border-light-400'
+                isDark
+                  ? 'bg-dark-100 text-gray-400 hover:bg-dark-200 border border-dark-300'
+                  : 'bg-light-200 text-gray-600 hover:bg-light-300 border border-light-400'
             }`}
             title="Search everywhere (Ctrl+Shift+F)"
           >
@@ -195,7 +194,7 @@ function AppContent() {
               Search everywhere...
             </span>
             <kbd className={`px-1 sm:px-1.5 py-0.5 text-xs rounded ml-auto hidden lg:inline flex-shrink-0 ${
-              state.theme === 'dark' ? 'bg-dark-300' : 'bg-light-300'
+              isDark ? 'bg-dark-300' : 'bg-light-300'
             }`}>
               Ctrl+Shift+F
             </kbd>
@@ -209,9 +208,9 @@ function AppContent() {
             <button
               onClick={() => dispatch({ type: 'TOGGLE_SHORTCUTS_HELP' })}
               className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-                state.theme === 'dark' 
-                  ? 'text-gray-400 hover:bg-dark-100' 
-                  : 'text-gray-600 hover:bg-light-300'
+                  isDark 
+                    ? 'text-gray-400 hover:bg-dark-100' 
+                    : 'text-gray-600 hover:bg-light-300'
               }`}
               title="Keyboard Shortcuts (?)"
             >

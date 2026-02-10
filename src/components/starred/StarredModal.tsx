@@ -6,8 +6,7 @@ interface StarredModalProps {
 }
 
 export default function StarredModal({ onClose }: StarredModalProps) {
-  const { state, dispatch, getStarredMessages } = useChat();
-  const isDark = state.theme === 'dark';
+  const { state, dispatch, getStarredMessages, isDark } = useChat();
   const starredMessages = getStarredMessages();
 
   const handleNavigateToMessage = (chatId: string) => {

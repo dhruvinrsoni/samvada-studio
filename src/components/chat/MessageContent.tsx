@@ -257,8 +257,7 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
 }
 
 export default function MessageContent({ content, isStreaming }: MessageContentProps) {
-  const { state } = useChat();
-  const isDark = state.theme === 'dark';
+  const { isDark } = useChat();
 
   return (
     <div className={`prose ${isDark ? 'prose-invert' : ''} prose-sm max-w-none overflow-hidden`}>

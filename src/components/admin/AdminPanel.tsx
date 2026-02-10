@@ -24,7 +24,9 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
   const [isAddingProvider, setIsAddingProvider] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [pendingEditProvider, setPendingEditProvider] = useState<LLMProviderConfig | 'add' | null>(null);
-  const isDark = state.theme === 'dark';
+  const isDark =
+    state.themeSettings.mode === 'dark' ||
+    (state.themeSettings.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   const repoUrl = 'https://github.com/dhruvinrsoni/samvada-studio';
   const appVersion = import.meta.env.APP_VERSION || '0.0.0';
   const gitCommit = import.meta.env.GIT_COMMIT || 'unknown';
@@ -516,8 +518,8 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                       </p>
                     </div>
                     <select
-                      value={state.theme}
-                      onChange={(e) => dispatch({ type: 'SET_THEME', payload: e.target.value as 'light' | 'dark' })}
+                      value={state.themeSettings.mode}
+                      onChange={(e) => dispatch({ type: 'UPDATE_THEME_SETTINGS', payload: { mode: e.target.value as 'light' | 'dark' | 'auto' } })}
                       className={`px-3 py-2 rounded-lg border ${
                         isDark 
                           ? 'bg-dark-200 border-dark-100 text-gray-200' 
@@ -526,6 +528,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                     >
                       <option value="dark">🌙 Dark</option>
                       <option value="light">☀️ Light</option>
+                      <option value="auto">🖥️ Auto (system)</option>
                     </select>
                   </div>
 
