@@ -11,7 +11,7 @@ interface ChatSettingsProps {
   onClose: () => void;
 }
 export default function ChatSettings({ chat, onClose }: ChatSettingsProps) {
-  const { state, dispatch, isDark } = useChat();
+  const { dispatch, isDark } = useChat();
   const [settings, setSettings] = useState(chat.settings);
   const [title, setTitle] = useState(chat.title);
   const [showFormattingSection, setShowFormattingSection] = useState(false);

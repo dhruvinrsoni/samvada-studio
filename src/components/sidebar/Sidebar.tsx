@@ -17,8 +17,7 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
   const isMobile = useIsMobile();
 
   // Get current theme mode
-  const isDark = state.themeSettings.mode === 'dark' ||
-    (state.themeSettings.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const { isDark } = useChat();
 
   // Check if there are any enabled providers
   const hasEnabledProviders = state.providers.some(p => p.isEnabled);
@@ -224,7 +223,7 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
           className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full transition-colors ${
             localShowArchived
               ? 'bg-theme-primary text-white'
-              : state.theme === 'dark'
+              : isDark
                 ? 'bg-dark-100 text-gray-400 hover:bg-dark-300'
                 : 'bg-light-300 text-gray-600 hover:bg-light-400'
           }`}

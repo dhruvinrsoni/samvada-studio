@@ -16,8 +16,8 @@ interface PWAInstallPromptProps {
 }
 
 export default function PWAInstallPrompt({ pwaStatus }: PWAInstallPromptProps) {
-  const { state } = useChat();
   const { isInstallable, installApp, dismissInstall } = pwaStatus;
+  const { isDark } = useChat();
 
   // Don't show if not installable
   if (!isInstallable) return null;
@@ -40,7 +40,7 @@ export default function PWAInstallPrompt({ pwaStatus }: PWAInstallPromptProps) {
       style={{ bottom: '5rem' }} // Ensure it doesn't overlap with other UI
     >
       <div className={`rounded-xl shadow-2xl border overflow-hidden ${
-        state.theme === 'dark'
+        isDark
           ? 'bg-dark-200 border-dark-100'
           : 'bg-white border-gray-200'
       }`}>
@@ -66,14 +66,14 @@ export default function PWAInstallPrompt({ pwaStatus }: PWAInstallPromptProps) {
         {/* Content */}
         <div className="p-4">
           <p className={`text-sm mb-4 ${
-            state.theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+            isDark ? 'text-gray-300' : 'text-gray-600'
           }`}>
             Install Samvada Studio for a faster, app-like experience with offline support.
           </p>
 
           {/* Benefits */}
           <ul className={`text-xs space-y-2 mb-4 ${
-            state.theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            isDark ? 'text-gray-400' : 'text-gray-500'
           }`}>
             <li className="flex items-center gap-2">
               <span className="text-green-500">✓</span>
@@ -110,7 +110,7 @@ export default function PWAInstallPrompt({ pwaStatus }: PWAInstallPromptProps) {
             <button
               onClick={handleDismiss}
               className={`px-4 py-2.5 font-medium rounded-lg transition-colors ${
-                state.theme === 'dark'
+                isDark
                   ? 'text-gray-400 hover:text-gray-200 hover:bg-dark-100'
                   : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
               }`}

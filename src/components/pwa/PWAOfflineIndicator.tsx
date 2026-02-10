@@ -14,8 +14,8 @@ interface PWAOfflineIndicatorProps {
 }
 
 export default function PWAOfflineIndicator({ pwaStatus }: PWAOfflineIndicatorProps) {
-  const { state } = useChat();
   const { isOnline } = pwaStatus;
+  const { isDark } = useChat();
 
   // Only show when offline
   if (isOnline) return null;
@@ -26,7 +26,7 @@ export default function PWAOfflineIndicator({ pwaStatus }: PWAOfflineIndicatorPr
         animate-slide-up transition-all duration-300`}
     >
       <div className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-lg ${
-        state.theme === 'dark'
+        isDark
           ? 'bg-yellow-900/90 text-yellow-200 border border-yellow-700'
           : 'bg-yellow-100 text-yellow-800 border border-yellow-300'
       }`}>

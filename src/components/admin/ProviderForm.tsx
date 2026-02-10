@@ -56,7 +56,7 @@ const DEFAULT_MODELS: Record<LLMProviderType, string[]> = {
 };
 
 export default function ProviderForm({ provider, onSave, onCancel, onFormChange }: ProviderFormProps) {
-  const { state, isDark } = useChat();
+  const { isDark } = useChat();
   const isEditing = !!provider;
 
   const initialFormData = {

@@ -239,7 +239,7 @@ function AppContent() {
           <button
             onClick={() => dispatch({ type: 'TOGGLE_COMMAND_PALETTE' })}
             className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-              state.theme === 'dark' 
+              isDark 
                 ? 'text-gray-400 hover:bg-dark-100' 
                 : 'text-gray-600 hover:bg-light-300'
             }`}
@@ -252,7 +252,7 @@ function AppContent() {
 
           {/* Divider - Hide on mobile */}
           {!isMobile && (
-            <div className={`h-5 sm:h-6 w-px ${state.theme === 'dark' ? 'bg-dark-100' : 'bg-light-400'}`} />
+            <div className={`h-5 sm:h-6 w-px ${isDark ? 'bg-dark-100' : 'bg-light-400'}`} />
           )}
 
           {/* Templates Library - Hide on small screens */}
@@ -260,7 +260,7 @@ function AppContent() {
             <button
               onClick={() => dispatch({ type: 'TOGGLE_TEMPLATES_MODAL' })}
               className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-                state.theme === 'dark' 
+                isDark 
                   ? 'text-gray-400 hover:bg-dark-100' 
                   : 'text-gray-600 hover:bg-light-300'
               }`}
@@ -277,7 +277,7 @@ function AppContent() {
             <button
               onClick={() => dispatch({ type: 'TOGGLE_EXPORT_MODAL' })}
               className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-                state.theme === 'dark' 
+                isDark 
                   ? 'text-gray-400 hover:bg-dark-100' 
                   : 'text-gray-600 hover:bg-light-300'
               }`}
@@ -316,7 +316,7 @@ function AppContent() {
             <button
               onClick={() => dispatch({ type: 'TOGGLE_TEMPLATES_MODAL' })}
               className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-                state.theme === 'dark' 
+                isDark 
                   ? 'text-gray-300 hover:bg-dark-100' 
                   : 'text-gray-600 hover:bg-light-300'
               }`}
@@ -338,7 +338,7 @@ function AppContent() {
             <button
               onClick={() => setIsThemeSettingsOpen(true)}
               className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-                state.theme === 'dark' 
+                isDark 
                   ? 'text-gray-400 hover:bg-dark-100' 
                   : 'text-gray-600 hover:bg-light-300'
               }`}
