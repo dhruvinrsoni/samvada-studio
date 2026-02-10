@@ -2,6 +2,7 @@ import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useChat } from '../../context/ChatContext';
+import { detectLanguage as detectLangUtil, tokenizeCStyle } from '../../utils/codeLanguage';
 
 interface MessageContentProps {
   content: string;
@@ -15,6 +16,7 @@ const KEYWORDS: Record<string, string[]> = {
   python: ['def', 'class', 'if', 'elif', 'else', 'for', 'while', 'return', 'import', 'from', 'as', 'try', 'except', 'finally', 'with', 'True', 'False', 'None', 'and', 'or', 'not', 'in', 'is', 'lambda', 'yield', 'async', 'await'],
   java: ['public', 'private', 'protected', 'class', 'interface', 'extends', 'implements', 'static', 'final', 'void', 'int', 'String', 'boolean', 'if', 'else', 'for', 'while', 'return', 'new', 'try', 'catch', 'throw', 'throws', 'import', 'package'],
   c: ['int', 'char', 'void', 'float', 'double', 'if', 'else', 'for', 'while', 'return', 'struct', 'typedef', 'include', 'define', 'stdio', 'stdlib', 'string', 'const', 'static', 'unsigned', 'signed', 'switch', 'case', 'break', 'continue', 'do', 'default'],
+  cpp: ['int', 'char', 'void', 'float', 'double', 'if', 'else', 'for', 'while', 'return', 'struct', 'typedef', 'include', 'define', 'stdio', 'stdlib', 'string', 'const', 'static', 'unsigned', 'signed', 'switch', 'case', 'break', 'continue', 'do', 'default', 'class', 'namespace', 'template', 'typename', 'std', 'cout', 'cin', 'nullptr', 'operator', 'using', 'auto', 'constexpr', 'delete', 'new'],
 };
 
 function highlightCode(code: string, language: string, theme: 'dark' | 'light' = 'dark'): JSX.Element {
@@ -40,31 +42,38 @@ function highlightCode(code: string, language: string, theme: 'dark' | 'light' =
 
   const colors = colorScheme[theme];
 
-  // Split code into tokens (simple approach)
-  const tokens: Array<{ text: string; type: 'keyword' | 'string' | 'comment' | 'number' | 'normal' }> = [];
-  const lines = code.split('\n');
+  // If C/C++ use specialized tokenizer to better handle scope and templates
+  let tokens: Array<{ text: string; type: 'keyword' | 'string' | 'comment' | 'number' | 'normal' }> = [];
+  if (language === 'c' || language === 'cpp') {
+    // tokenizeCStyle returns compatible Token[]
+    tokens = tokenizeCStyle(code, (language === 'cpp' ? 'cpp' : 'c'));
+  } else {
+    // Split code into tokens (simple approach)
+    tokens = [];
+    const lines = code.split('\n');
 
-  for (const line of lines) {
-    let remaining = line;
+    for (const line of lines) {
+      let remaining = line;
 
-    // Handle comments first
-    const commentMatch = remaining.match(/(\/\/.*$|\/\*[\s\S]*?\*\/|#.*$)/);
-    if (commentMatch && commentMatch.index !== undefined) {
-      const beforeComment = remaining.substring(0, commentMatch.index);
-      if (beforeComment) {
-        tokens.push(...parseLine(beforeComment, keywords));
+      // Handle comments first
+      const commentMatch = remaining.match(/(\/\/.*$|\/\*[\s\S]*?\*\/|#.*$)/);
+      if (commentMatch && commentMatch.index !== undefined) {
+        const beforeComment = remaining.substring(0, commentMatch.index);
+        if (beforeComment) {
+          tokens.push(...parseLine(beforeComment, keywords));
+        }
+        if (commentMatch[1]) {
+          tokens.push({ text: commentMatch[1], type: 'comment' });
+        }
+        remaining = remaining.substring(commentMatch.index + (commentMatch[0]?.length || 0));
+      } else {
+        tokens.push(...parseLine(remaining, keywords));
+        remaining = '';
       }
-      if (commentMatch[1]) {
-        tokens.push({ text: commentMatch[1], type: 'comment' });
-      }
-      remaining = remaining.substring(commentMatch.index + (commentMatch[0]?.length || 0));
-    } else {
-      tokens.push(...parseLine(remaining, keywords));
-      remaining = '';
+
+      // Add newline
+      tokens.push({ text: '\n', type: 'normal' });
     }
-
-    // Add newline
-    tokens.push({ text: '\n', type: 'normal' });
   }
 
   return (
@@ -138,61 +147,7 @@ function parseLine(line: string, keywords: string[]): Array<{ text: string; type
   return tokens;
 }
 
-/**
- * Detect programming language from code content
- * Used when language class is not provided
- */
-function detectLanguage(code: string): string {
-  const lines = code.split('\n').slice(0, 5); // Check first 5 lines
-  const content = lines.join('\n').toLowerCase();
-
-  // C/C++ patterns
-  if (/#include|int main|printf|void|char\*|uint32|struct\s+\w+|typedef|stdio\.h|stdlib\.h/.test(content)) {
-    return 'c';
-  }
-  
-  // Python patterns
-  if (/^import |^from |def |:\s*$|elif |except |class .*:|@|lambda|yield/.test(content)) {
-    return 'python';
-  }
-
-  // JavaScript/TypeScript patterns
-  if (/const |let |var |function |=>|async |await |import \{|export |class \w+|interface /.test(content)) {
-    return /interface |type \w+|as --|: \w+/.test(content) ? 'typescript' : 'javascript';
-  }
-
-  // Java patterns
-  if (/public class |private |static |void |new |import java|@Override|throw new|catch \(/.test(content)) {
-    return 'java';
-  }
-
-  // HTML/XML patterns
-  if (/<html|<body|<div|<!DOCTYPE|<head>/.test(content)) {
-    return 'html';
-  }
-
-  // CSS patterns
-  if (/\{\s*color:|\.[\w-]+\s*\{|@media|@keyframes|background:|border:/.test(content)) {
-    return 'css';
-  }
-
-  // SQL patterns
-  if (/SELECT |FROM |WHERE |INSERT INTO|UPDATE |DELETE |CREATE TABLE|DROP/.test(content)) {
-    return 'sql';
-  }
-
-  // JSON patterns
-  if (/^\s*[{[]|":\s*["\d\[\{]/.test(content)) {
-    return 'json';
-  }
-
-  // Bash/Shell patterns
-  if (/^#!\/bin|^\$\s|&&|\s\.sh|curl|grep|sed|awk/.test(content)) {
-    return 'bash';
-  }
-
-  return 'plaintext';
-}
+// Language detection moved to `src/utils/codeLanguage.ts` - use that module instead.
 
 function CodeBlock({ language, code }: { language: string; code: string }) {
   const [copied, setCopied] = useState(false);
@@ -325,9 +280,9 @@ export default function MessageContent({ content, isStreaming }: MessageContentP
               if (hasLanguageClass) {
                 const match = /language-(\w+)/.exec(className || '');  
                 language = match?.[1] || 'plaintext';
-              } else {
+                } else {
                 // Auto-detect language from code content
-                language = detectLanguage(codeString);
+                language = detectLangUtil(codeString);
               }
               return <CodeBlock language={language} code={codeString} />
             }
