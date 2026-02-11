@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useChat } from '../../context/ChatContext';
 import { detectLanguage as detectLangUtil, tokenizeCStyle } from '../../utils/codeLanguage';
+import { copyToClipboard } from '../../utils/clipboard';
 
 interface MessageContentProps {
   content: string;
@@ -156,19 +157,12 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
 
   const handleCopy = async () => {
     try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(code);
+      const ok = await copyToClipboard(code);
+      if (ok) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = code;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        throw new Error('copy failed');
       }
     } catch (error) {
       console.error('Copy failed:', error);

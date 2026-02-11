@@ -236,26 +236,7 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
 
   const labelClass = `block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`;
 
-  // Updated the copy button for Ollama API URLs to provide feedback
-  const handleCopyUrl = async (url) => {
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(url);
-        alert('URL copied to clipboard!');
-      } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = url;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        alert('URL copied to clipboard!');
-      }
-    } catch (error) {
-      console.error('Copy failed:', error);
-      alert('Failed to copy URL. Please try again.');
-    }
-  };
+  
 
   return (
     <div className={`mt-4 p-6 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300' : 'border-light-400 bg-light-200'}`}>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { ollamaDiscovery, OllamaConfiguration } from '../../services/ollamaDiscovery';
 import { useToast } from '../../context/ToastContext';
+import CopyableList, { CopyableItem } from '../common/CopyableList';
 
 export const OllamaConfigPanel: React.FC = () => {
   const { addToast } = useToast();
@@ -202,41 +203,15 @@ export const OllamaConfigPanel: React.FC = () => {
             <p className="text-xs text-blue-400 mb-2">
               💡 Discovered endpoints are automatically added to Custom Endpoints below and an LLM Provider is created!
             </p>
-            <div className="max-h-48 overflow-y-auto space-y-2">{Array.from(discoveryResults.entries()).map(([url, result]) => (
-                <div
-                  key={url}
-                  className={`p-3 rounded text-sm ${
-                    result.isHealthy
-                      ? 'bg-green-900/30 border border-green-700'
-                      : 'bg-red-900/30 border border-red-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono text-xs text-gray-300">Base URL:</span>
-                    <button
-                      onClick={() => navigator.clipboard.writeText(url)}
-                      className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-white"
-                      title="Copy URL"
-                    >
-                      📋 Copy
-                    </button>
-                  </div>
-                  <div className="font-mono text-sm text-white break-all mb-2">
-                    {url}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className={result.isHealthy ? 'text-green-400' : 'text-red-400'}>
-                      {result.isHealthy ? '✅ Healthy' : '❌ Failed'} • {result.responseTime}ms
-                    </span>
-                    {result.version && (
-                      <span className="text-xs text-gray-400">v{result.version}</span>
-                    )}
-                  </div>
-                  {result.error && (
-                    <div className="text-xs text-red-400 mt-1">Error: {result.error}</div>
-                  )}
-                </div>
-              ))}
+            <div className="max-h-48 overflow-y-auto">
+              <CopyableList
+                items={Array.from(discoveryResults.entries()).map(([url, result]) => ({
+                  id: url,
+                  title: 'Base URL:',
+                  text: url,
+                  subtitle: `${result.isHealthy ? '✅ Healthy' : '❌ Failed'} • ${result.responseTime}ms${result.version ? ` • v${result.version}` : ''}`,
+                } as CopyableItem))}
+              />
             </div>
           </div>
         )}
@@ -412,42 +387,21 @@ export const OllamaConfigPanel: React.FC = () => {
             <p className="text-xs text-gray-500 mb-3">
               Endpoints are tested in order. First healthy one is used.
             </p>
-            {config.endpoints.map((endpoint, idx) => {
-              const fullUrl = `${endpoint.protocol}://${endpoint.host}:${endpoint.port}${endpoint.basePath || ''}`;
-              return (
-                <div key={idx} className="bg-gray-900 rounded-lg p-3 flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-gray-400">#{idx + 1}</span>
-                      <span className="font-mono text-sm text-white break-all">
-                        {fullUrl}
-                      </span>
-                      <button
-                        onClick={() => navigator.clipboard.writeText(fullUrl)}
-                        className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-white flex-shrink-0"
-                        title="Copy URL"
-                      >
-                        📋
-                      </button>
-                    </div>
-                    {endpoint.label && (
-                      <div className="text-xs text-gray-400">{endpoint.label}</div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => handleRemoveEndpoint(endpoint.host, endpoint.port)}
-                    className="text-red-400 hover:text-red-300 text-sm flex-shrink-0 ml-2"
-                  >
-                    Remove
-                  </button>
-                </div>
-              );
-            })}
+            <CopyableList
+              items={config.endpoints.map((endpoint, idx) => {
+                const fullUrl = `${endpoint.protocol}://${endpoint.host}:${endpoint.port}${endpoint.basePath || ''}`;
+                return {
+                  id: `${endpoint.host}:${endpoint.port}`,
+                  title: `#${idx + 1}`,
+                  text: fullUrl,
+                  subtitle: endpoint.label || undefined,
+                  onRemove: () => handleRemoveEndpoint(endpoint.host, endpoint.port),
+                } as CopyableItem;
+              })}
+            />
           </div>
         ) : (
-          <div className="text-sm text-gray-500 text-center py-4">
-            No custom endpoints configured
-          </div>
+          <div className="text-sm text-gray-500 text-center py-4">No custom endpoints configured</div>
         )}
       </div>
 
