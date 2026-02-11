@@ -55,9 +55,14 @@ const DEFAULT_CONFIG: OllamaConfiguration = {
     enableLANScan: true,
     enablePortScan: true,
     enableWiFiScan: true,
-    scanTimeout: 2000,
+    // Reduced default timeout for faster discovery while still allowing slow LAN replies.
+    // 300ms is a good balance between speed and reliability on typical local networks.
+    scanTimeout: 300,
   },
 };
+
+// Global discovery guard/timeout (ms) - ensures discoverEndpoint always resolves
+const GLOBAL_DISCOVERY_TIMEOUT = 15000;
 
 // Storage key for persisted configuration
 const STORAGE_KEY = 'ollama-discovery-config';
@@ -67,6 +72,7 @@ class OllamaDiscoveryService {
   private cachedEndpoint: OllamaEndpoint | null = null;
   private discoveryResults: Map<string, OllamaDiscoveryResult> = new Map();
   private lastDiscoveryTime = 0; // Timestamp for debouncing rapid calls
+  private discoveryInProgress = false;
 
   constructor() {
     this.config = this.loadConfiguration();
@@ -565,34 +571,64 @@ class OllamaDiscoveryService {
     const now = Date.now();
     if (this.lastDiscoveryTime > 0 && now - this.lastDiscoveryTime < 5000) {
       console.log('[Ollama Discovery] Using recent discovery result (debounced)');
-      // Return cached endpoint if available
+      // Return cached endpoint if available - but guard the cached check with a short timeout
       if (this.cachedEndpoint) {
-        const cachedResult = await this.testEndpoint(this.cachedEndpoint);
-        if (cachedResult.isHealthy) {
-          return cachedResult;
+        try {
+          const cachedResult = await Promise.race([
+            this.testEndpoint(this.cachedEndpoint),
+            new Promise<null>(resolve => setTimeout(() => resolve(null), 2000)),
+          ]);
+          if (cachedResult && (cachedResult as OllamaDiscoveryResult).isHealthy) {
+            return cachedResult as OllamaDiscoveryResult;
+          }
+        } catch (e) {
+          console.warn('Cached endpoint test failed during debounce check', e);
         }
       }
       return null;
     }
-    this.lastDiscoveryTime = now;
 
-    if (!this.config.autoDiscovery && this.config.endpoints.length === 0) {
+    // Prevent concurrent discovery runs
+    if (this.discoveryInProgress) {
+      console.log('[Ollama Discovery] Discovery already in progress, skipping');
       return null;
     }
 
-    const candidates = await this.generateCandidateEndpoints();
-    console.log(`🔍 Ollama Discovery: Testing ${candidates.length} candidate endpoints`);
+    this.discoveryInProgress = true;
+    this.lastDiscoveryTime = now;
 
-    // Sort by priority
-    candidates.sort((a, b) => a.priority - b.priority);
+    // If autoDiscovery is disabled and there are no endpoints, nothing to do
+    if (!this.config.autoDiscovery && this.config.endpoints.length === 0) {
+      this.discoveryInProgress = false;
+      return null;
+    }
 
-    // Test endpoints based on fallback behavior
-    if (this.config.fallbackBehavior === 'fastest') {
-      // Race all candidates to find fastest
-      return this.findFastestEndpoint(candidates);
-    } else {
-      // Test in priority order until first healthy
-      return this.findFirstHealthyEndpoint(candidates);
+    // Wrap the main discovery flow so we can enforce a global timeout
+    const discoveryFlow = async (): Promise<OllamaDiscoveryResult | null> => {
+      const candidates = await this.generateCandidateEndpoints();
+      console.log(`🔍 Ollama Discovery: Testing ${candidates.length} candidate endpoints`);
+
+      // Sort by priority
+      candidates.sort((a, b) => a.priority - b.priority);
+
+      // Test endpoints based on fallback behavior
+      if (this.config.fallbackBehavior === 'fastest') {
+        // Race all candidates to find fastest
+        return this.findFastestEndpoint(candidates);
+      } else {
+        // Test in priority order until first healthy
+        return this.findFirstHealthyEndpoint(candidates);
+      }
+    };
+
+    try {
+      const result = await Promise.race([
+        discoveryFlow(),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), GLOBAL_DISCOVERY_TIMEOUT)),
+      ]);
+      return result as OllamaDiscoveryResult | null;
+    } finally {
+      this.discoveryInProgress = false;
     }
   }
 

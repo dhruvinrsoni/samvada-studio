@@ -270,9 +270,9 @@ export const OllamaConfigPanel: React.FC = () => {
               scanTimeout: parseInt(e.target.value),
             })}
             className="w-24 bg-gray-700 text-white px-2 py-1 rounded text-sm"
-            min="500"
+            min="20"
             max="10000"
-            step="500"
+            step="10"
           />
         </label>
       </div>
