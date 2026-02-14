@@ -56,8 +56,9 @@ const DEFAULT_CONFIG: OllamaConfiguration = {
     enablePortScan: true,
     enableWiFiScan: true,
     // Reduced default timeout for faster discovery while still allowing slow LAN replies.
-    // 300ms is a good balance between speed and reliability on typical local networks.
-    scanTimeout: 300,
+    // 100ms chosen as a balance: much faster responsiveness while tolerating typical LAN jitter.
+    // Advanced users can lower this in Admin > Ollama if their environment is very responsive.
+    scanTimeout: 100,
   },
 };
 

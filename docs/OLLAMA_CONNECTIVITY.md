@@ -122,7 +122,7 @@ Explicit configuration for advanced setups:
   networkDetection: {
     enableLANScan: true,  // Scan LAN for Ollama
     enablePortScan: true,  // Try alternative ports
-   scanTimeout: 300,    // Timeout per endpoint (ms) - reduced default for faster discovery
+   scanTimeout: 100,    // Timeout per endpoint (ms) - reduced default for faster discovery
   },
   retryPolicy: {
     maxRetries: 3,
