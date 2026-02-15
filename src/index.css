@@ -67,6 +67,44 @@
   --touch-target-min: 44px;
 }
 
+/* Apply font-size variable globally so font-size settings take effect everywhere */
+html, body, #root {
+  font-size: var(--font-size-base);
+}
+
+/* Compact mode: reduce base font-size and tighten spacing for denser UI */
+html.compact {
+  font-size: calc(var(--font-size-base) * 0.92);
+  --touch-target-min: 36px;
+}
+
+/* Compact mode specific overrides for common layout regions and controls */
+html.compact .sidebar,
+html.compact .chat-area,
+html.compact .context-panel,
+html.compact .modal,
+html.compact .header,
+html.compact .footer {
+  padding: 0.5rem !important;
+  gap: 0.25rem !important;
+}
+
+html.compact button,
+html.compact input,
+html.compact textarea,
+html.compact select,
+html.compact .btn {
+  padding: 0.35rem 0.5rem !important;
+  min-height: 32px !important;
+  font-size: 0.95em !important;
+}
+
+html.compact .message,
+html.compact .prompt-response-item {
+  padding: 0.45rem !important;
+  margin: 0.25rem 0 !important;
+}
+
 /* Mobile-first responsive font sizing */
 @media (max-width: 640px) {
   :root {

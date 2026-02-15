@@ -328,6 +328,34 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                   <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     Advanced theme customization options are not available at the moment.
                   </p>
+
+                  {/* Dev-only Bug Report Button - placed inside Advanced tab for discoverability */}
+                  {import.meta.env.DEV && (
+                    <div className="mt-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const report = createLLMReport.themeIssue();
+                          const markdown = createLLMReport.toMarkdown(report);
+                          createLLMReport.copyToClipboard(report);
+                          console.log('🐛 Theme Bug Report Generated and Copied!');
+                          console.log(markdown);
+                          // Friendly non-blocking notification for devs
+                          try {
+                            // Prefer toast if available
+                            const evt = new CustomEvent('dev:bug-report-copied');
+                            window.dispatchEvent(evt);
+                          } catch (err) {
+                            /* ignore */
+                          }
+                        }}
+                        title="Generate theme bug report (Dev only)"
+                        className="mt-2 inline-flex items-center px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-medium gap-2"
+                      >
+                        🐛 <span className="hidden sm:inline">Generate Bug Report</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -422,26 +450,7 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
           </div>
         </div>
 
-        {/* Dev-only Bug Report Button - Floating Bottom Right */}
-        {import.meta.env.DEV && (
-          <div className="absolute bottom-4 right-4 z-10">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                const report = createLLMReport.themeIssue();
-                const markdown = createLLMReport.toMarkdown(report);
-                createLLMReport.copyToClipboard(report);
-                console.log('🐛 Theme Bug Report Generated and Copied!');
-                console.log(markdown);
-                alert('Bug report copied to clipboard! Check console for full details.');
-              }}
-              title="Generate theme bug report (Dev only)"
-              className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-medium flex items-center gap-2 shadow-xl hover:shadow-2xl transition-all"
-            >
-              🐛 <span className="hidden sm:inline">Bug Report</span>
-            </button>
-          </div>
-        )}
+        {/* Bug report moved into Advanced tab */}
       </div>
     </div>
   );
