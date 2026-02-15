@@ -35,7 +35,7 @@ export default function CommandPalette() {
     { id: 'toggle-sidebar', name: 'Toggle Context Panel', description: 'Show/hide context panel', icon: '📄', category: 'navigation', action: () => { dispatch({ type: 'TOGGLE_CONTEXT_PANEL_MODE' }); dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); } },
     
     // Additional Navigation Commands
-    { id: 'go-to-templates', name: 'Go to Templates', description: 'Open the Templates Library', icon: '📂', category: 'navigation', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_TEMPLATES' }); } },
+    { id: 'go-to-templates', name: 'Go to Templates', description: 'Open the Templates Library', icon: '📂', category: 'navigation', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_TEMPLATES_MODAL' }); } },
     { id: 'go-to-starred', name: 'Go to Starred Messages', description: 'Open Starred Messages', icon: '⭐', category: 'navigation', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_STARRED_MODAL' }); } },
 
     // Settings Commands
@@ -66,7 +66,7 @@ export default function CommandPalette() {
     
     // Template Commands
     { id: 'templates', name: 'Prompt Templates', description: 'Browse and use saved templates', icon: '📚', category: 'templates', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_TEMPLATES_MODAL' }); } },
-  ], [state.themeSettings, activeChat, createChat, dispatch, exportChat]);
+  ], [state.themeSettings, state.chats, activeChat, createChat, dispatch, exportChat]);
 
   const filteredCommands = useMemo(() => {
     if (!query) return commands;
