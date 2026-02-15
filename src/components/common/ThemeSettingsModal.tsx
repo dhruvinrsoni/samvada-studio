@@ -120,7 +120,7 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-theme-primary to-theme-accent"></div>
               )}
             </button>
-          ))})
+          ))}
         </div>
 
         {/* Content */}
@@ -325,22 +325,9 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                     <span className="text-base sm:text-lg md:text-xl">⚙️</span>
                     Advanced Theme Options
                   </h3>
-                  
-                  <div className="space-y-3 sm:space-y-4">
-                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                      Advanced theme customization options will appear here.
-                    </p>
-                    <div className={`p-2 sm:p-3 rounded-lg ${isDark ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
-                      <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                        <strong>👉 Looking for PWA settings?</strong>
-                      </p>
-                      <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
-                        Progressive Web App installation and management has been moved to:
-                        <br />
-                        <strong>Admin Settings (⚙️) → PWA Tab (📱)</strong>
-                      </p>
-                    </div>
-                  </div>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                    Advanced theme customization options are not available at the moment.
+                  </p>
                 </div>
               </div>
             )}
