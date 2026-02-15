@@ -45,7 +45,15 @@ export default function CommandPalette() {
     
     // Additional Settings Commands
     { id: 'change-accent-color', name: 'Change Accent Color', description: 'Change the app accent color', icon: '🎨', category: 'settings', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_THEME_SETTINGS_MODAL' }); } },
-    { id: 'change-font-size', name: 'Change Font Size', description: 'Adjust the font size', icon: '🔠', category: 'settings', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_THEME_SETTINGS_MODAL' }); } },
+    { id: 'change-font-size', name: 'Change Font Size', description: 'Cycle font sizes (xs → small → medium → large → xl)', icon: '🔠', category: 'settings', action: () => {
+        // Cycle through font sizes and apply immediately without opening modal
+        const sizes: Array<'xs'|'small'|'medium'|'large'|'xl'> = ['xs','small','medium','large','xl'];
+        const current = state.themeSettings.fontSize as typeof sizes[number];
+        const idx = Math.max(0, sizes.indexOf(current));
+        const next = sizes[(idx + 1) % sizes.length];
+        dispatch({ type: 'UPDATE_THEME_SETTINGS', payload: { fontSize: next } });
+        dispatch({ type: 'TOGGLE_COMMAND_PALETTE' });
+      } },
 
     // Export Commands
     { id: 'export-md', name: 'Export as Markdown', description: 'Export current chat as .md file', icon: '📝', category: 'export', action: () => { if (activeChat) { downloadFile(exportChat(activeChat.id, 'markdown'), `${activeChat.title}.md`, 'text/markdown'); } dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); } },
