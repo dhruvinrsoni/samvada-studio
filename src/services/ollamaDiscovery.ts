@@ -209,8 +209,11 @@ class OllamaDiscoveryService {
 
   /**
    * Test if an endpoint is healthy
+   *
+   * Accepts an optional external AbortSignal so callers can abort this test
+   * when another worker finds a healthy endpoint.
    */
-  private async testEndpoint(endpoint: OllamaEndpoint): Promise<OllamaDiscoveryResult> {
+  private async testEndpoint(endpoint: OllamaEndpoint, externalSignal?: AbortSignal): Promise<OllamaDiscoveryResult> {
     const startTime = Date.now();
     const url = this.getEndpointUrl(endpoint);
     const timeout = endpoint.timeout || this.config.networkDetection.scanTimeout;
@@ -219,6 +222,16 @@ class OllamaDiscoveryService {
       // Use AbortController for timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      // If an external signal is provided, forward its abort to our controller
+      const onExternalAbort = () => controller.abort();
+      if (externalSignal) {
+        if (externalSignal.aborted) {
+          controller.abort();
+        } else {
+          externalSignal.addEventListener('abort', onExternalAbort);
+        }
+      }
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -235,6 +248,7 @@ class OllamaDiscoveryService {
       });
 
       clearTimeout(timeoutId);
+      if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
       const responseTime = Date.now() - startTime;
 
       if (response.ok) {
@@ -257,6 +271,7 @@ class OllamaDiscoveryService {
       }
     } catch (error: any) {
       const responseTime = Date.now() - startTime;
+      if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
       return {
         endpoint,
         responseTime,
@@ -670,19 +685,62 @@ class OllamaDiscoveryService {
   private async findFirstHealthyEndpoint(
     candidates: OllamaEndpoint[]
   ): Promise<OllamaDiscoveryResult | null> {
-    for (const endpoint of candidates) {
-      const result = await this.testEndpoint(endpoint);
-      this.discoveryResults.set(this.getEndpointUrl(endpoint), result);
+    // Run tests in parallel with limited concurrency and abort remaining tests once a healthy
+    // endpoint is found. This avoids waiting serially for many timeouts on large subnets.
+    const concurrency = Math.min(50, Math.max(8, Math.floor(candidates.length / 8) || 8));
 
-      if (result.isHealthy) {
-        this.cacheSuccessfulEndpoint(endpoint);
-        console.log(`✅ Found healthy Ollama endpoint: ${this.getEndpointUrl(endpoint)} (${result.responseTime}ms)`);
-        return result;
+    let found: OllamaDiscoveryResult | null = null;
+    const controllers: AbortController[] = [];
+
+    // Worker pool
+    let idx = 0;
+    const workers: Promise<void>[] = [];
+
+    const pickNext = () => {
+      const i = idx;
+      idx += 1;
+      return i;
+    };
+
+    const worker = async () => {
+      while (true) {
+        if (found) return;
+        const i = pickNext();
+        if (i >= candidates.length) return;
+
+        const endpoint = candidates[i];
+        const controller = new AbortController();
+        controllers.push(controller);
+
+        try {
+          const result = await this.testEndpoint(endpoint, controller.signal);
+          // store the result for UI/debug
+          this.discoveryResults.set(this.getEndpointUrl(endpoint), result);
+
+          if (result.isHealthy) {
+            found = result;
+            // cache and abort remaining
+            this.cacheSuccessfulEndpoint(endpoint);
+            console.log(`✅ Found healthy Ollama endpoint: ${this.getEndpointUrl(endpoint)} (${result.responseTime}ms)`);
+            controllers.forEach(c => c.abort());
+            return;
+          }
+        } catch (err) {
+          // ignore individual worker errors
+        }
       }
+    };
+
+    for (let w = 0; w < concurrency; w++) {
+      workers.push(worker());
     }
 
-    console.warn('❌ No healthy Ollama endpoints found');
-    return null;
+    await Promise.all(workers);
+
+    if (!found) {
+      console.warn('❌ No healthy Ollama endpoints found');
+    }
+    return found;
   }
 
   /**
