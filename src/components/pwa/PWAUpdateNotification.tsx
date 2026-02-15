@@ -15,7 +15,7 @@ interface PWAUpdateNotificationProps {
 }
 
 export default function PWAUpdateNotification({ pwaStatus }: PWAUpdateNotificationProps) {
-  const { state } = useChat();
+  const { state, isDark } = useChat();
   const { needsUpdate, updateApp, isUpdating } = pwaStatus;
 
   // Don't show if no update available
@@ -31,7 +31,7 @@ export default function PWAUpdateNotification({ pwaStatus }: PWAUpdateNotificati
         animate-slide-down transform transition-all duration-300 ease-out`}
     >
       <div className={`rounded-xl shadow-2xl border overflow-hidden max-w-sm ${
-        state.theme === 'dark'
+        isDark
           ? 'bg-dark-200 border-dark-100'
           : 'bg-white border-gray-200'
       }`}>
@@ -50,12 +50,12 @@ export default function PWAUpdateNotification({ pwaStatus }: PWAUpdateNotificati
             {/* Text */}
             <div className="flex-1 min-w-0">
               <h4 className={`font-semibold ${
-                state.theme === 'dark' ? 'text-gray-100' : 'text-gray-900'
+                isDark ? 'text-gray-100' : 'text-gray-900'
               }`}>
                 Update Available! 🎉
               </h4>
               <p className={`text-sm mt-1 ${
-                state.theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                isDark ? 'text-gray-400' : 'text-gray-600'
               }`}>
                 A new version of Samvada Studio is ready. Update now for the latest features and improvements.
               </p>
