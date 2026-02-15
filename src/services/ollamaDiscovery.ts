@@ -37,6 +37,9 @@ export interface OllamaConfiguration {
     enablePortScan: boolean;
     enableWiFiScan: boolean;
     scanTimeout: number;
+    // Safety caps and flags
+    maxCandidates?: number;
+    enableFullLANScan?: boolean;
   };
 }
 
@@ -59,6 +62,10 @@ const DEFAULT_CONFIG: OllamaConfiguration = {
     // 100ms chosen as a balance: much faster responsiveness while tolerating typical LAN jitter.
     // Advanced users can lower this in Admin > Ollama if their environment is very responsive.
     scanTimeout: 100,
+    // Maximum number of generated candidate endpoints to test (safety cap).
+    maxCandidates: 500,
+    // When false, LAN scans will use a focused window around the current IP instead of full /24.
+    enableFullLANScan: false,
   },
 };
 
@@ -218,13 +225,14 @@ class OllamaDiscoveryService {
     const url = this.getEndpointUrl(endpoint);
     const timeout = endpoint.timeout || this.config.networkDetection.scanTimeout;
 
+    let onExternalAbort: (() => void) | null = null;
     try {
       // Use AbortController for timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
       // If an external signal is provided, forward its abort to our controller
-      const onExternalAbort = () => controller.abort();
+      onExternalAbort = () => controller.abort();
       if (externalSignal) {
         if (externalSignal.aborted) {
           controller.abort();
@@ -248,7 +256,7 @@ class OllamaDiscoveryService {
       });
 
       clearTimeout(timeoutId);
-      if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
+      if (externalSignal && onExternalAbort) externalSignal.removeEventListener('abort', onExternalAbort);
       const responseTime = Date.now() - startTime;
 
       if (response.ok) {
@@ -271,7 +279,7 @@ class OllamaDiscoveryService {
       }
     } catch (error: any) {
       const responseTime = Date.now() - startTime;
-      if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
+      if (externalSignal && onExternalAbort) externalSignal.removeEventListener('abort', onExternalAbort);
       return {
         endpoint,
         responseTime,
@@ -297,11 +305,9 @@ class OllamaDiscoveryService {
 
       console.log(`🔍 LAN Scan: Scanning ${networkRanges.length} network ranges with ${commonPorts.length} ports each`);
 
-      // Scan network ranges
+      // Scan network ranges (focused window unless full scan explicitly enabled)
       for (const networkRange of networkRanges) {
         for (const port of commonPorts) {
-          // Limit concurrent requests to avoid overwhelming the network
-          const batchSize = 10;
           const rangeCandidates: OllamaEndpoint[] = [];
 
           for (let i = networkRange.start; i <= networkRange.end; i++) {
@@ -313,17 +319,17 @@ class OllamaDiscoveryService {
               priority: 100 + (i * 10) + port, // Lower priority for LAN scans
               label: `LAN: ${ip}:${port}`,
             });
-
-            // Process in batches
-            if (rangeCandidates.length >= batchSize) {
-              candidates.push(...rangeCandidates);
-              rangeCandidates.length = 0;
-            }
           }
 
-          // Add remaining candidates
           candidates.push(...rangeCandidates);
         }
+      }
+
+      // Safety: cap number of candidates to avoid storms
+      const maxCandidates = this.config.networkDetection.maxCandidates || 500;
+      if (candidates.length > maxCandidates) {
+        console.warn(`LAN scan generated ${candidates.length} candidates, truncating to ${maxCandidates}`);
+        candidates.length = maxCandidates;
       }
 
       console.log(`📡 Generated ${candidates.length} LAN scan candidates`);
@@ -404,23 +410,13 @@ class OllamaDiscoveryService {
       if (parts.length === 4) {
         const prefix = `${parts[0]}.${parts[1]}.${parts[2]}`;
 
-        // For home networks, scan common ranges
-        // 192.168.x.x networks: scan 1-254
-        // 10.x.x.x networks: scan 1-254
-        // 172.16-31.x.x networks: scan 1-254
-        if (parts[0] === '192' && parts[1] === '168') {
-          ranges.push({ prefix, start: 1, end: 254 });
-        } else if (parts[0] === '10') {
-          ranges.push({ prefix, start: 1, end: 254 });
-        } else if (parts[0] === '172' && parts[1] && parseInt(parts[1]) >= 16 && parseInt(parts[1]) <= 31) {
-          ranges.push({ prefix, start: 1, end: 254 });
-        } else {
-          // For other networks, scan a smaller range around the current IP
-          const currentOctet = parts[3] ? parseInt(parts[3]) : 100;
-          const start = Math.max(1, currentOctet - 10);
-          const end = Math.min(254, currentOctet + 10);
-          ranges.push({ prefix, start, end });
-        }
+        // For home networks, use a focused window by default to avoid creating full /24 scans.
+        // If the user explicitly enables full LAN scan (enableFullLANScan), a broader range will be used.
+        const currentOctet = parts[3] ? parseInt(parts[3]) : 100;
+        const window = this.config.networkDetection.enableFullLANScan ? 254 : 20;
+        const start = Math.max(1, currentOctet - window);
+        const end = Math.min(254, currentOctet + window);
+        ranges.push({ prefix, start, end });
       }
     }
 
@@ -687,7 +683,9 @@ class OllamaDiscoveryService {
   ): Promise<OllamaDiscoveryResult | null> {
     // Run tests in parallel with limited concurrency and abort remaining tests once a healthy
     // endpoint is found. This avoids waiting serially for many timeouts on large subnets.
-    const concurrency = Math.min(50, Math.max(8, Math.floor(candidates.length / 8) || 8));
+    // Conservative concurrency cap to avoid request storms. Scale with candidate count but keep low.
+    const configuredMax = 10; // safe default max concurrent requests
+    const concurrency = Math.min(configuredMax, Math.max(4, Math.floor(candidates.length / 40) || 4));
 
     let found: OllamaDiscoveryResult | null = null;
     const controllers: AbortController[] = [];
@@ -708,7 +706,7 @@ class OllamaDiscoveryService {
         const i = pickNext();
         if (i >= candidates.length) return;
 
-        const endpoint = candidates[i];
+        const endpoint = candidates[i]!;
         const controller = new AbortController();
         controllers.push(controller);
 

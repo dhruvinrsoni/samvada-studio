@@ -204,39 +204,37 @@ export const builtInChecks = {
     enabled: true,
     check: async (): Promise<HealthResult> => {
       try {
-        const { ollamaDiscovery } = await import('../services/ollamaDiscovery.js');
-        const result = await ollamaDiscovery.discoverEndpoint();
-        
-        if (result && result.isHealthy) {
+        // Use HealthService for a non-invasive check that does NOT trigger
+        // full network discovery. This prevents scans running automatically
+        // during general health monitoring. UI/admin flows can opt-in to
+        // discovery when needed.
+        const { HealthService } = await import('./healthService');
+        const res = await HealthService.checkOllamaConnectivity(undefined, false, false);
+
+        if (res.available) {
           return {
             isHealthy: true,
             issues: [],
             warnings: [],
             metadata: {
-              endpoint: `${result.endpoint.protocol}://${result.endpoint.host}:${result.endpoint.port}`,
-              responseTime: `${result.responseTime}ms`,
-              version: result.version,
-              label: result.endpoint.label || 'Default',
+              endpoint: 'configured or localhost',
+              models: res.models.map(m => m.name),
             },
           };
-        } else {
-          const errorMsg = result?.error || 'No healthy endpoints found';
-          return {
-            isHealthy: false,
-            issues: [
-              'Ollama not accessible',
-              errorMsg,
-            ],
-            warnings: [
-              'Configure custom Ollama endpoint in Admin Panel > Ollama tab',
-              'For mobile/LAN access, add your PC\'s IP address (e.g., 192.168.1.100:11434)',
-            ],
-          };
         }
+
+        return {
+          isHealthy: false,
+          issues: ['Ollama not accessible', res.error || 'No endpoint available'],
+          warnings: [
+            'Configure custom Ollama endpoint in Admin Panel > Ollama tab',
+            "For mobile/LAN access, add your PC's IP address (e.g., 192.168.1.100:11434)",
+          ],
+        };
       } catch (error: any) {
         return {
           isHealthy: false,
-          issues: [`Ollama health check failed: ${error.message}`],
+          issues: [`Ollama health check failed: ${error?.message || String(error)}`],
           warnings: ['Check Ollama configuration in Admin Panel'],
         };
       }

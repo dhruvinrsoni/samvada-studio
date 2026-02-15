@@ -147,8 +147,11 @@ export class HealthService {
       result.internet = false;
     }
 
-    // Check Ollama connectivity
-    const ollamaResult = await this.checkOllamaConnectivity();
+    // Check Ollama connectivity. Do NOT run auto-discovery during basic checks
+    // (prevents network scans / requests on app load). Higher-level UI/actions
+    // can opt-in to discovery by calling checkOllamaConnectivity without
+    // disabling discovery.
+    const ollamaResult = await this.checkOllamaConnectivity(undefined, false, false);
     result.ollama = ollamaResult.available;
     result.ollamaModels = ollamaResult.models.map(m => m.name);
 
@@ -192,43 +195,52 @@ export class HealthService {
    */
   static async checkOllamaConnectivity(
     customEndpoint?: string,
-    forceRefresh: boolean = false
+    forceRefresh: boolean = false,
+    allowAutoDiscovery: boolean = true
   ): Promise<OllamaConnectivityResult> {
-    // Use Ollama Discovery Service for smart endpoint detection
+    // Use Ollama Discovery Service for smart endpoint detection only when
+    // allowed. Consumers that run on app load (like basic connectivity checks)
+    // should set `allowAutoDiscovery` to false to avoid network scans.
     if (!customEndpoint) {
-      try {
-        const { ollamaDiscovery } = await import('../services/ollamaDiscovery.js');
-        const discoveryResult = await ollamaDiscovery.discoverEndpoint();
-        
-        if (discoveryResult && discoveryResult.isHealthy) {
-          // Discovery found a healthy endpoint!
-          const endpoint = `${discoveryResult.endpoint.protocol}://${discoveryResult.endpoint.host}:${discoveryResult.endpoint.port}`;
-          logDebug('HealthService', {
-            message: 'Ollama discovered via auto-detection',
-            endpoint,
-            responseTime: discoveryResult.responseTime,
-            version: discoveryResult.version,
-          });
+      if (allowAutoDiscovery) {
+        try {
+          const { ollamaDiscovery } = await import('../services/ollamaDiscovery.js');
+          const discoveryResult = await ollamaDiscovery.discoverEndpoint();
           
-          // Get models from discovered endpoint
-          return await this.fetchOllamaModels(endpoint, forceRefresh);
-        } else {
-          // No healthy endpoint found
-          return {
-            available: false,
-            models: [],
-            error: discoveryResult?.error || 'No Ollama endpoints found. Configure in Admin Panel > Ollama.',
-          };
+          if (discoveryResult && discoveryResult.isHealthy) {
+            // Discovery found a healthy endpoint!
+            const endpoint = `${discoveryResult.endpoint.protocol}://${discoveryResult.endpoint.host}:${discoveryResult.endpoint.port}`;
+            logDebug('HealthService', {
+              message: 'Ollama discovered via auto-detection',
+              endpoint,
+              responseTime: discoveryResult.responseTime,
+              version: discoveryResult.version,
+            });
+            
+            // Get models from discovered endpoint
+            return await this.fetchOllamaModels(endpoint, forceRefresh);
+          } else {
+            // No healthy endpoint found
+            return {
+              available: false,
+              models: [],
+              error: discoveryResult?.error || 'No Ollama endpoints found. Configure in Admin Panel > Ollama.',
+            };
+          }
+        } catch (error: any) {
+          console.warn('Ollama discovery failed:', error);
+          // Fallback to localhost if discovery fails
+          return await this.fetchOllamaModels('http://localhost:11434', forceRefresh);
         }
-      } catch (error: any) {
-        console.warn('Ollama discovery failed:', error);
-        // Fallback to localhost if discovery fails
+      } else {
+        // Auto-discovery disabled for this check — perform a quick localhost check
+        // (fetchOllamaModels will handle remote-hosted restrictions)
         return await this.fetchOllamaModels('http://localhost:11434', forceRefresh);
       }
     }
-    
+
     const endpoint = customEndpoint;
-    
+
     // For custom endpoints, use the provided endpoint
     return await this.fetchOllamaModels(endpoint, forceRefresh);
   }
