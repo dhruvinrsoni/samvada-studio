@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useChat } from '../../context/ChatContext';
-import Tooltip from './Tooltip';
 
 interface Command {
   id: string;
@@ -159,26 +158,27 @@ export default function CommandPalette() {
             </div>
           ) : (
             filteredCommands.map((cmd, index) => (
-              <Tooltip key={cmd.id} text={cmd.description} position="right">
-                <button
-                  className={`w-full flex items-center gap-3 px-3 sm:px-4 py-2 sm:py-3 text-left text-sm sm:text-base md:text-lg rounded-lg transition-all duration-150 ${{
-                    'bg-primary-500 text-white': index === selectedIndex,
-                    'hover:bg-gray-100': index !== selectedIndex && !isDark,
-                    'hover:bg-dark-300': index !== selectedIndex && isDark,
-                    'text-gray-900': index !== selectedIndex && !isDark,
-                    'text-gray-300': index !== selectedIndex && isDark,
-                  }}`}
-                  onClick={cmd.action}
-                >
-                  <span className="text-lg sm:text-xl">{cmd.icon}</span>
-                  <span className="flex-1 truncate">{cmd.name}</span>
-                  {cmd.shortcut && (
-                    <kbd className={`px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded ${isDark ? 'bg-dark-300 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
-                      {cmd.shortcut}
-                    </kbd>
-                  )}
-                </button>
-              </Tooltip>
+              <button
+                key={cmd.id}
+                onClick={cmd.action}
+                onMouseEnter={() => setSelectedIndex(index)}
+                className={`w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 text-left transition-colors ${
+                  index === selectedIndex
+                    ? isDark ? 'bg-theme-primary/20' : 'bg-theme-primary-light'
+                    : ''
+                } ${isDark ? 'hover:bg-dark-300' : 'hover:bg-gray-50'}`}
+              >
+                <span className="text-base sm:text-lg md:text-xl w-6 sm:w-8 text-center flex-shrink-0">{cmd.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className={`text-xs sm:text-sm md:text-base font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{cmd.name}</div>
+                  <div className={`text-[10px] sm:text-xs md:text-sm truncate ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{cmd.description}</div>
+                </div>
+                {cmd.shortcut && (
+                  <kbd className={`hidden sm:block px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded flex-shrink-0 ${isDark ? 'bg-dark-300 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
+                    {cmd.shortcut}
+                  </kbd>
+                )}
+              </button>
             ))
           )}
         </div>
