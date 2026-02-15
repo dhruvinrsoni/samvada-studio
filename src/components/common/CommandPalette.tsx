@@ -26,19 +26,35 @@ export default function CommandPalette() {
     { id: 'delete-chat', name: 'Delete Current Chat', description: 'Delete the active chat', icon: '🗑️', category: 'chat', action: () => { if (activeChat) { dispatch({ type: 'DELETE_CHAT', payload: activeChat.id }); } dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); } },
     { id: 'archive-chat', name: 'Archive Current Chat', description: 'Archive the active chat', icon: '📦', category: 'chat', action: () => { if (activeChat) { dispatch({ type: 'ARCHIVE_CHAT', payload: activeChat.id }); } dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); } },
     
+    // Additional Chat Commands
+    { id: 'archive-all-chats', name: 'Archive All Chats', description: 'Archive all chats', icon: '📦', category: 'chat', action: () => { dispatch({ type: 'ARCHIVE_CHATS', payload: state.chats.map(chat => chat.id) }); dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); } },
+    { id: 'delete-all-chats', name: 'Delete All Chats', description: 'Delete all chats', icon: '🗑️', category: 'chat', action: () => { dispatch({ type: 'DELETE_CHATS', payload: state.chats.map(chat => chat.id) }); dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); } },
+
     // Navigation Commands
     { id: 'search', name: 'Global Search', description: 'Search across all chats', icon: '🔍', category: 'navigation', shortcut: 'Ctrl+Shift+F', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); setTimeout(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F', ctrlKey: true, shiftKey: true })), 100); } },
     { id: 'toggle-sidebar', name: 'Toggle Context Panel', description: 'Show/hide context panel', icon: '📄', category: 'navigation', action: () => { dispatch({ type: 'TOGGLE_CONTEXT_PANEL_MODE' }); dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); } },
     
+    // Additional Navigation Commands
+    { id: 'go-to-templates', name: 'Go to Templates', description: 'Open the Templates Library', icon: '📂', category: 'navigation', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_TEMPLATES' }); } },
+    { id: 'go-to-starred', name: 'Go to Starred Messages', description: 'Open Starred Messages', icon: '⭐', category: 'navigation', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_STARRED_MODAL' }); } },
+
     // Settings Commands
     { id: 'admin', name: 'Open Settings', description: 'Configure LLM providers and preferences', icon: '⚙️', category: 'settings', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_ADMIN_PANEL' }); } },
     { id: 'theme-toggle', name: 'Toggle Dark/Light Mode', description: 'Switch between themes', icon: '🌓', category: 'settings', action: () => { const newMode = state.themeSettings.mode === 'dark' ? 'light' : 'dark'; dispatch({ type: 'UPDATE_THEME_SETTINGS', payload: { mode: newMode } }); dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); } },
     { id: 'shortcuts', name: 'Keyboard Shortcuts', description: 'View all keyboard shortcuts', icon: '⌨️', category: 'settings', shortcut: '?', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_SHORTCUTS_HELP' }); } },
     
+    // Additional Settings Commands
+    { id: 'change-accent-color', name: 'Change Accent Color', description: 'Change the app accent color', icon: '🎨', category: 'settings', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_THEME_SETTINGS_MODAL' }); } },
+    { id: 'change-font-size', name: 'Change Font Size', description: 'Adjust the font size', icon: '🔠', category: 'settings', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_THEME_SETTINGS_MODAL' }); } },
+
     // Export Commands
     { id: 'export-md', name: 'Export as Markdown', description: 'Export current chat as .md file', icon: '📝', category: 'export', action: () => { if (activeChat) { downloadFile(exportChat(activeChat.id, 'markdown'), `${activeChat.title}.md`, 'text/markdown'); } dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); } },
     { id: 'export-json', name: 'Export as JSON', description: 'Export current chat as .json file', icon: '📋', category: 'export', action: () => { if (activeChat) { downloadFile(exportChat(activeChat.id, 'json'), `${activeChat.title}.json`, 'application/json'); } dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); } },
     { id: 'export-html', name: 'Export as HTML', description: 'Export current chat as .html file', icon: '🌐', category: 'export', action: () => { if (activeChat) { downloadFile(exportChat(activeChat.id, 'html'), `${activeChat.title}.html`, 'text/html'); } dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); } },
+    
+    // Additional Export Commands
+    { id: 'export-all-md', name: 'Export All Chats as Markdown', description: 'Export all chats as .md files', icon: '📝', category: 'export', action: () => { state.chats.forEach(chat => { downloadFile(exportChat(chat.id, 'markdown'), `${chat.title}.md`, 'text/markdown'); }); dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); } },
+    { id: 'export-all-json', name: 'Export All Chats as JSON', description: 'Export all chats as .json files', icon: '📋', category: 'export', action: () => { state.chats.forEach(chat => { downloadFile(exportChat(chat.id, 'json'), `${chat.title}.json`, 'application/json'); }); dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); } },
     
     // Template Commands
     { id: 'templates', name: 'Prompt Templates', description: 'Browse and use saved templates', icon: '📚', category: 'templates', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_TEMPLATES_MODAL' }); } },
