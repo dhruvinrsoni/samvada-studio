@@ -15,7 +15,7 @@ interface PWAUpdateNotificationProps {
 }
 
 export default function PWAUpdateNotification({ pwaStatus }: PWAUpdateNotificationProps) {
-  const { state, isDark } = useChat();
+  const { isDark } = useChat();
   const { needsUpdate, updateApp, isUpdating } = pwaStatus;
 
   // Don't show if no update available

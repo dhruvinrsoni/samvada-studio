@@ -73,6 +73,9 @@ const initialState: AppState = {
   isTemplatesOpen: false,
   isExportModalOpen: false,
   isStarredModalOpen: false,
+  // Theme settings modal
+  isThemeSettingsOpen: false,
+  themeSettingsActiveTab: 'appearance',
   // NEW: Streaming
   isStreaming: false,
   streamingMessageId: null,
@@ -629,6 +632,12 @@ function chatReducer(state: AppState, action: ChatAction): AppState {
     // NEW: Voice Settings
     case 'UPDATE_VOICE_SETTINGS':
       return { ...state, voiceSettings: { ...state.voiceSettings, ...action.payload } };
+
+    case 'TOGGLE_THEME_SETTINGS_MODAL':
+      return { ...state, isThemeSettingsOpen: !state.isThemeSettingsOpen };
+
+    case 'SET_THEME_SETTINGS_TAB':
+      return { ...state, themeSettingsActiveTab: action.payload };
 
     // NEW: Theme Settings
     case 'UPDATE_THEME_SETTINGS':

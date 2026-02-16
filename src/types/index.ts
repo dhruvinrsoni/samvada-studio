@@ -518,6 +518,9 @@ export interface AppState {
   isTemplatesOpen: boolean;
   isExportModalOpen: boolean;
   isStarredModalOpen: boolean;
+  // Theme settings modal state
+  isThemeSettingsOpen?: boolean;
+  themeSettingsActiveTab?: 'appearance' | 'colors' | 'advanced';
   // NEW: Streaming
   isStreaming: boolean;
   streamingMessageId: string | null;
@@ -635,6 +638,8 @@ export type ChatAction =
   | { type: 'TOGGLE_COMMAND_PALETTE' }
   | { type: 'TOGGLE_SHORTCUTS_HELP' }
   | { type: 'TOGGLE_TEMPLATES_MODAL' }
+  | { type: 'TOGGLE_THEME_SETTINGS_MODAL' }
+  | { type: 'SET_THEME_SETTINGS_TAB'; payload: 'appearance' | 'colors' | 'advanced' }
   | { type: 'TOGGLE_EXPORT_MODAL' }
   | { type: 'TOGGLE_STARRED_MODAL' }
   | { type: 'TOGGLE_GLOBAL_SEARCH' }

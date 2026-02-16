@@ -37,7 +37,8 @@ function AppContent() {
   
   const [quotedText, setQuotedText] = useState<string>('');
   const [templateContent, setTemplateContent] = useState<string>('');
-  const [isThemeSettingsOpen, setIsThemeSettingsOpen] = useState(false);
+  // Theme settings modal is managed by global context now
+  const isThemeSettingsOpen = state.isThemeSettingsOpen;
   const [minimizedOllamaWarnings, setMinimizedOllamaWarnings] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -336,7 +337,7 @@ function AppContent() {
           {/* Theme Settings */}
           {!isMobile && (
             <button
-              onClick={() => setIsThemeSettingsOpen(true)}
+              onClick={() => { dispatch({ type: 'SET_THEME_SETTINGS_TAB', payload: 'appearance' }); dispatch({ type: 'TOGGLE_THEME_SETTINGS_MODAL' }); }}
               className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
                 isDark 
                   ? 'text-gray-400 hover:bg-dark-100' 
@@ -429,7 +430,8 @@ function AppContent() {
 
             <button
               onClick={() => {
-                setIsThemeSettingsOpen(true);
+                dispatch({ type: 'SET_THEME_SETTINGS_TAB', payload: 'appearance' });
+                dispatch({ type: 'TOGGLE_THEME_SETTINGS_MODAL' });
                 setIsMobileMenuOpen(false);
               }}
               className={`w-full text-left p-3 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300 text-gray-200' : 'border-light-400 bg-white text-gray-800'}`}
@@ -516,7 +518,7 @@ function AppContent() {
       <ErrorBoundary><TemplatesLibrary onSelectTemplate={handleSelectTemplate} /></ErrorBoundary>
       <ErrorBoundary><ExportModal /></ErrorBoundary>
       <ErrorBoundary>{state.isStarredModalOpen && <StarredModal onClose={() => dispatch({ type: 'TOGGLE_STARRED_MODAL' })} />}</ErrorBoundary>
-      <ErrorBoundary>{isThemeSettingsOpen && <ThemeSettingsModal onClose={() => setIsThemeSettingsOpen(false)} />}</ErrorBoundary>
+      <ErrorBoundary>{isThemeSettingsOpen && <ThemeSettingsModal onClose={() => dispatch({ type: 'TOGGLE_THEME_SETTINGS_MODAL' })} />}</ErrorBoundary>
 
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onRemove={removeToast} position="top-right" />

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { createLLMReport } from '../../utils/debug';
 import { getAllThemePresets, getThemePreset } from '../../utils/theme';
@@ -11,7 +11,12 @@ interface ThemeSettingsModalProps {
 
 export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps) {
   const { state, dispatch } = useChat();
-  const [activeTab, setActiveTab] = useState<'appearance' | 'colors' | 'advanced'>('appearance');
+  const [activeTab, setActiveTab] = useState<'appearance' | 'colors' | 'advanced'>(state.themeSettingsActiveTab || 'appearance');
+
+  // Keep local activeTab in sync with global state when opened programmatically
+  useEffect(() => {
+    if (state.themeSettingsActiveTab) setActiveTab(state.themeSettingsActiveTab);
+  }, [state.themeSettingsActiveTab]);
   const [customColors, setCustomColors] = useState<CustomTheme>(
     state.themeSettings.customColors || {
       primary: '#3b82f6',

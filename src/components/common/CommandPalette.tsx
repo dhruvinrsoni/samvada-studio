@@ -44,7 +44,7 @@ export default function CommandPalette() {
     { id: 'shortcuts', name: 'Keyboard Shortcuts', description: 'View all keyboard shortcuts', icon: '⌨️', category: 'settings', shortcut: '?', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_SHORTCUTS_HELP' }); } },
     
     // Additional Settings Commands
-    { id: 'change-accent-color', name: 'Change Accent Color', description: 'Change the app accent color', icon: '🎨', category: 'settings', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'TOGGLE_THEME_SETTINGS_MODAL' }); } },
+    { id: 'change-accent-color', name: 'Change Accent Color', description: 'Change the app accent color', icon: '🎨', category: 'settings', action: () => { dispatch({ type: 'TOGGLE_COMMAND_PALETTE' }); dispatch({ type: 'SET_THEME_SETTINGS_TAB', payload: 'appearance' }); dispatch({ type: 'TOGGLE_THEME_SETTINGS_MODAL' }); } },
     { id: 'change-font-size', name: 'Change Font Size', description: 'Cycle font sizes (xs → small → medium → large → xl)', icon: '🔠', category: 'settings', action: () => {
         // Cycle through font sizes and apply immediately without opening modal
         const sizes: Array<'xs'|'small'|'medium'|'large'|'xl'> = ['xs','small','medium','large','xl'];
