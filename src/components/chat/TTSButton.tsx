@@ -41,6 +41,8 @@ export default function TTSButton({ text }: TTSButtonProps) {
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
   const estimatedDurationRef = useRef<number>(0);
+  const currentTextRef = useRef<string>('');
+  const charPositionRef = useRef<number>(0);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -81,29 +83,33 @@ export default function TTSButton({ text }: TTSButtonProps) {
     return (textLength / charsPerSecond) * 1000;
   }, []);
 
-  const startProgressTracking = useCallback((duration: number) => {
+  const startProgressTracking = useCallback((duration: number, startPos: number = 0) => {
     startTimeRef.current = Date.now();
     estimatedDurationRef.current = duration;
+    charPositionRef.current = startPos;
     if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
     progressIntervalRef.current = setInterval(() => {
       const elapsed = Date.now() - startTimeRef.current;
       const pct = Math.min((elapsed / duration) * 100, 100);
       setProgress(pct);
+      // Update estimated character position
+      const totalChars = currentTextRef.current.length;
+      charPositionRef.current = Math.floor((startPos + (pct / 100) * (totalChars - startPos)));
       if (pct >= 100 && progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
       }
     }, 100);
   }, []);
 
-  const handlePlay = useCallback(() => {
+  const handlePlay = useCallback((fromPosition: number = 0) => {
     if (!window.speechSynthesis) return;
 
     if (ttsState === 'paused') {
       window.speechSynthesis.resume();
       setTtsState('speaking');
-      // Resume progress tracking
+      // Resume progress tracking from current position
       const remaining = estimatedDurationRef.current * (1 - progress / 100);
-      startProgressTracking(remaining);
+      startProgressTracking(remaining, charPositionRef.current);
       return;
     }
 
@@ -111,7 +117,11 @@ export default function TTSButton({ text }: TTSButtonProps) {
     window.speechSynthesis.cancel();
 
     const cleanText = stripMarkdown(text);
-    const utterance = new SpeechSynthesisUtterance(cleanText);
+    currentTextRef.current = cleanText;
+    
+    // Resume from specific position if provided
+    const textToSpeak = fromPosition > 0 ? cleanText.slice(fromPosition) : cleanText;
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.rate = speed;
     utterance.pitch = state.voiceSettings.ttsPitch;
 
@@ -123,19 +133,21 @@ export default function TTSButton({ text }: TTSButtonProps) {
 
     utterance.onstart = () => {
       setTtsState('speaking');
-      const duration = estimateDuration(cleanText.length, speed);
-      startProgressTracking(duration);
+      const duration = estimateDuration(textToSpeak.length, speed);
+      startProgressTracking(duration, fromPosition);
     };
 
     utterance.onend = () => {
       setTtsState('idle');
       setProgress(0);
+      charPositionRef.current = 0;
       if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
     };
 
     utterance.onerror = () => {
       setTtsState('idle');
       setProgress(0);
+      charPositionRef.current = 0;
       if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
     };
 
@@ -158,18 +170,20 @@ export default function TTSButton({ text }: TTSButtonProps) {
     if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
   }, []);
 
-  const cycleSpeed = useCallback(() => {
-    const idx = SPEEDS.indexOf(speed);
-    const next = SPEEDS[(idx + 1) % SPEEDS.length] ?? 1;
+  const cycleSpeed = useCallback((newSpeed?: PlaybackSpeed) => {
+    const next = newSpeed ?? SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length] ?? 1;
     setSpeed(next);
 
-    // If currently speaking, restart with new speed
+    // If currently speaking, resume from current position with new speed
     if (ttsState === 'speaking') {
+      const currentPosition = charPositionRef.current;
       window.speechSynthesis.cancel();
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
       // Small delay to let cancel complete
       setTimeout(() => {
-        const cleanText = stripMarkdown(text);
-        const utterance = new SpeechSynthesisUtterance(cleanText);
+        const cleanText = currentTextRef.current || stripMarkdown(text);
+        const textToSpeak = cleanText.slice(currentPosition);
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
         utterance.rate = next as number;
         utterance.pitch = state.voiceSettings.ttsPitch as number;
         if (state.voiceSettings.ttsVoice) {
@@ -180,18 +194,20 @@ export default function TTSButton({ text }: TTSButtonProps) {
         utterance.onend = () => {
           setTtsState('idle');
           setProgress(0);
+          charPositionRef.current = 0;
           if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
         };
         utterance.onerror = () => {
           setTtsState('idle');
           setProgress(0);
+          charPositionRef.current = 0;
           if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
         };
         utteranceRef.current = utterance;
         window.speechSynthesis.speak(utterance);
         setTtsState('speaking');
-        const duration = estimateDuration(cleanText.length, next as number);
-        startProgressTracking(duration);
+        const duration = estimateDuration(textToSpeak.length, next as number);
+        startProgressTracking(duration, currentPosition);
       }, 50);
     }
   }, [speed, ttsState, text, state.voiceSettings, estimateDuration, startProgressTracking]);
@@ -199,20 +215,42 @@ export default function TTSButton({ text }: TTSButtonProps) {
   const handleShareText = useCallback(async () => {
     const cleanText = stripMarkdown(text);
 
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'AI Response',
-          text: cleanText,
-        });
-        return;
-      } catch {
-        // User cancelled or share failed, fall through to clipboard
+    // Try to generate audio file for sharing
+    try {
+      // Attempt to use MediaRecorder to capture audio (limited browser support)
+      // Most browsers don't allow capturing speechSynthesis output
+      // So we'll fallback to text sharing with note about TTS
+      
+      if (navigator.share) {
+        // Create a text file with TTS-ready content
+       const blob = new Blob([cleanText], { type: 'text/plain' });
+        const file = new File([blob], 'ai-response.txt', { type: 'text/plain' });
+        
+        // Try sharing the file
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'AI Response (Text for TTS)',
+            text: 'Use your device\'s text-to-speech feature to listen',
+          });
+          return;
+        }
       }
+      
+      // Fallback: download as text file
+      const blob = new Blob([cleanText], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ai-response-tts.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      // Final fallback: copy to clipboard
+      await navigator.clipboard.writeText(cleanText);
     }
-
-    // Fallback: copy clean text to clipboard
-    await navigator.clipboard.writeText(cleanText);
   }, [text]);
 
   // Don't render if TTS is disabled or speechSynthesis is unavailable
@@ -232,7 +270,7 @@ export default function TTSButton({ text }: TTSButtonProps) {
     <div className="flex items-center gap-1 relative">
       {/* Play / Pause / Stop button */}
       <button
-        onClick={ttsState === 'idle' ? handlePlay : ttsState === 'speaking' ? handlePause : handlePlay}
+        onClick={() => ttsState === 'idle' ? handlePlay() : ttsState === 'speaking' ? handlePause() : handlePlay()}
         className={`${buttonBase} ${ttsState !== 'idle' ? activeTheme : buttonTheme} relative overflow-hidden`}
         title={
           ttsState === 'idle'
@@ -244,10 +282,16 @@ export default function TTSButton({ text }: TTSButtonProps) {
       >
         {/* Progress bar background */}
         {ttsState !== 'idle' && (
-          <span
-            className="absolute inset-0 bg-theme-primary/10 transition-all duration-200"
-            style={{ width: `${progress}%` }}
-          />
+          <>
+            <span
+              className="absolute inset-0 bg-theme-primary/30 transition-all duration-200"
+              style={{ width: `${progress}%` }}
+            />
+            <span
+              className="absolute bottom-0 left-0 right-0 h-1 bg-theme-primary transition-all duration-200"
+              style={{ width: `${progress}%` }}
+            />
+          </>
         )}
         <span className="relative z-10 flex items-center gap-1">
           {ttsState === 'idle' && '🔊'}
@@ -276,7 +320,7 @@ export default function TTSButton({ text }: TTSButtonProps) {
       <div className="relative" ref={speedMenuRef}>
         <button
           onClick={() => setShowSpeedMenu(!showSpeedMenu)}
-          onDoubleClick={cycleSpeed}
+          onDoubleClick={() => cycleSpeed()}
           className={`${buttonBase} ${buttonTheme} tabular-nums font-mono text-[10px] sm:text-xs min-w-[40px] sm:min-w-[48px] justify-center`}
           title={`Playback speed: ${speed}x (click to choose, double-click to cycle)`}
         >
@@ -294,16 +338,8 @@ export default function TTSButton({ text }: TTSButtonProps) {
               <button
                 key={s}
                 onClick={() => {
-                  setSpeed(s);
                   setShowSpeedMenu(false);
-                  // If speaking, restart with new speed
-                  if (ttsState === 'speaking') {
-                    handleStop();
-                    setTimeout(() => {
-                      setSpeed(s);
-                      handlePlay();
-                    }, 50);
-                  }
+                  cycleSpeed(s);
                 }}
                 className={`w-full px-3 py-1.5 text-xs text-left hover:${
                   isDark ? 'bg-dark-300' : 'bg-gray-100'
@@ -320,9 +356,9 @@ export default function TTSButton({ text }: TTSButtonProps) {
       <button
         onClick={handleShareText}
         className={`${buttonBase} ${buttonTheme}`}
-        title="Share response text"
+        title="Download response text (TTS-ready)"
       >
-        📤 <span className="hidden sm:inline">Share</span>
+        💾 <span className="hidden sm:inline">Download</span>
       </button>
     </div>
   );

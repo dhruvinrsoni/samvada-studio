@@ -24,6 +24,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
   const [isAddingProvider, setIsAddingProvider] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [pendingEditProvider, setPendingEditProvider] = useState<LLMProviderConfig | 'add' | null>(null);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const isDark =
     state.themeSettings.mode === 'dark' ||
     (state.themeSettings.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -125,6 +126,27 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
 
     fetchCiStatus();
     return () => controller.abort();
+  }, []);
+
+  // Load available TTS voices
+  useEffect(() => {
+    const loadVoices = () => {
+      const availableVoices = window.speechSynthesis?.getVoices() || [];
+      setVoices(availableVoices);
+    };
+    
+    loadVoices();
+    
+    // Voices may load asynchronously
+    if (window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+    
+    return () => {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+    };
   }, []);
 
   if (!state.isAdminPanelOpen) return null;
@@ -555,6 +577,125 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                         <option key={p.id} value={p.id}>{p.name}</option>
                       ))}
                     </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Voice & TTS Settings */}
+              <div className={`p-4 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300' : 'border-light-400 bg-light-200'}`}>
+                <h3 className={`font-medium mb-4 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                  Voice & Text-to-Speech
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Text-to-Speech (TTS)
+                      </p>
+                      <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                        Read AI responses aloud with natural voice
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={state.voiceSettings.isTTSEnabled}
+                        onChange={(e) => dispatch({ type: 'UPDATE_VOICE_SETTINGS', payload: { isTTSEnabled: e.target.checked } })}
+                        className="sr-only peer"
+                      />
+                      <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme-primary ${
+                        isDark ? 'bg-gray-600' : 'bg-gray-300'
+                      }`}></div>
+                    </label>
+                  </div>
+
+                  {state.voiceSettings.isTTSEnabled && (
+                    <>
+                      <div className="flex flex-col gap-2">
+                        <label className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Voice
+                        </label>
+                        <select
+                          value={state.voiceSettings.ttsVoice}
+                          onChange={(e) => dispatch({ type: 'UPDATE_VOICE_SETTINGS', payload: { ttsVoice: e.target.value } })}
+                          className={`px-3 py-2 rounded-lg border ${
+                            isDark 
+                              ? 'bg-dark-200 border-dark-100 text-gray-200' 
+                              : 'bg-white border-light-400 text-gray-800'
+                          }`}
+                        >
+                          <option value="">Default System Voice</option>
+                          {voices.map((voice) => (
+                            <option key={voice.name} value={voice.name}>
+                              {voice.name} ({voice.lang}) {voice.localService ? '🖥️' : '☁️'}
+                            </option>
+                          ))}
+                        </select>
+                        <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                          🖥️ = Local voice, ☁️ = Network voice. Recommended: Google voices for best quality.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-2">
+                          <label className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                            Speed
+                          </label>
+                          <input
+                            type="range"
+                            min="0.5"
+                            max="2"
+                            step="0.1"
+                            value={state.voiceSettings.ttsRate}
+                            onChange={(e) => dispatch({ type: 'UPDATE_VOICE_SETTINGS', payload: { ttsRate: parseFloat(e.target.value) } })}
+                            className="w-full accent-theme-primary"
+                          />
+                          <span className={`text-xs text-center ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                            {state.voiceSettings.ttsRate}x
+                          </span>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                            Pitch
+                          </label>
+                          <input
+                            type="range"
+                            min="0.5"
+                            max="2"
+                            step="0.1"
+                            value={state.voiceSettings.ttsPitch}
+                            onChange={(e) => dispatch({ type: 'UPDATE_VOICE_SETTINGS', payload: { ttsPitch: parseFloat(e.target.value) } })}
+                            className="w-full accent-theme-primary"
+                          />
+                          <span className={`text-xs text-center ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                            {state.voiceSettings.ttsPitch}x
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Voice Input (Speech-to-Text)
+                      </p>
+                      <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                        Dictate your prompts using voice (Ctrl+M)
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={state.voiceSettings.isVoiceInputEnabled}
+                        onChange={(e) => dispatch({ type: 'UPDATE_VOICE_SETTINGS', payload: { isVoiceInputEnabled: e.target.checked } })}
+                        className="sr-only peer"
+                      />
+                      <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme-primary ${
+                        isDark ? 'bg-gray-600' : 'bg-gray-300'
+                      }`}></div>
+                    </label>
                   </div>
                 </div>
               </div>
