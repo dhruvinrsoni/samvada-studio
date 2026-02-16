@@ -5,6 +5,7 @@ import { getFirstWords, formatTimestamp, formatDuration } from '../../utils/help
 import { regenerateResponse } from '../../utils/llmService';
 import type { PromptResponse } from '../../types';
 import MessageContent from './MessageContent';
+import TTSButton from './TTSButton';
 
 interface PromptResponseItemProps {
   chatId: string;
@@ -487,6 +488,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
               >
                 📋 <span className="hidden xs:inline">Copy</span>
               </button>
+              <TTSButton text={activeResponse?.content || ''} />
               {onQuote && activeResponse && (
                 <button
                   onClick={() => {
