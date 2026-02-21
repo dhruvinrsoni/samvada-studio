@@ -430,6 +430,29 @@ export const OllamaConfigPanel: React.FC = () => {
           </label>
         </div>
 
+        {/* Deployment Mode Warning */}
+        {ollamaDiscovery.isAppDeployed() && ollamaDiscovery.isAppHTTPS() && (
+          <div className={`p-3 rounded-lg mb-3 border text-xs ${
+            isDark 
+              ? 'bg-yellow-900/20 border-yellow-700 text-yellow-300' 
+              : 'bg-yellow-50 border-yellow-300 text-yellow-800'
+          }`}>
+            <div className="flex gap-2">
+              <span className="flex-shrink-0">⚠️</span>
+              <div className="space-y-1">
+                <p className="font-semibold">Deployed App - Limited Local Network Access</p>
+                <p>This app is deployed on GitHub Pages. Due to HTTPS → HTTP restrictions, automatic LAN scanning won't work.</p>
+                <p className="mt-2"><strong>Solutions:</strong></p>
+                <ul className="list-disc list-inside ml-1 space-y-0.5">
+                  <li>Enable <strong>mDNS discovery</strong> by running: <code className="bg-black/30 px-1 rounded">sudo scutil -r ollama.local</code></li>
+                  <li>Or manually add your Ollama host below (use mDNS name: <code className="bg-black/30 px-1 rounded">ollama.local</code>)</li>
+                  <li>Or use a local proxy/tunnel to enable HTTP on HTTPS</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-2 mb-3">
           <button
             onClick={handleDiscovery}
@@ -516,6 +539,11 @@ export const OllamaConfigPanel: React.FC = () => {
         {/* Add endpoint form */}
         {showAddForm && (
           <div className={`mt-3 p-3 rounded-lg space-y-3 ${isDark ? 'bg-dark-200' : 'bg-light-300'}`}>
+            {ollamaDiscovery.isAppDeployed() && ollamaDiscovery.isAppHTTPS() && (
+              <p className={`text-xs ${textMuted}`}>
+                💡 <strong>Tip:</strong> For deployed apps, use mDNS names like <code className={`px-1 rounded text-xs ${isDark ? 'bg-dark-100' : 'bg-white'}`}>ollama.local</code> instead of IP addresses (which are blocked by HTTPS/HTTP policies).
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className={labelClass}>Host / IP *</label>
@@ -523,7 +551,7 @@ export const OllamaConfigPanel: React.FC = () => {
                   type="text"
                   value={newEndpoint.host}
                   onChange={(e) => setNewEndpoint({ ...newEndpoint, host: e.target.value })}
-                  placeholder="192.168.1.100"
+                  placeholder={ollamaDiscovery.isAppDeployed() ? 'ollama.local' : '192.168.1.100'}
                   className={inputClass}
                 />
               </div>

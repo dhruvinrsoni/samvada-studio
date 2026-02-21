@@ -479,11 +479,64 @@ class OllamaDiscoveryService {
   }
 
   /**
+   * Check if app is deployed (vs running locally)
+   * Returns true if running on a deployed domain (GitHub Pages, Vercel, etc.)
+   */
+  isAppDeployed(): boolean {
+    if (typeof window === 'undefined') return false;
+    const hostname = window.location.hostname;
+    return !['localhost', '127.0.0.1', 'l.ocalhost'].some(h => hostname.includes(h));
+  }
+
+  /**
+   * Check if app is running over HTTPS (blocks mixed content to HTTP)
+   */
+  isAppHTTPS(): boolean {
+    if (typeof window === 'undefined') return false;
+    return window.location.protocol === 'https:';
+  }
+
+  /**
+   * Get mDNS hostname candidates (Bonjour service discovery)
+   */
+  private getMDNSCandidates(priority: number): { candidates: OllamaEndpoint[]; nextPriority: number } {
+    const candidates: OllamaEndpoint[] = [];
+    let p = priority;
+    
+    // Common mDNS hostnames for Ollama
+    const mdnsNames = [
+      'ollama',           // Direct name
+      'ollama.local',     // Standard mDNS
+      'localhost-ollama', // Some setups use this
+      'ollama-server',    // Alternative naming
+      'local.ollama',     // Reverse variation
+    ];
+
+    const ports = [11434, 11435, 8080];
+
+    for (const name of mdnsNames) {
+      for (const port of ports) {
+        candidates.push({
+          host: name,
+          port,
+          protocol: 'http',
+          priority: p++,
+          label: `mDNS: ${name}:${port}`,
+        });
+      }
+    }
+
+    return { candidates, nextPriority: p };
+  }
+
+  /**
    * Generate candidate endpoints for auto-discovery
    */
   private async generateCandidateEndpoints(): Promise<OllamaEndpoint[]> {
     const candidates: OllamaEndpoint[] = [];
     let priority = 0;
+    const isDeployed = this.isAppDeployed();
+    const isHTTPS = this.isAppHTTPS();
 
     // 1. Cached successful endpoint (highest priority)
     if (this.cachedEndpoint) {
@@ -495,7 +548,14 @@ class OllamaDiscoveryService {
       candidates.push({ ...endpoint, priority: priority++ });
     });
 
-    // 3. Current hostname (smart detection for LAN access)
+    // 3. For deployed HTTPS apps: Try mDNS first (before localhost, which will fail)
+    if (isDeployed && isHTTPS) {
+      const { candidates: mdnsCandidates, nextPriority } = this.getMDNSCandidates(priority);
+      candidates.push(...mdnsCandidates);
+      priority = nextPriority;
+    }
+
+    // 4. Current hostname (smart detection for LAN access)
     if (typeof window !== 'undefined') {
       const currentHost = window.location.hostname;
       if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
@@ -509,7 +569,7 @@ class OllamaDiscoveryService {
       }
     }
 
-    // 4. Standard localhost
+    // 5. Standard localhost
     candidates.push({
       host: 'localhost',
       port: 11434,
@@ -526,8 +586,15 @@ class OllamaDiscoveryService {
       label: 'Localhost IP',
     });
 
-    // 5. Comprehensive LAN scanning (if enabled)
-    if (this.config.networkDetection.enableLANScan) {
+    // 6. For local apps: Try mDNS after localhost
+    if (!isDeployed || !isHTTPS) {
+      const { candidates: mdnsCandidates, nextPriority } = this.getMDNSCandidates(priority);
+      candidates.push(...mdnsCandidates);
+      priority = nextPriority;
+    }
+
+    // 7. Comprehensive LAN scanning (if enabled AND not HTTPS deployed, due to mixed content)
+    if (this.config.networkDetection.enableLANScan && (!isDeployed || !isHTTPS)) {
       try {
         const lanCandidates = await this.performLANScan();
         candidates.push(...lanCandidates);
@@ -536,8 +603,8 @@ class OllamaDiscoveryService {
       }
     }
 
-    // 6. WiFi network scanning (if enabled)
-    if (this.config.networkDetection.enableWiFiScan) {
+    // 8. WiFi network scanning (if enabled AND not HTTPS deployed)
+    if (this.config.networkDetection.enableWiFiScan && (!isDeployed || !isHTTPS)) {
       try {
         const wifiCandidates = await this.performWiFiScan();
         candidates.push(...wifiCandidates);
