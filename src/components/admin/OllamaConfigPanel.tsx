@@ -39,6 +39,10 @@ export const OllamaConfigPanel: React.FC = () => {
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showNetworkSettings, setShowNetworkSettings] = useState(false);
+  const [expandedEndpoints, setExpandedEndpoints] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('ollama-expanded-endpoints');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
   const [newEndpoint, setNewEndpoint] = useState({
     host: '',
     port: 11434,
@@ -78,6 +82,20 @@ export const OllamaConfigPanel: React.FC = () => {
   useEffect(() => {
     refreshStatuses();
   }, [refreshStatuses]);
+
+  // ---------- Toggle endpoint expansion with persistence ----------
+  const toggleEndpointExpanded = (baseUrl: string) => {
+    setExpandedEndpoints(prev => {
+      const updated = new Set(prev);
+      if (updated.has(baseUrl)) {
+        updated.delete(baseUrl);
+      } else {
+        updated.add(baseUrl);
+      }
+      localStorage.setItem('ollama-expanded-endpoints', JSON.stringify(Array.from(updated)));
+      return updated;
+    });
+  };
 
   // ---------- Run full discovery (LAN/WiFi/Port scans) ----------
   const handleDiscovery = async () => {
@@ -304,89 +322,101 @@ export const OllamaConfigPanel: React.FC = () => {
           </p>
         ) : (
           <div className="space-y-3">
-            {endpointStatuses.map((ep) => (
-              <div key={ep.baseUrl} className={`rounded-lg border p-3 ${
-                ep.isHealthy
-                  ? isDark ? 'border-green-800/50 bg-green-900/10' : 'border-green-300 bg-green-50'
-                  : isDark ? 'border-red-800/50 bg-red-900/10' : 'border-red-200 bg-red-50'
-              }`}>
-                {/* Endpoint header row */}
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${ep.isHealthy ? 'bg-green-500' : 'bg-red-500'}`} />
-                    <span className={`text-sm font-mono truncate ${textPrimary}`}>{ep.baseUrl}</span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                    {ep.isHealthy && (
-                      <span className={`text-xs ${textMuted}`}>{ep.responseTime}ms</span>
-                    )}
-                    {ep.version && (
-                      <span className={`text-xs px-1.5 py-0.5 rounded ${isDark ? 'bg-dark-100 text-gray-400' : 'bg-light-300 text-gray-600'}`}>
-                        v{ep.version}
-                      </span>
-                    )}
-                  </div>
+            {endpointStatuses.map((ep) => {
+              const isExpanded = expandedEndpoints.has(ep.baseUrl);
+              return (
+                <div key={ep.baseUrl} className={`rounded-lg border p-3 ${
+                  ep.isHealthy
+                    ? isDark ? 'border-green-800/50 bg-green-900/10' : 'border-green-300 bg-green-50'
+                    : isDark ? 'border-red-800/50 bg-red-900/10' : 'border-red-200 bg-red-50'
+                }`}>
+                  {/* Endpoint header row - clickable to toggle */}
+                  <button
+                    onClick={() => toggleEndpointExpanded(ep.baseUrl)}
+                    className="w-full text-left flex items-center justify-between mb-1 hover:opacity-75 transition-opacity"
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className={`flex-shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${ep.isHealthy ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <span className={`text-sm font-mono truncate ${textPrimary}`}>{ep.baseUrl}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                      {ep.isHealthy && (
+                        <span className={`text-xs ${textMuted}`}>{ep.responseTime}ms</span>
+                      )}
+                      {ep.version && (
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${isDark ? 'bg-dark-100 text-gray-400' : 'bg-light-300 text-gray-600'}`}>
+                          v{ep.version}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+
+                  {/* Expandable content */}
+                  {isExpanded && (
+                    <>
+                      {/* Error message */}
+                      {!ep.isHealthy && ep.error && (
+                        <p className={`text-xs mt-2 ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                          {ep.error === 'Timeout' ? '⏱ Connection timed out' : `✗ ${ep.error}`}
+                        </p>
+                      )}
+
+                      {/* Models list */}
+                      {ep.isHealthy && ep.models.length > 0 && (
+                        <div className="mt-2">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className={`text-xs font-medium ${textMuted}`}>
+                              {ep.models.length} model{ep.models.length !== 1 ? 's' : ''}
+                            </span>
+                            <button
+                              onClick={() => handleImportAllModels(ep.baseUrl, ep.models)}
+                              className="text-xs text-theme-primary hover:text-theme-primary-hover font-medium"
+                            >
+                              + Import All
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {ep.models.map(model => {
+                              const alreadyAdded = state.providers.some(
+                                p => p.type === 'ollama' && p.apiEndpoint === `${ep.baseUrl}/api/generate` && p.model === model.name
+                              );
+                              return (
+                                <button
+                                  key={model.name}
+                                  onClick={() => handleToggleModel(ep.baseUrl, model.name)}
+                                  className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
+                                    alreadyAdded
+                                      ? isDark ? 'bg-green-900/30 hover:bg-red-900/30 text-green-400 hover:text-red-400' : 'bg-green-100 hover:bg-red-100 text-green-700 hover:text-red-700'
+                                      : isDark ? 'bg-dark-100 hover:bg-theme-primary/30 text-gray-300 hover:text-white' : 'bg-light-300 hover:bg-theme-primary/20 text-gray-700 hover:text-gray-900'
+                                  }`}
+                                  title={alreadyAdded ? `Click to remove ${model.name} from providers` : `Click to add ${model.name} as provider`}
+                                >
+                                  {alreadyAdded ? '✓' : '+'} {model.name}
+                                  {model.size ? ` (${formatBytes(model.size)})` : ''}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {ep.isHealthy && ep.models.length === 0 && (
+                        <p className={`text-xs mt-1 ${textMuted}`}>No models installed on this host</p>
+                      )}
+                    </>
+                  )}
                 </div>
-
-                {/* Error message */}
-                {!ep.isHealthy && ep.error && (
-                  <p className={`text-xs mt-1 ${isDark ? 'text-red-400' : 'text-red-600'}`}>
-                    {ep.error === 'Timeout' ? '⏱ Connection timed out' : `✗ ${ep.error}`}
-                  </p>
-                )}
-
-                {/* Models list */}
-                {ep.isHealthy && ep.models.length > 0 && (
-                  <div className="mt-2">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className={`text-xs font-medium ${textMuted}`}>
-                        {ep.models.length} model{ep.models.length !== 1 ? 's' : ''}
-                      </span>
-                      <button
-                        onClick={() => handleImportAllModels(ep.baseUrl, ep.models)}
-                        className="text-xs text-theme-primary hover:text-theme-primary-hover font-medium"
-                      >
-                        + Import All
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {ep.models.map(model => {
-                        const alreadyAdded = state.providers.some(
-                          p => p.type === 'ollama' && p.apiEndpoint === `${ep.baseUrl}/api/generate` && p.model === model.name
-                        );
-                        return (
-                          <button
-                            key={model.name}
-                            onClick={() => handleToggleModel(ep.baseUrl, model.name)}
-                            className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
-                              alreadyAdded
-                                ? isDark ? 'bg-green-900/30 hover:bg-red-900/30 text-green-400 hover:text-red-400' : 'bg-green-100 hover:bg-red-100 text-green-700 hover:text-red-700'
-                                : isDark ? 'bg-dark-100 hover:bg-theme-primary/30 text-gray-300 hover:text-white' : 'bg-light-300 hover:bg-theme-primary/20 text-gray-700 hover:text-gray-900'
-                            }`}
-                            title={alreadyAdded ? `Click to remove ${model.name} from providers` : `Click to add ${model.name} as provider`}
-                          >
-                            {alreadyAdded ? '✓' : '+'} {model.name}
-                            {model.size ? ` (${formatBytes(model.size)})` : ''}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {ep.isHealthy && ep.models.length === 0 && (
-                  <p className={`text-xs mt-1 ${textMuted}`}>No models installed on this host</p>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* ────── Discovery & Add Endpoint ────── */}
+      {/* ────── Auto Discovery & Add Endpoint ────── */}
       <div className={cardClass}>
         <div className="flex items-center justify-between mb-3">
-          <h4 className={`font-semibold text-sm ${textPrimary}`}>🔍 Discovery</h4>
+          <h4 className={`font-semibold text-sm ${textPrimary}`}>🔍 Auto Discovery</h4>
           <label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
@@ -568,13 +598,25 @@ export const OllamaConfigPanel: React.FC = () => {
                       <span className={`text-xs ${textMuted}`}>({ep.label})</span>
                     )}
                   </div>
-                  <button
-                    onClick={() => handleRemoveEndpoint(ep.host, ep.port)}
-                    className={`text-xs px-1.5 py-0.5 rounded hover:bg-red-500/20 ${isDark ? 'text-red-400' : 'text-red-600'}`}
-                    title="Remove endpoint"
-                  >
-                    ✕
-                  </button>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(url);
+                        addToast('success', 'Copied', 'Endpoint URL copied to clipboard');
+                      }}
+                      className={`text-xs px-1.5 py-0.5 rounded hover:bg-theme-primary/20 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}
+                      title="Copy endpoint URL"
+                    >
+                      📋
+                    </button>
+                    <button
+                      onClick={() => handleRemoveEndpoint(ep.host, ep.port)}
+                      className={`text-xs px-1.5 py-0.5 rounded hover:bg-red-500/20 ${isDark ? 'text-red-400' : 'text-red-600'}`}
+                      title="Remove endpoint"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               );
             })}
