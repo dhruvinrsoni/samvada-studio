@@ -11,7 +11,6 @@ interface ProviderCardProps {
   providerHealth?: ProviderHealth; // Passed from parent to avoid duplicate monitoring
   onEdit: () => void;
   onDelete: () => void;
-  onSetDefault: () => void;
   onTest: () => void;
 }
 
@@ -21,7 +20,6 @@ export default function ProviderCard({
   providerHealth,
   onEdit,
   onDelete,
-  onSetDefault,
   onTest,
 }: ProviderCardProps) {
   const { dispatch, isDark } = useChat();
@@ -238,23 +236,6 @@ export default function ProviderCard({
           >
             {provider.testStatus === 'pending' ? '⟳' : '🔌'} Test
           </button>
-          {!isDefault && (
-            <button
-              onClick={onSetDefault}
-              disabled={!provider.isEnabled}
-              className={`px-2.5 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                !provider.isEnabled
-                  ? 'cursor-not-allowed opacity-50'
-                  : ''
-              } ${
-                isDark 
-                  ? 'bg-dark-100 hover:bg-dark-50 text-gray-300' 
-                  : 'bg-light-300 hover:bg-light-400 text-gray-700'
-              }`}
-            >
-              Set Default
-            </button>
-          )}
           <button
             onClick={onEdit}
             className={`px-2.5 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${

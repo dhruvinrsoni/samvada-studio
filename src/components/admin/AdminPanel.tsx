@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { generateId } from '../../utils/helpers';
 import { testProviderConnection } from '../../utils/llmService';
+import { HealthService } from '../../utils/healthService';
 import type { LLMProviderConfig } from '../../types';
 import ProviderCard from './ProviderCard';
 import ProviderForm from './ProviderForm';
@@ -250,10 +251,6 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
     }
   };
 
-  const handleSetDefault = (id: string) => {
-    dispatch({ type: 'SET_DEFAULT_PROVIDER', payload: id });
-  };
-
   const handleTestProvider = async (provider: LLMProviderConfig) => {
     dispatch({ type: 'TEST_PROVIDER', payload: { id: provider.id, status: 'pending' } });
     
@@ -417,6 +414,43 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                 </button>
               </div>
 
+              {/* Default Provider Selector - moved to top */}
+              {state.providers.length > 0 && (
+                <div className={`p-4 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300' : 'border-light-400 bg-light-200'}`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div>
+                      <p className={`font-medium text-sm ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                        ⭐ Default Provider
+                      </p>
+                      <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                        Used for new chats
+                      </p>
+                    </div>
+                    <select
+                      value={state.defaultProviderId || ''}
+                      onChange={(e) => dispatch({ type: 'SET_DEFAULT_PROVIDER', payload: e.target.value })}
+                      className={`px-3 py-2 rounded-lg border text-sm font-medium ${
+                        isDark 
+                          ? 'bg-dark-200 border-dark-100 text-gray-200' 
+                          : 'bg-white border-light-400 text-gray-800'
+                      }`}
+                    >
+                      <option value="">None</option>
+                      {state.providers.map(p => {
+                        const health = healthStatus.find(h => h.providerId === p.id);
+                        const modelSizeText = p.type === 'ollama' && health?.modelSize
+                          ? ` (${HealthService.formatBytes(health.modelSize)})`
+                          : '';
+                        const displayText = `${p.name} - ${p.model}${modelSizeText}`;
+                        return (
+                          <option key={p.id} value={p.id}>{displayText}</option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                </div>
+              )}
+
               {/* Add New Provider Form (at top) */}
               {isAddingProvider && (
                 <div id="add-provider-form">
@@ -499,7 +533,6 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                           providerHealth={health}
                           onEdit={() => handleEditProvider(provider)}
                           onDelete={() => handleDeleteProvider(provider.id)}
-                          onSetDefault={() => handleSetDefault(provider.id)}
                           onTest={() => handleTestProvider(provider)}
                         />
                         
@@ -551,31 +584,6 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                       <option value="dark">🌙 Dark</option>
                       <option value="light">☀️ Light</option>
                       <option value="auto">🖥️ Auto (system)</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                        Default Provider
-                      </p>
-                      <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                        Select the default LLM provider for new chats
-                      </p>
-                    </div>
-                    <select
-                      value={state.defaultProviderId || ''}
-                      onChange={(e) => dispatch({ type: 'SET_DEFAULT_PROVIDER', payload: e.target.value })}
-                      className={`px-3 py-2 rounded-lg border ${
-                        isDark 
-                          ? 'bg-dark-200 border-dark-100 text-gray-200' 
-                          : 'bg-white border-light-400 text-gray-800'
-                      }`}
-                    >
-                      <option value="">None</option>
-                      {state.providers.map(p => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
                     </select>
                   </div>
                 </div>
