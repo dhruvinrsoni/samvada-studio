@@ -147,29 +147,32 @@ export const OllamaConfigPanel: React.FC = () => {
     refreshStatuses();
   };
 
-  // ---------- Quick-add a single model as LLM provider ----------
-  const handleQuickAddModel = (baseUrl: string, modelName: string) => {
-    const exists = state.providers.find(
+  // ---------- Toggle model provider (add/remove) ----------
+  const handleToggleModel = (baseUrl: string, modelName: string) => {
+    const existing = state.providers.find(
       p => p.type === 'ollama' && p.apiEndpoint === `${baseUrl}/api/generate` && p.model === modelName
     );
-    if (exists) {
-      addToast('info', 'Already Added', `${modelName} from ${baseUrl} already exists as a provider.`);
-      return;
-    }
 
-    const newProvider: LLMProviderConfig = {
-      id: generateId(),
-      name: `Ollama · ${modelName}`,
-      type: 'ollama',
-      apiEndpoint: `${baseUrl}/api/generate`,
-      model: modelName,
-      isEnabled: true,
-      isDefault: state.providers.length === 0,
-      settings: { temperature: 0.7, maxTokens: 4096 },
-      testStatus: 'untested',
-    };
-    dispatch({ type: 'ADD_PROVIDER', payload: newProvider });
-    addToast('success', 'Provider Created', `${modelName} added as LLM provider`);
+    if (existing) {
+      // Remove provider
+      dispatch({ type: 'DELETE_PROVIDER', payload: existing.id });
+      addToast('info', 'Provider Removed', `${modelName} removed from providers`);
+    } else {
+      // Add provider
+      const newProvider: LLMProviderConfig = {
+        id: generateId(),
+        name: `Ollama · ${modelName}`,
+        type: 'ollama',
+        apiEndpoint: `${baseUrl}/api/generate`,
+        model: modelName,
+        isEnabled: true,
+        isDefault: state.providers.length === 0,
+        settings: { temperature: 0.7, maxTokens: 4096 },
+        testStatus: 'untested',
+      };
+      dispatch({ type: 'ADD_PROVIDER', payload: newProvider });
+      addToast('success', 'Provider Added', `${modelName} added as LLM provider`);
+    }
   };
 
   // ---------- Bulk import all models from an endpoint ----------
@@ -354,14 +357,13 @@ export const OllamaConfigPanel: React.FC = () => {
                         return (
                           <button
                             key={model.name}
-                            onClick={() => !alreadyAdded && handleQuickAddModel(ep.baseUrl, model.name)}
-                            disabled={alreadyAdded}
+                            onClick={() => handleToggleModel(ep.baseUrl, model.name)}
                             className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
                               alreadyAdded
-                                ? isDark ? 'bg-green-900/30 text-green-400 cursor-default' : 'bg-green-100 text-green-700 cursor-default'
+                                ? isDark ? 'bg-green-900/30 hover:bg-red-900/30 text-green-400 hover:text-red-400' : 'bg-green-100 hover:bg-red-100 text-green-700 hover:text-red-700'
                                 : isDark ? 'bg-dark-100 hover:bg-theme-primary/30 text-gray-300 hover:text-white' : 'bg-light-300 hover:bg-theme-primary/20 text-gray-700 hover:text-gray-900'
                             }`}
-                            title={alreadyAdded ? 'Already added as provider' : `Click to add ${model.name} as provider`}
+                            title={alreadyAdded ? `Click to remove ${model.name} from providers` : `Click to add ${model.name} as provider`}
                           >
                             {alreadyAdded ? '✓' : '+'} {model.name}
                             {model.size ? ` (${formatBytes(model.size)})` : ''}
