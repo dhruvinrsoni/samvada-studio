@@ -146,20 +146,14 @@ class OllamaDiscoveryService {
       normalized.protocol = 'http';
     }
 
-    // Normalize basePath - ensure it starts with / and includes /api if not present
-    if (!normalized.basePath) {
-      normalized.basePath = '/api';
-    } else if (!normalized.basePath.startsWith('/')) {
-      normalized.basePath = '/' + normalized.basePath;
-    }
-
-    // Ensure basePath includes /api for Ollama API compatibility
-    if (!normalized.basePath.includes('/api')) {
-      if (normalized.basePath === '/') {
-        normalized.basePath = '/api';
-      } else {
-        normalized.basePath = normalized.basePath.replace(/\/$/, '') + '/api';
+    // For Ollama, basePath should typically be empty so /api/ can be appended per endpoint
+    // Only keep basePath if explicitly provided and not the default /api
+    if (normalized.basePath && normalized.basePath !== '/api') {
+      if (!normalized.basePath.startsWith('/')) {
+        normalized.basePath = '/' + normalized.basePath;
       }
+    } else {
+      normalized.basePath = ''; // Empty basePath is correct for standard Ollama
     }
 
     // Validate protocol
@@ -169,7 +163,7 @@ class OllamaDiscoveryService {
 
     // Generate a default label if not provided
     if (!normalized.label) {
-      normalized.label = `${normalized.protocol}://${normalized.host}:${normalized.port}${normalized.basePath}`;
+      normalized.label = `${normalized.protocol}://${normalized.host}:${normalized.port}`;
     }
 
     return normalized;
