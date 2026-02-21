@@ -73,7 +73,7 @@ export const DEFAULT_PROVIDER_CONFIGS: Record<LLMProviderType, Partial<LLMProvid
   ollama: {
     name: 'Ollama (Local)',
     apiEndpoint: 'http://localhost:11434/api/generate',
-    model: 'llama2',
+    model: 'llama2:latest',
     settings: { temperature: 0.7, maxTokens: 4096 },
   },
   azure: {
