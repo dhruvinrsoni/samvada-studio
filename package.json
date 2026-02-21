@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "proxy": "node cors-proxy-server.js",
     "proxy:insecure": "node cors-proxy-server.js --insecure",
-    "proxy:custom": "node cors-proxy-server.js"
+    "proxy:custom": "node cors-proxy-server.js",
+    "tunnel": "node scripts/tunnel.js"
   },
   "dependencies": {
     "highlight.js": "^11.11.1",
@@ -22,6 +23,8 @@
     "react-markdown": "^9.0.1",
     "remark-gfm": "^4.0.1",
     "uuid": "^10.0.0"
+    ,
+    "localtunnel": "^2.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
