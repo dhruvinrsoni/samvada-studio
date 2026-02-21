@@ -233,7 +233,32 @@ export class HealthService {
           return await this.fetchOllamaModels('http://localhost:11434', forceRefresh);
         }
       } else {
-        // Auto-discovery disabled for this check — perform a quick localhost check
+        // Auto-discovery disabled for this check — prefer user-configured endpoints
+        // This avoids noisy LAN scans while still honoring Admin > Ollama settings.
+        try {
+          const { ollamaDiscovery } = await import('../services/ollamaDiscovery.js');
+          const cfg = ollamaDiscovery.getConfiguration();
+
+          // Try configured endpoints first with a quick ping (short timeout)
+          for (const ep of cfg.endpoints || []) {
+            const base = `${ep.protocol}://${ep.host}:${ep.port}`;
+            try {
+              const resp = await fetch(`${base}/api/tags`, {
+                method: 'GET',
+                signal: AbortSignal.timeout(1000),
+              });
+              if (resp.ok) {
+                return await this.fetchOllamaModels(base, forceRefresh);
+              }
+            } catch {
+              // continue to next configured endpoint
+            }
+          }
+        } catch (err) {
+          // ignore errors reading configured endpoints
+        }
+
+        // No configured endpoint responded — perform a quick localhost check
         // (fetchOllamaModels will handle remote-hosted restrictions)
         return await this.fetchOllamaModels('http://localhost:11434', forceRefresh);
       }
