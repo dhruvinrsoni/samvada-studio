@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { fetchOllamaModels, fetchOpenAIModels, fetchAnthropicModels, fetchGoogleModels } from '../../utils/llmService';
+import { ollamaDiscovery } from '../../services/ollamaDiscovery';
 import type { LLMProviderConfig, LLMProviderType } from '../../types';
 
 // Check if app is running on localhost or hosted
@@ -87,6 +88,10 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
   
   // State for dynamic models from API providers
   const [dynamicModels, setDynamicModels] = useState<string[]>([]);
+  
+  // State for discovered Ollama endpoints (for dropdown)
+  const [discoveredEndpoints, setDiscoveredEndpoints] = useState<string[]>([]);
+  const [useCustomEndpoint, setUseCustomEndpoint] = useState(false);
 
   // Detect form changes and notify parent
   useEffect(() => {
@@ -138,6 +143,23 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
       }
     }
   }, [formData.type, isEditing]);
+
+  // Load discovered/configured Ollama endpoints for dropdown
+  useEffect(() => {
+    if (formData.type === 'ollama') {
+      const urls = ollamaDiscovery.getConfiguredEndpointUrls();
+      // Convert base URLs to /api/generate format for Ollama provider
+      const endpointUrls = urls.map(u => `${u}/api/generate`);
+      setDiscoveredEndpoints(endpointUrls);
+      // If current endpoint isn't in the list and isn't the default, show custom input
+      if (isEditing && !endpointUrls.includes(formData.apiEndpoint) && formData.apiEndpoint !== DEFAULT_ENDPOINTS.ollama) {
+        setUseCustomEndpoint(true);
+      }
+    } else {
+      setDiscoveredEndpoints([]);
+      setUseCustomEndpoint(false);
+    }
+  }, [formData.type, isEditing, formData.apiEndpoint]);
   
   // Fetch models dynamically when API key is added for supported providers
   useEffect(() => {
@@ -483,14 +505,55 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
 
         <div>
           <label className={labelClass}>API Endpoint</label>
-          <input
-            type="url"
-            value={formData.apiEndpoint}
-            onChange={(e) => setFormData({ ...formData, apiEndpoint: e.target.value })}
-            className={inputClass}
-            placeholder="https://api.example.com/v1/chat"
-            required
-          />
+          {formData.type === 'ollama' && discoveredEndpoints.length > 0 && !useCustomEndpoint ? (
+            <div>
+              <select
+                value={formData.apiEndpoint}
+                onChange={(e) => {
+                  if (e.target.value === '__custom__') {
+                    setUseCustomEndpoint(true);
+                  } else {
+                    setFormData({ ...formData, apiEndpoint: e.target.value });
+                  }
+                }}
+                className={inputClass}
+              >
+                {discoveredEndpoints.map(url => (
+                  <option key={url} value={url}>{url}</option>
+                ))}
+                <option value="__custom__">✏️ Enter custom URL...</option>
+              </select>
+              <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                💡 Endpoints from Admin → Ollama settings. Select or enter a custom URL.
+              </p>
+            </div>
+          ) : (
+            <div>
+              <input
+                type="url"
+                value={formData.apiEndpoint}
+                onChange={(e) => setFormData({ ...formData, apiEndpoint: e.target.value })}
+                className={inputClass}
+                placeholder="https://api.example.com/v1/chat"
+                required
+              />
+              {formData.type === 'ollama' && useCustomEndpoint && discoveredEndpoints.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUseCustomEndpoint(false);
+                    // Reset to first discovered endpoint if current isn't in the list
+                    if (!discoveredEndpoints.includes(formData.apiEndpoint) && discoveredEndpoints[0]) {
+                      setFormData(prev => ({ ...prev, apiEndpoint: discoveredEndpoints[0] || prev.apiEndpoint }));
+                    }
+                  }}
+                  className={`text-xs mt-1 ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}`}
+                >
+                  ← Use discovered endpoint
+                </button>
+              )}
+            </div>
+          )}
           
           {/* Incomplete Endpoint Warning for OpenAI */}
           {formData.type === 'openai' && formData.apiEndpoint && 

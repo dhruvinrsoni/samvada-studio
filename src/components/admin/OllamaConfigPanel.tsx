@@ -1,115 +1,212 @@
-// Ollama Configuration Panel - Spring-style manual configuration UI
-import React, { useState, useEffect } from 'react';
-import { ollamaDiscovery, OllamaConfiguration } from '../../services/ollamaDiscovery';
+// Ollama Configuration Panel - Spring Boot-style auto-configuration dashboard
+// Live endpoint status, model discovery, quick-add providers, network scanning
+import React, { useState, useEffect, useCallback } from 'react';
+import { ollamaDiscovery, type OllamaConfiguration } from '../../services/ollamaDiscovery';
+import { useChat } from '../../context/ChatContext';
 import { useToast } from '../../context/ToastContext';
-import CopyableList, { CopyableItem } from '../common/CopyableList';
+import { generateId } from '../../utils/helpers';
+import type { LLMProviderConfig } from '../../types';
+
+// Utility to format bytes
+const formatBytes = (bytes: number): string => {
+  if (!bytes || bytes === 0) return '';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
+
+interface EndpointStatus {
+  baseUrl: string;
+  label?: string;
+  isHealthy: boolean;
+  responseTime: number;
+  version?: string;
+  models: { name: string; size?: number }[];
+  error?: string;
+}
 
 export const OllamaConfigPanel: React.FC = () => {
+  const { state, dispatch } = useChat();
   const { addToast } = useToast();
+  const isDark =
+    state.themeSettings.mode === 'dark' ||
+    (state.themeSettings.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
   const [config, setConfig] = useState<OllamaConfiguration>(ollamaDiscovery.getConfiguration());
-  const [discoveryResults, setDiscoveryResults] = useState<Map<string, any>>(new Map());
+  const [endpointStatuses, setEndpointStatuses] = useState<EndpointStatus[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDiscovering, setIsDiscovering] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [showNetworkSettings, setShowNetworkSettings] = useState(false);
   const [newEndpoint, setNewEndpoint] = useState({
     host: '',
     port: 11434,
     protocol: 'http' as 'http' | 'https',
-    basePath: '',
-    apiKey: '',
     label: '',
   });
-  const [showAddForm, setShowAddForm] = useState(false);
 
-  useEffect(() => {
-    setConfig(ollamaDiscovery.getConfiguration());
+  // Card / section styling
+  const cardClass = `rounded-lg p-4 border ${isDark ? 'bg-dark-300 border-dark-100' : 'bg-light-200 border-light-400'}`;
+  const inputClass = `w-full p-2 rounded-lg border text-sm ${isDark ? 'bg-dark-200 border-dark-100 text-gray-200' : 'bg-white border-light-400 text-gray-800'}`;
+  const labelClass = `block text-xs font-medium mb-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`;
+  const textMuted = isDark ? 'text-gray-400' : 'text-gray-600';
+  const textPrimary = isDark ? 'text-gray-200' : 'text-gray-800';
+
+  // ---------- Refresh endpoint statuses ----------
+  const refreshStatuses = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const results = await ollamaDiscovery.getEndpointsWithModels();
+      setEndpointStatuses(results.map(r => ({
+        baseUrl: r.baseUrl,
+        label: r.endpoint.label,
+        isHealthy: r.isHealthy,
+        responseTime: r.responseTime,
+        version: r.version,
+        models: r.models,
+        error: r.error,
+      })));
+    } catch (err) {
+      console.warn('Failed to refresh endpoint statuses', err);
+    } finally {
+      setIsRefreshing(false);
+    }
   }, []);
 
+  // Initial load
+  useEffect(() => {
+    refreshStatuses();
+  }, [refreshStatuses]);
+
+  // ---------- Run full discovery (LAN/WiFi/Port scans) ----------
   const handleDiscovery = async () => {
     setIsDiscovering(true);
     try {
       const result = await ollamaDiscovery.discoverEndpoint();
-      setDiscoveryResults(ollamaDiscovery.getDiscoveryResults());
-      
       if (result && result.isHealthy) {
-        // Auto-add discovered endpoint to Ollama discovery service
-        const discoveredEndpoint = {
-          host: result.endpoint.host,
-          port: result.endpoint.port,
-          protocol: result.endpoint.protocol,
-          basePath: result.endpoint.basePath || '',
-          apiKey: '',
-          label: `Auto-discovered (${result.endpoint.host})`,
-        };
-        
-        // Check if this endpoint already exists (duplicate check)
-        const existingEndpoint = config.endpoints.find(
-          e => e.host === discoveredEndpoint.host && e.port === discoveredEndpoint.port
+        const existing = config.endpoints.find(
+          e => e.host === result.endpoint.host && e.port === result.endpoint.port
         );
-        
-        if (!existingEndpoint) {
-          ollamaDiscovery.addEndpoint(discoveredEndpoint);
+        if (!existing) {
+          ollamaDiscovery.addEndpoint({
+            host: result.endpoint.host,
+            port: result.endpoint.port,
+            protocol: result.endpoint.protocol,
+            label: `Auto-discovered (${result.endpoint.host})`,
+          });
           setConfig(ollamaDiscovery.getConfiguration());
         }
-        
-        // Store discovered base URL for use when adding new Ollama providers
-        // Include /api/generate for proper Ollama API endpoint
+
         const baseUrl = `${result.endpoint.protocol}://${result.endpoint.host}:${result.endpoint.port}/api/generate`;
         localStorage.setItem('ollama-discovered-base-url', baseUrl);
-        
-        // Trigger provider auto-configuration through event
+
         window.dispatchEvent(new CustomEvent('ollama-discovered', {
           detail: {
             baseUrl,
             version: result.version,
             models: result.models || [],
-            endpoint: discoveredEndpoint
-          }
+            endpoint: result.endpoint,
+          },
         }));
-        
-        addToast(
-          'success',
-          '🎉 Ollama Auto-Configured!',
-          `Found Ollama at ${baseUrl}\n${existingEndpoint ? 'Already configured' : 'Auto-added endpoint & created LLM provider!'}`
-        );
+
+        addToast('success', 'Ollama Found!', `Discovered at ${result.endpoint.host}:${result.endpoint.port}${existing ? ' (already configured)' : ''}`);
       } else {
-        addToast('error', 'Discovery Failed', 'No healthy Ollama endpoints found. Try adding a custom endpoint.');
+        addToast('error', 'Discovery Failed', 'No healthy Ollama endpoints found. Add a custom endpoint below.');
       }
     } catch (error: any) {
       addToast('error', 'Discovery Error', error.message);
     } finally {
       setIsDiscovering(false);
+      await refreshStatuses();
     }
   };
 
+  // ---------- Add endpoint ----------
   const handleAddEndpoint = () => {
     if (!newEndpoint.host) {
-      alert('Please enter a host address');
+      addToast('error', 'Missing Host', 'Enter a host address or IP');
       return;
     }
-
-    ollamaDiscovery.addEndpoint(newEndpoint);
-    setConfig(ollamaDiscovery.getConfiguration());
-    setNewEndpoint({
-      host: '',
-      port: 11434,
-      protocol: 'http',
-      basePath: '',
-      apiKey: '',
-      label: '',
+    ollamaDiscovery.addEndpoint({
+      host: newEndpoint.host,
+      port: newEndpoint.port,
+      protocol: newEndpoint.protocol,
+      label: newEndpoint.label || `${newEndpoint.host}:${newEndpoint.port}`,
     });
+    setConfig(ollamaDiscovery.getConfiguration());
+    setNewEndpoint({ host: '', port: 11434, protocol: 'http', label: '' });
     setShowAddForm(false);
+    addToast('success', 'Endpoint Added', `${newEndpoint.protocol}://${newEndpoint.host}:${newEndpoint.port}`);
+    refreshStatuses();
   };
 
   const handleRemoveEndpoint = (host: string, port: number) => {
-    if (confirm(`Remove endpoint ${host}:${port}?`)) {
-      ollamaDiscovery.removeEndpoint(host, port);
-      setConfig(ollamaDiscovery.getConfiguration());
+    ollamaDiscovery.removeEndpoint(host, port);
+    setConfig(ollamaDiscovery.getConfiguration());
+    refreshStatuses();
+  };
+
+  // ---------- Quick-add a single model as LLM provider ----------
+  const handleQuickAddModel = (baseUrl: string, modelName: string) => {
+    const exists = state.providers.find(
+      p => p.type === 'ollama' && p.apiEndpoint === `${baseUrl}/api/generate` && p.model === modelName
+    );
+    if (exists) {
+      addToast('info', 'Already Added', `${modelName} from ${baseUrl} already exists as a provider.`);
+      return;
+    }
+
+    const newProvider: LLMProviderConfig = {
+      id: generateId(),
+      name: `Ollama · ${modelName}`,
+      type: 'ollama',
+      apiEndpoint: `${baseUrl}/api/generate`,
+      model: modelName,
+      isEnabled: true,
+      isDefault: state.providers.length === 0,
+      settings: { temperature: 0.7, maxTokens: 4096 },
+      testStatus: 'untested',
+    };
+    dispatch({ type: 'ADD_PROVIDER', payload: newProvider });
+    addToast('success', 'Provider Created', `${modelName} added as LLM provider`);
+  };
+
+  // ---------- Bulk import all models from an endpoint ----------
+  const handleImportAllModels = (baseUrl: string, models: { name: string; size?: number }[]) => {
+    let added = 0;
+    for (const model of models) {
+      const exists = state.providers.find(
+        p => p.type === 'ollama' && p.apiEndpoint === `${baseUrl}/api/generate` && p.model === model.name
+      );
+      if (!exists) {
+        const newProvider: LLMProviderConfig = {
+          id: generateId(),
+          name: `Ollama · ${model.name}`,
+          type: 'ollama',
+          apiEndpoint: `${baseUrl}/api/generate`,
+          model: model.name,
+          isEnabled: true,
+          isDefault: state.providers.length === 0 && added === 0,
+          settings: { temperature: 0.7, maxTokens: 4096 },
+          testStatus: 'untested',
+        };
+        dispatch({ type: 'ADD_PROVIDER', payload: newProvider });
+        added++;
+      }
+    }
+    if (added > 0) {
+      addToast('success', 'Models Imported', `${added} model${added > 1 ? 's' : ''} added as providers from ${baseUrl}`);
+    } else {
+      addToast('info', 'No New Models', 'All models from this endpoint are already configured.');
     }
   };
 
+  // ---------- Config changes ----------
   const handleConfigChange = (key: keyof OllamaConfiguration, value: any) => {
-    const newConfig = { ...config, [key]: value };
-    setConfig(newConfig);
-    ollamaDiscovery.saveConfiguration(newConfig);
+    const updated = { ...config, [key]: value };
+    setConfig(updated);
+    ollamaDiscovery.saveConfiguration(updated);
   };
 
   const handleExport = () => {
@@ -133,9 +230,10 @@ export const OllamaConfigPanel: React.FC = () => {
         const text = await file.text();
         if (ollamaDiscovery.importConfiguration(text)) {
           setConfig(ollamaDiscovery.getConfiguration());
-          alert('✅ Configuration imported successfully');
+          addToast('success', 'Imported', 'Configuration imported successfully');
+          refreshStatuses();
         } else {
-          alert('❌ Failed to import configuration');
+          addToast('error', 'Import Failed', 'Invalid configuration file');
         }
       }
     };
@@ -143,31 +241,150 @@ export const OllamaConfigPanel: React.FC = () => {
   };
 
   const handleReset = () => {
-    if (confirm('Reset all Ollama configuration? This will clear cached endpoints and custom settings.')) {
-      ollamaDiscovery.clearEndpoints();
-      ollamaDiscovery.reset();
-      setConfig(ollamaDiscovery.getConfiguration());
-      setDiscoveryResults(new Map());
-    }
+    ollamaDiscovery.clearEndpoints();
+    ollamaDiscovery.reset();
+    setConfig(ollamaDiscovery.getConfiguration());
+    setEndpointStatuses([]);
+    addToast('info', 'Reset', 'Ollama configuration reset to defaults');
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="border-b border-gray-700 pb-4">
-        <h3 className="text-xl font-bold text-white mb-2">🔧 Ollama Configuration</h3>
-        <p className="text-sm text-gray-400">
-          Production-grade auto-discovery with manual configuration fallbacks
-        </p>
-      </div>
+  // Count healthy endpoints and total models
+  const healthyCount = endpointStatuses.filter(e => e.isHealthy).length;
+  const totalModels = endpointStatuses.reduce((sum, e) => sum + e.models.length, 0);
 
-      {/* Auto-Discovery Section */}
-      <div className="bg-gray-800 rounded-lg p-4 space-y-4">
+  return (
+    <div className="space-y-5">
+      {/* ────── Header ────── */}
+      <div className={`pb-3 border-b ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="font-semibold text-white mb-1">Auto-Discovery</h4>
-            <p className="text-sm text-gray-400">Automatically find available Ollama endpoints</p>
+            <h3 className={`text-lg font-bold ${textPrimary}`}>🦙 Ollama Hub</h3>
+            <p className={`text-xs mt-0.5 ${textMuted}`}>
+              Auto-discovery · Live status · One-click provider setup
+            </p>
           </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2 py-1 rounded-full ${
+              healthyCount > 0
+                ? 'bg-green-500/20 text-green-500'
+                : isDark ? 'bg-dark-100 text-gray-500' : 'bg-light-300 text-gray-500'
+            }`}>
+              {healthyCount} host{healthyCount !== 1 ? 's' : ''} online
+            </span>
+            {totalModels > 0 && (
+              <span className={`text-xs px-2 py-1 rounded-full ${isDark ? 'bg-dark-100 text-gray-400' : 'bg-light-300 text-gray-600'}`}>
+                {totalModels} model{totalModels !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ────── Live Endpoint Dashboard ────── */}
+      <div className={cardClass}>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className={`font-semibold text-sm ${textPrimary}`}>📡 Endpoint Status</h4>
+          <button
+            onClick={refreshStatuses}
+            disabled={isRefreshing}
+            className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${
+              isDark ? 'bg-dark-100 hover:bg-dark-50 text-gray-300' : 'bg-light-300 hover:bg-light-400 text-gray-700'
+            } disabled:opacity-50`}
+          >
+            {isRefreshing ? '⟳ Checking...' : '⟳ Refresh'}
+          </button>
+        </div>
+
+        {endpointStatuses.length === 0 && !isRefreshing ? (
+          <p className={`text-sm text-center py-4 ${textMuted}`}>
+            No endpoints tested yet. Click Refresh or Run Discovery.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {endpointStatuses.map((ep) => (
+              <div key={ep.baseUrl} className={`rounded-lg border p-3 ${
+                ep.isHealthy
+                  ? isDark ? 'border-green-800/50 bg-green-900/10' : 'border-green-300 bg-green-50'
+                  : isDark ? 'border-red-800/50 bg-red-900/10' : 'border-red-200 bg-red-50'
+              }`}>
+                {/* Endpoint header row */}
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${ep.isHealthy ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <span className={`text-sm font-mono truncate ${textPrimary}`}>{ep.baseUrl}</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                    {ep.isHealthy && (
+                      <span className={`text-xs ${textMuted}`}>{ep.responseTime}ms</span>
+                    )}
+                    {ep.version && (
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${isDark ? 'bg-dark-100 text-gray-400' : 'bg-light-300 text-gray-600'}`}>
+                        v{ep.version}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Error message */}
+                {!ep.isHealthy && ep.error && (
+                  <p className={`text-xs mt-1 ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                    {ep.error === 'Timeout' ? '⏱ Connection timed out' : `✗ ${ep.error}`}
+                  </p>
+                )}
+
+                {/* Models list */}
+                {ep.isHealthy && ep.models.length > 0 && (
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className={`text-xs font-medium ${textMuted}`}>
+                        {ep.models.length} model{ep.models.length !== 1 ? 's' : ''}
+                      </span>
+                      <button
+                        onClick={() => handleImportAllModels(ep.baseUrl, ep.models)}
+                        className="text-xs text-theme-primary hover:text-theme-primary-hover font-medium"
+                      >
+                        + Import All
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {ep.models.map(model => {
+                        const alreadyAdded = state.providers.some(
+                          p => p.type === 'ollama' && p.apiEndpoint === `${ep.baseUrl}/api/generate` && p.model === model.name
+                        );
+                        return (
+                          <button
+                            key={model.name}
+                            onClick={() => !alreadyAdded && handleQuickAddModel(ep.baseUrl, model.name)}
+                            disabled={alreadyAdded}
+                            className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
+                              alreadyAdded
+                                ? isDark ? 'bg-green-900/30 text-green-400 cursor-default' : 'bg-green-100 text-green-700 cursor-default'
+                                : isDark ? 'bg-dark-100 hover:bg-theme-primary/30 text-gray-300 hover:text-white' : 'bg-light-300 hover:bg-theme-primary/20 text-gray-700 hover:text-gray-900'
+                            }`}
+                            title={alreadyAdded ? 'Already added as provider' : `Click to add ${model.name} as provider`}
+                          >
+                            {alreadyAdded ? '✓' : '+'} {model.name}
+                            {model.size ? ` (${formatBytes(model.size)})` : ''}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {ep.isHealthy && ep.models.length === 0 && (
+                  <p className={`text-xs mt-1 ${textMuted}`}>No models installed on this host</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ────── Discovery & Add Endpoint ────── */}
+      <div className={cardClass}>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className={`font-semibold text-sm ${textPrimary}`}>🔍 Discovery</h4>
           <label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
@@ -175,288 +392,203 @@ export const OllamaConfigPanel: React.FC = () => {
               onChange={(e) => handleConfigChange('autoDiscovery', e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            <div className={`w-9 h-5 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all ${
+              isDark ? 'bg-dark-100 peer-checked:bg-theme-primary' : 'bg-light-400 peer-checked:bg-theme-primary'
+            }`} />
           </label>
         </div>
 
-        <button
-          onClick={handleDiscovery}
-          disabled={isDiscovering}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-        >
-          {isDiscovering ? (
-            <>
-              <span className="animate-spin">🔍</span>
-              Discovering...
-            </>
-          ) : (
-            <>
-              <span>🔍</span>
-              Run Discovery
-            </>
-          )}
-        </button>
-
-        {discoveryResults.size > 0 && (
-          <div className="mt-4 space-y-2">
-            <h5 className="text-sm font-semibold text-gray-300">Discovery Results:</h5>
-            <p className="text-xs text-blue-400 mb-2">
-              💡 Discovered endpoints are automatically added to Custom Endpoints below and an LLM Provider is created!
-            </p>
-            <div className="max-h-48 overflow-y-auto">
-              <CopyableList
-                items={Array.from(discoveryResults.entries()).map(([url, result]) => ({
-                  id: url,
-                  title: 'Base URL:',
-                  text: url,
-                  subtitle: `${result.isHealthy ? '✅ Healthy' : '❌ Failed'} • ${result.responseTime}ms${result.version ? ` • v${result.version}` : ''}`,
-                } as CopyableItem))}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Network Detection Settings */}
-      <div className="bg-gray-800 rounded-lg p-4 space-y-3">
-        <h4 className="font-semibold text-white mb-2">Network Detection</h4>
-        
-        <label className="flex items-center justify-between">
-          <span className="text-sm text-gray-300">Enable LAN Scan</span>
-          <input
-            type="checkbox"
-            checked={config.networkDetection.enableLANScan}
-            onChange={(e) => handleConfigChange('networkDetection', {
-              ...config.networkDetection,
-              enableLANScan: e.target.checked,
-            })}
-            className="rounded"
-          />
-        </label>
-
-        <label className="flex items-center justify-between">
-          <span className="text-sm text-gray-300">Enable Port Scan</span>
-          <input
-            type="checkbox"
-            checked={config.networkDetection.enablePortScan}
-            onChange={(e) => handleConfigChange('networkDetection', {
-              ...config.networkDetection,
-              enablePortScan: e.target.checked,
-            })}
-            className="rounded"
-          />
-        </label>
-
-        <label className="flex items-center justify-between">
-          <span className="text-sm text-gray-300">Enable WiFi Scan</span>
-          <input
-            type="checkbox"
-            checked={config.networkDetection.enableWiFiScan}
-            onChange={(e) => handleConfigChange('networkDetection', {
-              ...config.networkDetection,
-              enableWiFiScan: e.target.checked,
-            })}
-            className="rounded"
-          />
-        </label>
-
-        <label className="flex items-center justify-between">
-          <span className="text-sm text-gray-300">Scan Timeout (ms)</span>
-          <input
-            type="number"
-            value={config.networkDetection.scanTimeout}
-            onChange={(e) => handleConfigChange('networkDetection', {
-              ...config.networkDetection,
-              scanTimeout: parseInt(e.target.value),
-            })}
-            className="w-24 bg-gray-700 text-white px-2 py-1 rounded text-sm"
-            min="20"
-            max="10000"
-            step="10"
-          />
-        </label>
-      </div>
-
-      {/* Custom Endpoints */}
-      <div className="bg-gray-800 rounded-lg p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="font-semibold text-white mb-1">Custom Endpoints</h4>
-            <p className="text-sm text-gray-400">
-              Add specific Ollama servers (remote, Docker, custom ports, etc.)
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Multiple endpoints = automatic failover. Discovery tries all in priority order.
-            </p>
-          </div>
+        <div className="flex gap-2 mb-3">
+          <button
+            onClick={handleDiscovery}
+            disabled={isDiscovering}
+            className="flex-1 bg-theme-primary hover:bg-theme-primary-hover disabled:opacity-50 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
+          >
+            {isDiscovering ? (
+              <><span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full" /> Scanning...</>
+            ) : (
+              <><span>🔍</span> Run Discovery</>
+            )}
+          </button>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="text-blue-400 hover:text-blue-300 text-sm font-medium"
+            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isDark ? 'bg-dark-100 hover:bg-dark-50 text-gray-300' : 'bg-light-300 hover:bg-light-400 text-gray-700'
+            }`}
           >
-            {showAddForm ? '✕ Cancel' : '+ Add Endpoint'}
+            {showAddForm ? '✕' : '+ Add Host'}
           </button>
         </div>
 
+        {/* Network scanning settings (collapsible) */}
+        <button
+          onClick={() => setShowNetworkSettings(!showNetworkSettings)}
+          className={`w-full flex items-center justify-between text-xs px-2 py-1.5 rounded ${
+            isDark ? 'hover:bg-dark-100 text-gray-500' : 'hover:bg-light-300 text-gray-500'
+          }`}
+        >
+          <span>⚙ Network scan settings</span>
+          <span>{showNetworkSettings ? '▲' : '▼'}</span>
+        </button>
+
+        {showNetworkSettings && (
+          <div className={`mt-2 p-3 rounded-lg space-y-2 ${isDark ? 'bg-dark-200' : 'bg-light-300'}`}>
+            {([
+              { key: 'enableLANScan', label: 'LAN Scan' },
+              { key: 'enablePortScan', label: 'Port Scan' },
+              { key: 'enableWiFiScan', label: 'WiFi Scan' },
+            ] as const).map(({ key, label }) => (
+              <label key={key} className="flex items-center justify-between">
+                <span className={`text-xs ${textMuted}`}>{label}</span>
+                <input
+                  type="checkbox"
+                  checked={(config.networkDetection as any)[key]}
+                  onChange={(e) => handleConfigChange('networkDetection', {
+                    ...config.networkDetection,
+                    [key]: e.target.checked,
+                  })}
+                  className="rounded h-3.5 w-3.5"
+                />
+              </label>
+            ))}
+            <label className="flex items-center justify-between">
+              <span className={`text-xs ${textMuted}`}>Scan Timeout (ms)</span>
+              <input
+                type="number"
+                value={config.networkDetection.scanTimeout}
+                onChange={(e) => handleConfigChange('networkDetection', {
+                  ...config.networkDetection,
+                  scanTimeout: parseInt(e.target.value) || 100,
+                })}
+                className={`w-20 text-xs px-2 py-1 rounded ${isDark ? 'bg-dark-100 text-gray-300 border-dark-50' : 'bg-white text-gray-700 border-light-400'} border`}
+                min="20"
+                max="10000"
+                step="10"
+              />
+            </label>
+            <label className="flex items-center justify-between">
+              <span className={`text-xs ${textMuted}`}>Fallback Strategy</span>
+              <select
+                value={config.fallbackBehavior}
+                onChange={(e) => handleConfigChange('fallbackBehavior', e.target.value)}
+                className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-dark-100 text-gray-300 border-dark-50' : 'bg-white text-gray-700 border-light-400'} border`}
+              >
+                <option value="first-healthy">First Healthy</option>
+                <option value="fastest">Fastest</option>
+                <option value="round-robin">Round Robin</option>
+              </select>
+            </label>
+          </div>
+        )}
+
+        {/* Add endpoint form */}
         {showAddForm && (
-          <div className="bg-gray-900 rounded-lg p-4 space-y-3">
-            <div className="text-xs text-gray-400 mb-3">
-              <strong>How it works:</strong> Add Ollama servers by IP/hostname. Multiple endpoints provide automatic failover - if one fails, the next is tried automatically.
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+          <div className={`mt-3 p-3 rounded-lg space-y-3 ${isDark ? 'bg-dark-200' : 'bg-light-300'}`}>
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Host/IP *</label>
+                <label className={labelClass}>Host / IP *</label>
                 <input
                   type="text"
                   value={newEndpoint.host}
                   onChange={(e) => setNewEndpoint({ ...newEndpoint, host: e.target.value })}
                   placeholder="192.168.1.100"
-                  className="w-full bg-gray-800 text-white px-3 py-2 rounded text-sm"
+                  className={inputClass}
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Port</label>
+                <label className={labelClass}>Port</label>
                 <input
                   type="number"
                   value={newEndpoint.port}
-                  onChange={(e) => setNewEndpoint({ ...newEndpoint, port: parseInt(e.target.value) })}
-                  className="w-full bg-gray-800 text-white px-3 py-2 rounded text-sm"
+                  onChange={(e) => setNewEndpoint({ ...newEndpoint, port: parseInt(e.target.value) || 11434 })}
+                  className={inputClass}
                 />
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Protocol</label>
+                <label className={labelClass}>Protocol</label>
                 <select
                   value={newEndpoint.protocol}
                   onChange={(e) => setNewEndpoint({ ...newEndpoint, protocol: e.target.value as 'http' | 'https' })}
-                  className="w-full bg-gray-800 text-white px-3 py-2 rounded text-sm"
+                  className={inputClass}
                 >
                   <option value="http">HTTP</option>
                   <option value="https">HTTPS</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Label</label>
+                <label className={labelClass}>Label</label>
                 <input
                   type="text"
                   value={newEndpoint.label}
                   onChange={(e) => setNewEndpoint({ ...newEndpoint, label: e.target.value })}
-                  placeholder="My Server"
-                  className="w-full bg-gray-800 text-white px-3 py-2 rounded text-sm"
+                  placeholder="My Laptop"
+                  className={inputClass}
                 />
               </div>
             </div>
-
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Base Path (optional)</label>
-              <input
-                type="text"
-                value={newEndpoint.basePath}
-                onChange={(e) => setNewEndpoint({ ...newEndpoint, basePath: e.target.value })}
-                placeholder="/api (auto-added if empty)"
-                className="w-full bg-gray-800 text-white px-3 py-2 rounded text-sm"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Ollama API endpoints automatically include /api path. Leave empty for auto-configuration.
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">API Key (optional)</label>
-              <input
-                type="password"
-                value={newEndpoint.apiKey}
-                onChange={(e) => setNewEndpoint({ ...newEndpoint, apiKey: e.target.value })}
-                placeholder="sk-..."
-                className="w-full bg-gray-800 text-white px-3 py-2 rounded text-sm"
-              />
-            </div>
-
             <button
               onClick={handleAddEndpoint}
-              className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-medium"
+              className="w-full bg-theme-primary hover:bg-theme-primary-hover text-white text-sm px-3 py-2 rounded-lg font-medium transition-colors"
             >
               Add Endpoint
             </button>
           </div>
         )}
-
-        {config.endpoints.length > 0 ? (
-          <div className="space-y-2">
-            <p className="text-xs text-gray-500 mb-3">
-              Endpoints are tested in order. First healthy one is used.
-            </p>
-            <CopyableList
-              items={config.endpoints.map((endpoint, idx) => {
-                const fullUrl = `${endpoint.protocol}://${endpoint.host}:${endpoint.port}${endpoint.basePath || ''}`;
-                return {
-                  id: `${endpoint.host}:${endpoint.port}`,
-                  title: `#${idx + 1}`,
-                  text: fullUrl,
-                  subtitle: endpoint.label || undefined,
-                  onRemove: () => handleRemoveEndpoint(endpoint.host, endpoint.port),
-                } as CopyableItem;
-              })}
-            />
-          </div>
-        ) : (
-          <div className="text-sm text-gray-500 text-center py-4">No custom endpoints configured</div>
-        )}
       </div>
 
-      {/* Discovery Priority Order */}
-      <div className="bg-gray-800 rounded-lg p-4">
-        <h4 className="font-semibold text-white mb-3">🔄 Discovery Priority Order</h4>
-        <div className="text-sm text-gray-300 space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="text-blue-400 font-mono">1.</span>
-            <span>Cached successful endpoint (instant)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-blue-400 font-mono">2.</span>
-            <span>Custom endpoints (in order added)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-blue-400 font-mono">3.</span>
-            <span>Current hostname (DHCP-aware)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-blue-400 font-mono">4.</span>
-            <span>localhost:11434</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-blue-400 font-mono">5.</span>
-            <span>LAN scan (if enabled)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-blue-400 font-mono">6.</span>
-            <span>Port scan (if enabled)</span>
+      {/* ────── Configured Endpoints ────── */}
+      {config.endpoints.length > 0 && (
+        <div className={cardClass}>
+          <h4 className={`font-semibold text-sm mb-2 ${textPrimary}`}>📋 Custom Endpoints ({config.endpoints.length})</h4>
+          <p className={`text-xs mb-3 ${textMuted}`}>
+            Tested in priority order. First healthy one is used.
+          </p>
+          <div className="space-y-1.5">
+            {config.endpoints.map((ep, idx) => {
+              const url = `${ep.protocol}://${ep.host}:${ep.port}`;
+              const status = endpointStatuses.find(s => s.baseUrl === url);
+              return (
+                <div
+                  key={`${ep.host}:${ep.port}`}
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm ${
+                    isDark ? 'bg-dark-200' : 'bg-light-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`text-xs font-mono ${textMuted}`}>#{idx + 1}</span>
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      status?.isHealthy ? 'bg-green-500' : status ? 'bg-red-500' : 'bg-gray-500'
+                    }`} />
+                    <span className={`font-mono truncate ${textPrimary}`}>{url}</span>
+                    {ep.label && (
+                      <span className={`text-xs ${textMuted}`}>({ep.label})</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleRemoveEndpoint(ep.host, ep.port)}
+                    className={`text-xs px-1.5 py-0.5 rounded hover:bg-red-500/20 ${isDark ? 'text-red-400' : 'text-red-600'}`}
+                    title="Remove endpoint"
+                  >
+                    ✕
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
-        <p className="text-xs text-gray-500 mt-3">
-          First healthy endpoint found is used. Copy URLs from discovery results above.
-        </p>
-      </div>
+      )}
 
-      {/* Action Buttons */}
-      <div className="flex gap-2 mt-4">
-        <button
-          onClick={handleExport}
-          className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded font-medium"
-        >
-          📥 Export Config
+      {/* ────── Actions ────── */}
+      <div className="flex flex-wrap gap-2">
+        <button onClick={handleExport} className={`flex-1 min-w-[100px] text-xs px-3 py-2 rounded-lg font-medium transition-colors ${isDark ? 'bg-dark-300 hover:bg-dark-100 text-gray-400 border border-dark-100' : 'bg-light-200 hover:bg-light-300 text-gray-600 border border-light-400'}`}>
+          📥 Export
         </button>
-        <button
-          onClick={handleImport}
-          className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded font-medium"
-        >
-          📤 Import Config
+        <button onClick={handleImport} className={`flex-1 min-w-[100px] text-xs px-3 py-2 rounded-lg font-medium transition-colors ${isDark ? 'bg-dark-300 hover:bg-dark-100 text-gray-400 border border-dark-100' : 'bg-light-200 hover:bg-light-300 text-gray-600 border border-light-400'}`}>
+          📤 Import
         </button>
-        <button
-          onClick={handleReset}
-          className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-medium"
-        >
+        <button onClick={handleReset} className={`flex-1 min-w-[100px] text-xs px-3 py-2 rounded-lg font-medium transition-colors text-red-500 ${isDark ? 'bg-dark-300 hover:bg-red-900/20 border border-dark-100' : 'bg-light-200 hover:bg-red-50 border border-light-400'}`}>
           🔄 Reset
         </button>
       </div>

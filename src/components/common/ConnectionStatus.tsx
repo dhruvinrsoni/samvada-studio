@@ -34,6 +34,7 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
     ollama: boolean;
     internet: boolean;
     ollamaModels: string[];
+    ollamaEndpoint?: string; // Which endpoint responded
   } | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -68,9 +69,23 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
     setIsChecking(true);
     try {
       const status = await HealthService.checkBasicConnectivity();
+      
+      // Try to determine which endpoint responded via quickCheck
+      let ollamaEndpoint: string | undefined;
+      if (status.ollama) {
+        try {
+          const { ollamaDiscovery } = await import('../../services/ollamaDiscovery.js');
+          const qr = await ollamaDiscovery.quickCheck();
+          if (qr?.isHealthy) {
+            ollamaEndpoint = `${qr.endpoint.host}:${qr.endpoint.port}`;
+          }
+        } catch { /* ignore */ }
+      }
+
       const newConnectivity = {
         online: navigator.onLine,
         ...status,
+        ollamaEndpoint,
       };
       setConnectivity(newConnectivity);
       
@@ -282,7 +297,7 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
                 />
                 {hasOllamaProvider && (
                   <StatusItem
-                    label="Ollama (localhost:11434)"
+                    label={`Ollama (${connectivity.ollamaEndpoint || 'not found'})`}
                     status={connectivity.ollama}
                     isDark={isDark}
                   />
@@ -316,7 +331,7 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
                   ) : (
                     // Show standard Ollama installation/startup message
                     <>
-                      <p className="font-semibold mb-2">Ollama is not running:</p>
+                      <p className="font-semibold mb-2">Ollama is not reachable:</p>
                       <ol className="list-decimal list-inside space-y-1 ml-1">
                         <li>Install Ollama: <code className={`px-1 py-0.5 rounded ${
                           isDark ? 'bg-yellow-500/20' : 'bg-yellow-100'
@@ -324,6 +339,7 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
                         <li>Start the server: <code className={`px-1 py-0.5 rounded ${
                           isDark ? 'bg-yellow-500/20' : 'bg-yellow-100'
                         }`}>ollama serve</code></li>
+                        <li>For LAN access, add the host IP in <strong>Admin → Ollama → Custom Endpoints</strong></li>
                       </ol>
                       {!ollamaIsDefault && (
                         <p className="mt-2 text-xs opacity-80">

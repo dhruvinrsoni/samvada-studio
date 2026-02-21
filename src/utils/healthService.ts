@@ -127,6 +127,8 @@ export class HealthService {
 
   /**
    * Check basic connectivity (used by ConnectionStatus)
+   * Uses quickCheck() to test configured + cached + localhost endpoints
+   * without triggering expensive LAN/WiFi scans.
    */
   static async checkBasicConnectivity(): Promise<BasicConnectivityResult> {
     const result: BasicConnectivityResult = {
@@ -147,17 +149,31 @@ export class HealthService {
       result.internet = false;
     }
 
-    // Check Ollama connectivity. Do NOT run auto-discovery during basic checks
-    // (prevents network scans / requests on app load). Higher-level UI/actions
-    // can opt-in to discovery by calling checkOllamaConnectivity without
-    // disabling discovery.
-    const ollamaResult = await this.checkOllamaConnectivity(undefined, false, false);
-    result.ollama = ollamaResult.available;
-    result.ollamaModels = ollamaResult.models.map(m => m.name);
+    // Use quickCheck (configured + cached + localhost) for fast Ollama detection.
+    // This respects Admin → Ollama saved endpoints without triggering LAN scans.
+    try {
+      const { ollamaDiscovery } = await import('../services/ollamaDiscovery.js');
+      const quickResult = await ollamaDiscovery.quickCheck();
+      if (quickResult && quickResult.isHealthy) {
+        const baseUrl = `${quickResult.endpoint.protocol}://${quickResult.endpoint.host}:${quickResult.endpoint.port}`;
+        const ollamaResult = await this.fetchOllamaModels(baseUrl, false);
+        result.ollama = ollamaResult.available;
+        result.ollamaModels = ollamaResult.models.map(m => m.name);
+      } else {
+        // quickCheck found nothing — fall back to localhost as last resort
+        const ollamaResult = await this.checkOllamaConnectivity(undefined, false, false);
+        result.ollama = ollamaResult.available;
+        result.ollamaModels = ollamaResult.models.map(m => m.name);
+      }
+    } catch {
+      // If quickCheck fails entirely, fall back to localhost check
+      const ollamaResult = await this.checkOllamaConnectivity(undefined, false, false);
+      result.ollama = ollamaResult.available;
+      result.ollamaModels = ollamaResult.models.map(m => m.name);
+    }
 
     logDebug('HealthService', {
       basicConnectivity: result,
-      ollamaError: ollamaResult.error
     });
 
     return result;

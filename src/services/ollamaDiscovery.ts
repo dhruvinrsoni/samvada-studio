@@ -801,6 +801,159 @@ class OllamaDiscoveryService {
   }
 
   /**
+   * Quick Check — test ONLY configured + cached + localhost endpoints.
+   * No LAN/WiFi/port scanning.  Designed to be called frequently (polling, ConnectionStatus).
+   * Returns the first healthy endpoint found, or null.
+   */
+  async quickCheck(): Promise<OllamaDiscoveryResult | null> {
+    const candidates: OllamaEndpoint[] = [];
+    let priority = 0;
+
+    // 1. Cached endpoint
+    if (this.cachedEndpoint) {
+      candidates.push({ ...this.cachedEndpoint, priority: priority++ });
+    }
+
+    // 2. User-configured endpoints
+    for (const ep of this.config.endpoints) {
+      candidates.push({ ...ep, priority: priority++ });
+    }
+
+    // 3. Current hostname (LAN access)
+    if (typeof window !== 'undefined') {
+      const currentHost = window.location.hostname;
+      if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+        candidates.push({ host: currentHost, port: 11434, protocol: 'http', priority: priority++, label: 'Current Host' });
+      }
+    }
+
+    // 4. Localhost fallbacks
+    candidates.push({ host: 'localhost', port: 11434, protocol: 'http', priority: priority++, label: 'Localhost' });
+    candidates.push({ host: '127.0.0.1', port: 11434, protocol: 'http', priority: priority++, label: 'Localhost IP' });
+
+    // De-duplicate
+    const seen = new Set<string>();
+    const unique = candidates.filter(ep => {
+      const key = `${ep.protocol}://${ep.host}:${ep.port}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // Test in priority order (parallel, first-healthy wins)
+    return this.findFirstHealthyEndpoint(unique);
+  }
+
+  /**
+   * Fetch models from a specific endpoint URL (base URL without /api path).
+   * Returns { name, size }[].
+   */
+  async fetchModelsFromEndpoint(baseUrl: string): Promise<{ name: string; size?: number }[]> {
+    try {
+      const resp = await fetch(`${baseUrl}/api/tags`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(3000),
+      });
+      if (!resp.ok) return [];
+      const data = await resp.json();
+      return (data.models || [])
+        .filter((m: any) => !m.name?.toLowerCase().includes('embed'))
+        .map((m: any) => ({ name: m.name, size: m.size }));
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Get all configured endpoints with their live health + models.
+   * Used by OllamaConfigPanel to show a comprehensive view.
+   */
+  async getEndpointsWithModels(): Promise<Array<{
+    endpoint: OllamaEndpoint;
+    baseUrl: string;
+    isHealthy: boolean;
+    responseTime: number;
+    version?: string;
+    models: { name: string; size?: number }[];
+    error?: string;
+  }>> {
+    const candidates: OllamaEndpoint[] = [];
+    let priority = 0;
+
+    // Gather all known endpoints (configured + cached + localhost)
+    if (this.cachedEndpoint) {
+      candidates.push({ ...this.cachedEndpoint, priority: priority++ });
+    }
+    for (const ep of this.config.endpoints) {
+      candidates.push({ ...ep, priority: priority++ });
+    }
+    if (typeof window !== 'undefined') {
+      const currentHost = window.location.hostname;
+      if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+        candidates.push({ host: currentHost, port: 11434, protocol: 'http', priority: priority++, label: 'Current Host' });
+      }
+    }
+    candidates.push({ host: 'localhost', port: 11434, protocol: 'http', priority: priority++, label: 'Localhost' });
+    candidates.push({ host: '127.0.0.1', port: 11434, protocol: 'http', priority: priority++, label: 'Localhost IP' });
+
+    // De-duplicate
+    const seen = new Set<string>();
+    const unique = candidates.filter(ep => {
+      const key = `${ep.protocol}://${ep.host}:${ep.port}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // Test all in parallel with model fetching
+    const results = await Promise.all(unique.map(async (ep) => {
+      const baseUrl = `${ep.protocol}://${ep.host}:${ep.port}`;
+      const healthResult = await this.testEndpoint(ep);
+      let models: { name: string; size?: number }[] = [];
+      if (healthResult.isHealthy) {
+        models = await this.fetchModelsFromEndpoint(baseUrl);
+      }
+      return {
+        endpoint: ep,
+        baseUrl,
+        isHealthy: healthResult.isHealthy,
+        responseTime: healthResult.responseTime,
+        version: healthResult.version,
+        models,
+        error: healthResult.error,
+      };
+    }));
+
+    return results;
+  }
+
+  /**
+   * Get all user-configured endpoint URLs (for dropdowns).
+   * Includes cached endpoint if different from configured.
+   */
+  getConfiguredEndpointUrls(): string[] {
+    const urls: string[] = [];
+    const seen = new Set<string>();
+
+    // Cached endpoint first
+    if (this.cachedEndpoint) {
+      const url = `${this.cachedEndpoint.protocol}://${this.cachedEndpoint.host}:${this.cachedEndpoint.port}`;
+      if (!seen.has(url)) { urls.push(url); seen.add(url); }
+    }
+
+    // User-configured endpoints
+    for (const ep of this.config.endpoints) {
+      const url = `${ep.protocol}://${ep.host}:${ep.port}`;
+      if (!seen.has(url)) { urls.push(url); seen.add(url); }
+    }
+
+    // Localhost as fallback
+    if (!seen.has('http://localhost:11434')) urls.push('http://localhost:11434');
+
+    return urls;
+  }
+
+  /**
    * Export configuration for backup/sharing
    */
   exportConfiguration(): string {
