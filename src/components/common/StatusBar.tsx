@@ -273,11 +273,11 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
 
       {/* Status Bar */}
       <div 
-        className={`fixed left-0 right-0 z-30 transition-all duration-300 ${
-          showDisableWarning && !warningDismissed ? 'bottom-[56px] sm:bottom-[62px]' : 'bottom-0'
+        className={`left-0 right-0 z-30 transition-all duration-300 ${
+          showDisableWarning && !warningDismissed ? 'border-b' : 'border-t'
         } ${
           state.theme === 'dark' ? 'bg-dark-100 border-dark-300' : 'bg-light-100 border-light-400'
-        } border-t`}
+        }`}
       >
       {/* No Providers Message */}
       {!hasProviders && (
