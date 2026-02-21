@@ -335,10 +335,13 @@ export const OllamaConfigPanel: React.FC = () => {
                     onClick={() => toggleEndpointExpanded(ep.baseUrl)}
                     className="w-full text-left flex items-center justify-between mb-1 hover:opacity-75 transition-opacity"
                   >
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span className={`flex-shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
-                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${ep.isHealthy ? 'bg-green-500' : 'bg-red-500'}`} />
-                      <span className={`text-sm font-mono truncate ${textPrimary}`}>{ep.baseUrl}</span>
+                    <div className="flex items-center gap-2 min-w-0 flex-1 flex-col xs:flex-row">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className={`flex-shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${ep.isHealthy ? 'bg-green-500' : 'bg-red-500'}`} />
+                        <span className={`text-sm font-mono truncate ${textPrimary}`}>{ep.baseUrl}</span>
+                        <span className={`text-xs ${textMuted} flex-shrink-0`}>/api</span>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                       {ep.isHealthy && (
@@ -544,6 +547,13 @@ export const OllamaConfigPanel: React.FC = () => {
                 💡 <strong>Tip:</strong> For deployed apps, use mDNS names like <code className={`px-1 rounded text-xs ${isDark ? 'bg-dark-100' : 'bg-white'}`}>ollama.local</code> instead of IP addresses (which are blocked by HTTPS/HTTP policies).
               </p>
             )}
+            
+            <div className={`p-2 rounded text-xs border ${isDark ? 'bg-dark-100 border-dark-50' : 'bg-blue-50 border-blue-300'}`}>
+              <p className={isDark ? 'text-gray-400' : 'text-blue-700'}>
+                <strong>ℹ️ Note:</strong> The <code className={`px-1 rounded ${isDark ? 'bg-dark-200' : 'bg-blue-100'}`}>/api</code> path is <strong>automatically handled</strong>. Just provide host and port.
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className={labelClass}>Host / IP *</label>
@@ -565,6 +575,7 @@ export const OllamaConfigPanel: React.FC = () => {
                 />
               </div>
             </div>
+            
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className={labelClass}>Protocol</label>
@@ -588,6 +599,20 @@ export const OllamaConfigPanel: React.FC = () => {
                 />
               </div>
             </div>
+
+            {/* URL Preview - shows auto-handled /api path */}
+            {newEndpoint.host && (
+              <div className={`p-2 rounded-lg border text-xs ${isDark ? 'bg-dark-100 border-dark-50' : 'bg-gray-100 border-gray-300'}`}>
+                <p className={`font-semibold mb-1 ${textMuted}`}>Connection URL (auto-constructed):</p>
+                <code className={`block p-2 rounded text-xs break-all ${isDark ? 'bg-dark-200 text-green-300' : 'bg-white text-green-700'}`}>
+                  {newEndpoint.protocol}://{newEndpoint.host}:{newEndpoint.port}<strong>/api</strong><span className={isDark ? 'text-gray-500' : 'text-gray-400'}>/version</span>
+                </code>
+                <p className={`text-xs mt-1 ${textMuted}`}>
+                  ✓ <strong>/api</strong> path is automatically added for all endpoints
+                </p>
+              </div>
+            )}
+
             <button
               onClick={handleAddEndpoint}
               className="w-full bg-theme-primary hover:bg-theme-primary-hover text-white text-sm px-3 py-2 rounded-lg font-medium transition-colors"
