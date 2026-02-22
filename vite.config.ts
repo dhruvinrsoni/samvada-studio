@@ -37,11 +37,14 @@ const buildTimestamp = (() => {
   return istTime.toISOString().replace('T', ' ').slice(0, -5) + '+05:30'
 })()
 
-// Use environment variable for base path (GitHub Pages needs /repo-name/)
-const base = process.env.BASE_URL || '/'
-
 // Determine if we're in development mode
 const isDev = process.env.NODE_ENV === 'development' || process.env.VITE_DEV_MODE === 'true'
+
+// Use environment variable for base path (GitHub Pages needs /repo-name/)
+// Default to '/' in development, but when building for production default to the GitHub Pages subpath
+// so the generated service worker and assets are scoped to /samvada-studio/ and won't claim the whole domain.
+const defaultProdBase = '/samvada-studio/'
+const base = process.env.BASE_URL ?? (isDev ? '/' : defaultProdBase)
 
 // PWA configuration based on environment
 const pwaConfig = {
