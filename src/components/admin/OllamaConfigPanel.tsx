@@ -339,7 +339,7 @@ export const OllamaConfigPanel: React.FC = () => {
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <span className={`flex-shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
                         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${ep.isHealthy ? 'bg-green-500' : 'bg-red-500'}`} />
-                        <span className={`text-sm font-mono truncate ${textPrimary}`}>{ep.baseUrl}</span>
+                        <span className={`text-sm font-mono break-safe break-words whitespace-normal min-w-0 ${textPrimary}`}>{ep.baseUrl}</span>
                         <span className={`text-xs ${textMuted} flex-shrink-0`}>/api</span>
                       </div>
                     </div>
@@ -641,12 +641,12 @@ export const OllamaConfigPanel: React.FC = () => {
                     isDark ? 'bg-dark-200' : 'bg-light-300'
                   }`}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
                     <span className={`text-xs font-mono ${textMuted}`}>#{idx + 1}</span>
                     <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
                       status?.isHealthy ? 'bg-green-500' : status ? 'bg-red-500' : 'bg-gray-500'
                     }`} />
-                    <span className={`font-mono truncate ${textPrimary}`}>{url}</span>
+                    <span className={`font-mono break-safe break-words whitespace-normal min-w-0 ${textPrimary}`}>{url}</span>
                     {ep.label && (
                       <span className={`text-xs ${textMuted}`}>({ep.label})</span>
                     )}
