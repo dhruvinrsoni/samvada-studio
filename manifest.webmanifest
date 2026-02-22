@@ -1,13 +1,13 @@
 {
   "name": "Samvada Studio",
-  "short_name": "Samvada",
+  "short_name": "Samvada Studio",
   "description": "A power-user workspace for designing and managing conversational AI",
-  "start_url": "/samvada-studio",
+  "start_url": "/samvada-studio/",
   "display": "standalone",
   "background_color": "#1a1a2e",
   "theme_color": "#1a1a2e",
   "lang": "en",
-  "scope": "/",
+  "scope": "/samvada-studio/",
   "icons": [
     { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any" },
