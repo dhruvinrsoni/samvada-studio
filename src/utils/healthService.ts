@@ -320,9 +320,9 @@ export class HealthService {
         try {
           const pingResponse = await fetch(`${endpoint}/api/tags`, {
             method: 'GET',
-            signal: AbortSignal.timeout(1000), // Quick 1-second ping
+            signal: AbortSignal.timeout(1500), // Quick 1.5s ping
           });
-          
+
           if (pingResponse.ok) {
             // Ollama is running, return cached models
             return {
@@ -331,12 +331,28 @@ export class HealthService {
             };
           }
         } catch {
-          // Ollama not running, return cached data but mark as unavailable
-          return {
-            available: false,
-            models: cache.models,
-            error: 'Ollama server not responding',
-          };
+          // Quick ping failed — perform one retry with a slightly longer timeout
+          try {
+            const retryResponse = await fetch(`${endpoint}/api/tags`, {
+              method: 'GET',
+              signal: AbortSignal.timeout(3000), // Retry with 3s timeout
+            });
+
+            if (retryResponse.ok) {
+              // Server responded on retry — return cached models
+              return {
+                available: true,
+                models: cache.models,
+              };
+            }
+          } catch {
+            // Retry also failed — return cached data but mark as unavailable
+            return {
+              available: false,
+              models: cache.models,
+              error: 'Ollama server not responding (quick check failed)',
+            };
+          }
         }
       }
     }
