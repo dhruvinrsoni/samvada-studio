@@ -80,11 +80,12 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               onBlur={() => {
-                if (isMobile) {
-                  handleRenameCancel();
-                  return;
+                // On mobile, avoid cancelling on blur because tapping the
+                // Save/Cancel buttons can trigger a blur before the button
+                // click handler runs. Require explicit Save/Cancel on mobile.
+                if (!isMobile) {
+                  handleRename();
                 }
-                handleRename();
               }}
               onKeyDown={handleRenameKeyDown}
               onClick={(e) => e.stopPropagation()}
