@@ -518,7 +518,9 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
                 title="Select LLM Provider"
               >
                 <span className="truncate max-w-[80px] sm:max-w-[100px] lg:max-w-[150px]">
-                  {selectedProvider ? `${selectedProvider.name}` : 'Provider'}
+                  {selectedProvider ? (
+                    selectedProvider.type === 'ollama' ? `${selectedProvider.model} (${selectedProvider.name})` : selectedProvider.name
+                  ) : 'Provider'}
                 </span>
                 <svg
                   className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform flex-shrink-0 ${isProviderDropdownOpen ? 'rotate-180' : ''}`}

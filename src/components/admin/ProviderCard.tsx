@@ -68,9 +68,23 @@ export default function ProviderCard({
           <span className="text-xl sm:text-2xl flex-shrink-0">{getProviderIcon(provider.type)}</span>
           <div className="flex-1 min-w-0">
             <div className="flex flex-col xs:flex-row xs:items-center gap-1.5 xs:gap-2 flex-wrap">
-              <h4 className={`font-medium truncate ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                {provider.name}
-              </h4>
+              {provider.type === 'ollama' ? (
+                <div className="flex flex-col">
+                  <h4 className={`font-medium truncate ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                    {provider.model}
+                  </h4>
+                  <div className={`text-xs truncate ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {provider.name || 'Ollama (Local)'}
+                    {providerHealth?.modelSize && (
+                      <span className="ml-1 opacity-75 whitespace-nowrap">• {HealthService.formatBytes(providerHealth.modelSize)}</span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <h4 className={`font-medium truncate ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                  {provider.name}
+                </h4>
+              )}
               {isDefault && (
                 <span className="px-2 py-0.5 text-xs bg-theme-primary text-white rounded-full whitespace-nowrap self-start">
                   Default
@@ -85,16 +99,13 @@ export default function ProviderCard({
                 {getStatusBadge()}
               </div>
             </div>
-            <p className={`text-sm mt-1.5 break-words ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              <span className="text-xs">Model:</span> <code className={`px-1 py-0.5 rounded text-xs break-all ${isDark ? 'bg-dark-100' : 'bg-light-400'}`}>
-                {provider.model}
-                {provider.type === 'ollama' && providerHealth?.modelSize && (
-                  <span className="ml-1 opacity-75 whitespace-nowrap">
-                    ({HealthService.formatBytes(providerHealth.modelSize)})
-                  </span>
-                )}
-              </code>
-            </p>
+            {provider.type !== 'ollama' && (
+              <p className={`text-sm mt-1.5 break-words ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                <span className="text-xs">Model:</span> <code className={`px-1 py-0.5 rounded text-xs break-all ${isDark ? 'bg-dark-100' : 'bg-light-400'}`}>
+                  {provider.model}
+                </code>
+              </p>
+            )}
             <p className={`text-xs mt-1 break-all ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
               Endpoint: {provider.apiEndpoint || 'Not configured'}
             </p>
