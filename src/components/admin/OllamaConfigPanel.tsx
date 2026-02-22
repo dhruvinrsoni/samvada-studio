@@ -385,19 +385,53 @@ export const OllamaConfigPanel: React.FC = () => {
                                 p => p.type === 'ollama' && p.apiEndpoint === `${ep.baseUrl}/api/generate` && p.model === model.name
                               );
                               return (
-                                <button
-                                  key={model.name}
-                                  onClick={() => handleToggleModel(ep.baseUrl, model.name)}
-                                  className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
-                                    alreadyAdded
-                                      ? isDark ? 'bg-green-900/30 hover:bg-red-900/30 text-green-400 hover:text-red-400' : 'bg-green-100 hover:bg-red-100 text-green-700 hover:text-red-700'
-                                      : isDark ? 'bg-dark-100 hover:bg-theme-primary/30 text-gray-300 hover:text-white' : 'bg-light-300 hover:bg-theme-primary/20 text-gray-700 hover:text-gray-900'
-                                  }`}
-                                  title={alreadyAdded ? `Click to remove ${model.name} from providers` : `Click to add ${model.name} as provider`}
-                                >
-                                  {alreadyAdded ? '✓' : '+'} {model.name}
-                                  {model.size ? ` (${formatBytes(model.size)})` : ''}
-                                </button>
+                                <div key={model.name} className="inline-flex items-center gap-1">
+                                  {alreadyAdded ? (
+                                    <>
+                                      <button
+                                        onClick={() => {
+                                          // Emit an event to open the provider editor in AdminPanel
+                                          const existing = state.providers.find(
+                                            p => p.type === 'ollama' && p.apiEndpoint === `${ep.baseUrl}/api/generate` && p.model === model.name
+                                          );
+                                          if (existing) {
+                                            window.dispatchEvent(new CustomEvent('edit-provider', { detail: { id: existing.id } }));
+                                          }
+                                        }}
+                                        className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${isDark ? 'bg-dark-100 hover:bg-theme-primary/30 text-gray-300 hover:text-white' : 'bg-light-300 hover:bg-theme-primary/20 text-gray-700 hover:text-gray-900'}`}
+                                        title={`Edit ${model.name} provider`}
+                                      >
+                                        ✏️ {model.name}{model.size ? ` (${formatBytes(model.size)})` : ''}
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          // Remove provider
+                                          const existing = state.providers.find(
+                                            p => p.type === 'ollama' && p.apiEndpoint === `${ep.baseUrl}/api/generate` && p.model === model.name
+                                          );
+                                          if (existing) {
+                                            dispatch({ type: 'DELETE_PROVIDER', payload: existing.id });
+                                            addToast('info', 'Provider Removed', `${model.name} removed from providers`);
+                                            refreshStatuses();
+                                          }
+                                        }}
+                                        className="inline-flex items-center px-2 py-1 rounded text-xs text-red-500 hover:bg-red-50"
+                                        title={`Remove ${model.name}`}
+                                      >
+                                        🗑️
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleToggleModel(ep.baseUrl, model.name)}
+                                      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${isDark ? 'bg-dark-100 hover:bg-theme-primary/30 text-gray-300 hover:text-white' : 'bg-light-300 hover:bg-theme-primary/20 text-gray-700 hover:text-gray-900'}`}
+                                      title={`Click to add ${model.name} as provider`}
+                                    >
+                                      + {model.name}
+                                      {model.size ? ` (${formatBytes(model.size)})` : ''}
+                                    </button>
+                                  )}
+                                </div>
                               );
                             })}
                           </div>

@@ -83,7 +83,24 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
     };
     
     window.addEventListener('ollama-discovered', handleOllamaDiscovered as EventListener);
-    return () => window.removeEventListener('ollama-discovered', handleOllamaDiscovered as EventListener);
+    // Listen for external requests to edit a provider (e.g. from Ollama panel)
+    const handleEditRequest = (e: Event) => {
+      try {
+        const payload = (e as CustomEvent).detail as { id?: string };
+        if (!payload?.id) return;
+        const providerToEdit = state.providers.find(p => p.id === payload.id);
+        if (providerToEdit) {
+          handleEditProvider(providerToEdit);
+        }
+      } catch (err) {
+        console.warn('Failed to handle edit-provider event', err);
+      }
+    };
+    window.addEventListener('edit-provider', handleEditRequest as EventListener);
+    return () => {
+      window.removeEventListener('ollama-discovered', handleOllamaDiscovered as EventListener);
+      window.removeEventListener('edit-provider', handleEditRequest as EventListener);
+    };
   }, [state.providers, dispatch]);
 
   useEffect(() => {
@@ -159,6 +176,12 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
       return;
     }
     
+    // Ensure Admin panel is visible and switch to Providers tab
+    if (!state.isAdminPanelOpen) {
+      dispatch({ type: 'TOGGLE_ADMIN_PANEL' });
+    }
+    setActiveTab('providers');
+
     // Otherwise, switch to editing this provider
     setIsAddingProvider(false);
     setEditingProvider(provider);
