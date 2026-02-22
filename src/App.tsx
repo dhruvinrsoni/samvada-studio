@@ -13,17 +13,16 @@ import KeyboardShortcuts from './components/common/KeyboardShortcuts';
 import TemplatesLibrary from './components/templates/TemplatesLibrary';
 import ExportModal from './components/export/ExportModal';
 import StarredModal from './components/starred/StarredModal';
-import ThemeHealthIndicator from './components/common/ThemeHealthIndicator';
 import ThemeSettingsModal from './components/common/ThemeSettingsModal';
-import ConnectionStatus from './components/common/ConnectionStatus';
 import StatusBar from './components/common/StatusBar';
-import DebugMode from './components/common/DebugMode';
+import SystemHealthCenter from './components/common/SystemHealthCenter';
 import ToastContainer from './components/toast/ToastContainer';
 import { PWAInstallPrompt, PWAUpdateNotification, PWAOfflineIndicator } from './components/pwa';
 import { usePWA } from './hooks/usePWA';
 import { useState, useEffect } from 'react';
 import BRAND from './constants/brand';
 import { HealthService } from './utils/healthService';
+import { ObservabilityProvider } from './context/ObservabilityContext';
 
 function AppContent() {
   const { state, dispatch, createChat, isDark } = useChat();
@@ -39,7 +38,6 @@ function AppContent() {
   const [templateContent, setTemplateContent] = useState<string>('');
   // Theme settings modal is managed by global context now
   const isThemeSettingsOpen = state.isThemeSettingsOpen;
-  const [minimizedOllamaWarnings, setMinimizedOllamaWarnings] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleQuote = (text: string) => {
@@ -56,14 +54,6 @@ function AppContent() {
 
   const clearTemplateContent = () => {
     setTemplateContent('');
-  };
-
-  const minimizeOllamaWarnings = () => {
-    setMinimizedOllamaWarnings(true);
-  };
-
-  const showOllamaWarnings = () => {
-    setMinimizedOllamaWarnings(false);
   };
 
   // Global keyboard shortcuts
@@ -514,10 +504,7 @@ function AppContent() {
 
         {/* Status Bar - Below chat, takes natural height */}
         <ErrorBoundary name="Status Bar">
-          <StatusBar 
-            minimizedOllamaWarnings={minimizedOllamaWarnings}
-            onShowOllamaWarnings={showOllamaWarnings}
-          />
+          <StatusBar />
         </ErrorBoundary>
       </div>
 
@@ -534,26 +521,14 @@ function AppContent() {
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onRemove={removeToast} position="top-right" />
 
-      {/* Connection Status Indicator */}
-      <ConnectionStatus 
-        minimized={minimizedOllamaWarnings} 
-        onMinimize={minimizeOllamaWarnings} 
-      />
+      {/* Unified System Health Center */}
+      <SystemHealthCenter />
 
       {/* PWA Components */}
       <PWAInstallPrompt pwaStatus={pwaStatus} />
       <PWAUpdateNotification pwaStatus={pwaStatus} />
       <PWAOfflineIndicator pwaStatus={pwaStatus} />
 
-      {/* Silent Failure Prevention - Theme Health Indicator */}
-      <ErrorBoundary name="Theme Health">
-        <ThemeHealthIndicator />
-      </ErrorBoundary>
-
-      {/* Debug Mode - Ctrl+Shift+D */}
-      <ErrorBoundary name="Debug Mode">
-        <DebugMode />
-      </ErrorBoundary>
     </div>
     </>
   );
@@ -563,7 +538,9 @@ export default function App() {
   return (
     <ToastProvider>
       <ChatProvider>
-        <AppContent />
+        <ObservabilityProvider>
+          <AppContent />
+        </ObservabilityProvider>
       </ChatProvider>
     </ToastProvider>
   );

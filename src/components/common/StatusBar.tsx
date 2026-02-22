@@ -10,7 +10,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
-import useProviderHealthMonitor from '../../hooks/useProviderHealthMonitor';
+import { useObservability } from '../../context/ObservabilityContext';
 import { HealthService, type HealthStatus } from '../../utils/healthService';
 
 interface StatusBarProps {
@@ -30,10 +30,13 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
   const contentRef = useRef<HTMLDivElement>(null);
   const lastCheckTimeRef = useRef<number>(Date.now());
 
-  const { healthStatus, isChecking, refresh, showDisableWarning, currentPollInterval } = useProviderHealthMonitor({
-    providers: state.providers.filter(p => p.isEnabled),
-    enabled: state.healthMonitoringEnabled ?? true,
-  });
+  const {
+    providerHealth: healthStatus,
+    isProviderChecking: isChecking,
+    refreshProviders: refresh,
+    showDisableWarning,
+    currentPollInterval,
+  } = useObservability();
 
   // Check if warning was dismissed and if enough time has passed to show it again
   useEffect(() => {
