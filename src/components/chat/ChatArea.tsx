@@ -31,6 +31,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
   const [isRenamingChat, setIsRenamingChat] = useState(false);
   const [chatTitleInput, setChatTitleInput] = useState('');
   const loadingRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement | null>(null);
   
   // Get available providers and selected provider
   const enabledProviders = state.providers.filter(p => p.isEnabled);
@@ -100,6 +101,31 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
       loadingRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
   }, [isLoading]);
+
+  // When a chat opens, immediately jump to the bottom (no animation) for best performance
+  useEffect(() => {
+    if (!messagesRef.current) return;
+
+    try {
+      const el = messagesRef.current!;
+      const contentHeight = el.scrollHeight;
+      const viewHeight = el.clientHeight || 1;
+      // Direct assignment is the fastest and avoids layout thrash from animated scrolling
+      el.scrollTop = Math.max(0, contentHeight - viewHeight);
+    } catch (e) {
+      // ignore runtime issues
+    }
+  }, [activeChat?.id]);
+
+  const scrollToTop = (behavior: ScrollBehavior = 'smooth') => {
+    if (!messagesRef.current) return;
+    messagesRef.current.scrollTo({ top: 0, behavior });
+  };
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    if (!messagesRef.current) return;
+    messagesRef.current.scrollTo({ top: messagesRef.current.scrollHeight, behavior });
+  };
 
   // Close provider dropdown when clicking outside
   useEffect(() => {
@@ -420,9 +446,9 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
             {activeChat.promptResponses.length} {isMobile ? '' : 'messages'}
           </span>
           
-          {/* Expand/Collapse All Buttons */}
-          {activeChat.promptResponses.length > 0 && (
-            <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+              {/* Expand/Collapse All Buttons + Scroll Controls */}
+              {activeChat.promptResponses.length > 0 && (
+                <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
               <button
                 onClick={() => dispatch({ type: 'EXPAND_ALL', payload: { chatId: activeChat.id } })}
                 className={`p-1 sm:px-2 sm:py-1 text-xs rounded transition-colors min-w-[28px] min-h-[28px] flex items-center justify-center ${
@@ -449,6 +475,34 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
                 </svg>
               </button>
+                  {/* Scroll to top */}
+                  <button
+                    onClick={() => scrollToTop()}
+                    className={`p-1 sm:px-2 sm:py-1 text-xs rounded transition-colors min-w-[28px] min-h-[28px] flex items-center justify-center ${
+                      isDark
+                        ? 'bg-dark-100 text-gray-400 hover:bg-dark-50 hover:text-gray-300'
+                        : 'bg-light-300 text-gray-600 hover:bg-light-400 hover:text-gray-700'
+                    }`}
+                    title="Go to top"
+                  >
+                    <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  </button>
+                  {/* Scroll to bottom */}
+                  <button
+                    onClick={() => scrollToBottom()}
+                    className={`p-1 sm:px-2 sm:py-1 text-xs rounded transition-colors min-w-[28px] min-h-[28px] flex items-center justify-center ${
+                      isDark
+                        ? 'bg-dark-100 text-gray-400 hover:bg-dark-50 hover:text-gray-300'
+                        : 'bg-light-300 text-gray-600 hover:bg-light-400 hover:text-gray-700'
+                    }`}
+                    title="Go to bottom"
+                  >
+                    <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
             </div>
           )}
           {/* Provider Selector - Mobile-friendly */}
@@ -540,7 +594,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
       )}
 
       {/* Messages Area - responsive padding and spacing */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-3 md:p-4 space-y-2 sm:space-y-3 md:space-y-4 max-w-full scroll-touch">
+      <div ref={messagesRef} className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-3 md:p-4 space-y-2 sm:space-y-3 md:space-y-4 max-w-full scroll-touch">
         {/* Pinned Messages */}
         {pinnedPnRs.length > 0 && (
           <div className="mb-2 sm:mb-4">
