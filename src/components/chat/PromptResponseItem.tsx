@@ -308,7 +308,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                 U
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1 sm:gap-2 mb-1 flex-wrap">
+                <div className="flex items-center gap-1 sm:gap-2 mb-1 flex-nowrap whitespace-nowrap">
                   <span className={`text-xs sm:text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>You</span>
                   <span className="text-[10px] sm:text-xs text-gray-500">
                     {formatTimestamp(promptResponse.prompt.timestamp)}
@@ -374,7 +374,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                   AI
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1 sm:gap-2 mb-1 flex-wrap">
+                  <div className="flex items-center gap-1 sm:gap-2 mb-1 flex-nowrap whitespace-nowrap">
                     <span className={`text-xs sm:text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Assistant</span>
                     <span className="text-[10px] sm:text-xs text-gray-500">
                       {formatTimestamp(activeResponse.timestamp)}
