@@ -223,9 +223,11 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
   const unpinnedPnRs = activeChat.promptResponses.filter(pnr => !pnr.isPinned);
 
   return (
-    <div className={`chat-area flex-1 flex flex-col h-full overflow-hidden ${
-      state.showDisableWarning ? 'pb-20 sm:pb-16' : 'pb-2 sm:pb-2'
-    } ${isDark ? 'bg-dark-300' : 'bg-light-200'}`}>
+    <div
+      className={`chat-area flex-1 flex flex-col h-full overflow-hidden ${isDark ? 'bg-dark-300' : 'bg-light-200'}`}
+      // Use CSS variable set by StatusBar to reserve exact overlay height; add small default padding
+      style={{ paddingBottom: `calc(var(--bottom-overlay-height, 0px) + 0.5rem)` }}
+    >
       {/* Dynamic padding: pb-20/pb-16 when disable warning shown (~80px/64px), minimal padding normally */}
       {/* Header */}
       <div className={`flex items-center justify-between p-2 sm:p-3 md:p-4 border-b gap-2 flex-shrink-0 ${isDark ? 'border-dark-100' : 'border-light-400'}`}>

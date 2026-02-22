@@ -61,6 +61,31 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
     }
   }, [showDisableWarning]);
 
+  // Update CSS variable with banner height so layout can adapt precisely
+  useEffect(() => {
+    const setVar = () => {
+      try {
+        const h = bannerRef.current ? `${bannerRef.current.getBoundingClientRect().height}px` : '0px';
+        document.documentElement.style.setProperty('--bottom-overlay-height', h);
+      } catch {
+        document.documentElement.style.setProperty('--bottom-overlay-height', '0px');
+      }
+    };
+
+    // Set initially and on resize
+    setVar();
+    window.addEventListener('resize', setVar);
+    // Also observe mutations in case content height changes
+    const obs = new MutationObserver(setVar);
+    if (bannerRef.current) obs.observe(bannerRef.current, { childList: true, subtree: true, characterData: true });
+
+    return () => {
+      window.removeEventListener('resize', setVar);
+      obs.disconnect();
+      document.documentElement.style.setProperty('--bottom-overlay-height', '0px');
+    };
+  }, [showDisableWarning, warningDismissed]);
+
   // Update global state when showDisableWarning changes
   useEffect(() => {
     dispatch({ type: 'SET_SHOW_DISABLE_WARNING', payload: showDisableWarning });
@@ -73,6 +98,9 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
 
   // Show message if no providers configured
   const hasProviders = state.providers.length > 0;
+
+  // Ref for the disable warning banner to measure its height
+  const bannerRef = useRef<HTMLDivElement | null>(null);
 
   /**
    * Get status icon and color
@@ -221,9 +249,13 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
       {/* Disable Warning Banner */}
       {showDisableWarning && !warningDismissed && (
         <div 
+          ref={bannerRef}
           className={`fixed bottom-0 left-0 right-0 z-40 px-3 sm:px-4 py-2 sm:py-2.5 border-t-2 border-yellow-500 ${
             state.theme === 'dark' ? 'bg-yellow-900/20' : 'bg-yellow-100'
           }`}
+          onLoad={() => {
+            // no-op; measurement happens in effect
+          }}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -273,6 +305,11 @@ export default function StatusBar({ minimizedOllamaWarnings = false, onShowOllam
           </div>
         </div>
       )}
+
+      {/* Keep a CSS variable updated with the banner height so other components (ChatArea) can adjust padding precisely */}
+      <style>{`
+        :root { --bottom-overlay-height: 0px; }
+      `}</style>
 
       {/* Status Bar */}
       <div 
