@@ -2,12 +2,14 @@
 import localtunnel from 'localtunnel';
 
 const PORT = 11434; // fixed port for Ollama
-const SUBDOMAIN = process.env.SUBDOMAIN || 'samvada-ollama';
+const ENV_SUBDOMAIN = process.env.SUBDOMAIN;
 
 async function run() {
   try {
-    console.log(`Starting localtunnel for localhost:${PORT} (subdomain=${SUBDOMAIN})`);
-    const tunnel = await localtunnel({ port: PORT, subdomain: SUBDOMAIN });
+    console.log(`Starting localtunnel for localhost:${PORT} ${ENV_SUBDOMAIN ? `(subdomain=${ENV_SUBDOMAIN})` : '(no subdomain - random URL)'}`);
+    const options = { port: PORT };
+    if (ENV_SUBDOMAIN) options.subdomain = ENV_SUBDOMAIN;
+    const tunnel = await localtunnel(options);
 
     console.log('Tunnel established:');
     console.log(`  Public URL: ${tunnel.url}`);
@@ -25,7 +27,8 @@ async function run() {
       process.exit(0);
     });
   } catch (err) {
-    console.error('Failed to create tunnel:', err.message || err);
+    // Log full error for easier debugging (stack if available)
+    console.error('Failed to create tunnel:', err && err.stack ? err.stack : err);
     process.exit(1);
   }
 }
