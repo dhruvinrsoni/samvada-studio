@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { useObservability } from '../../context/ObservabilityContext';
 import { createLLMReport } from '../../utils/debug';
@@ -27,17 +27,11 @@ export default function SystemHealthCenter() {
     return 'br';
   });
   const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef<{x:number,y:number}>({x:0,y:0});
+  
   const pillRef = useRef<HTMLButtonElement | null>(null);
+  
 
-  const issueCount = useMemo(() => {
-    const providerIssues = providerHealth.filter(p => p.status === 'offline').length;
-    const connectivityIssue = connectivity && (!connectivity.internet || !connectivity.ollama) ? 1 : 0;
-    const diagnosticsIssues = diagnosticsReport?.summary.issues || 0;
-    return providerIssues + connectivityIssue + diagnosticsIssues;
-  }, [providerHealth, connectivity, diagnosticsReport]);
-
-  const hasIssues = issueCount > 0 || ollamaWarning.hasWarning;
+  
 
   const copyThemeReport = async () => {
     const report = createLLMReport.themeIssue();
@@ -66,9 +60,21 @@ export default function SystemHealthCenter() {
     try { localStorage.setItem('healthPillCorner', c); } catch {}
   };
 
-  // Pointer drag handlers
+  // Pointer drag handlers + adaptive overlay avoidance
   useEffect(() => {
-    // local state used during dragging
+    const adjustForOverlay = () => {
+      try {
+        const raw = getComputedStyle(document.documentElement).getPropertyValue('--bottom-overlay-height') || '0px';
+        const px = parseFloat(raw.replace('px','')) || 0;
+        // If current corner is bottom and overlay consumes space, move to top counterpart
+        if (px > 20 && (corner === 'br' || corner === 'bl')) {
+          const newCorner = corner === 'br' ? 'tr' : 'tl';
+          saveCorner(newCorner);
+        }
+      } catch {
+        // ignore
+      }
+    };
 
     const onPointerMove = (e: PointerEvent) => {
       if (!isDragging) return;
@@ -107,30 +113,32 @@ export default function SystemHealthCenter() {
       window.addEventListener('pointerup', onPointerUp);
     }
 
+    // Run initial adjustment and observe style changes to react to --bottom-overlay-height updates
+    adjustForOverlay();
+    const mo = new MutationObserver(adjustForOverlay);
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+    window.addEventListener('resize', adjustForOverlay);
+
     return () => {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
+      mo.disconnect();
+      window.removeEventListener('resize', adjustForOverlay);
     };
-  }, [isDragging]);
+  }, [isDragging, corner]);
 
-  const handlePointerDown = (e: React.PointerEvent) => {
-    (e.target as Element).setPointerCapture?.(e.pointerId);
-    dragStartRef.current = { x: e.clientX, y: e.clientY };
-    setIsDragging(true);
-  };
+  // Listen for external open requests (e.g., StatusBar icon)
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener('open-system-health', onOpen as EventListener);
+    return () => window.removeEventListener('open-system-health', onOpen as EventListener);
+  }, []);
 
-  const handleClick = (e: React.MouseEvent) => {
-    if (isDragging) {
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
-    setOpen(true);
-  };
+  
 
   return (
     <div style={cornerStyle as any}>
-      {open ? (
+      {open && (
         <div className={`w-[92vw] max-w-md rounded-xl border shadow-xl ${isDark ? 'bg-dark-200 border-dark-100' : 'bg-white border-light-400'}`}>
           <div className={`flex items-center justify-between px-3 py-2 border-b ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
             <div>
@@ -236,28 +244,6 @@ export default function SystemHealthCenter() {
             </div>
           </div>
         </div>
-      ) : (
-        <button
-          ref={pillRef}
-          onPointerDown={handlePointerDown}
-          onClick={handleClick}
-          className={`relative px-3 py-2 rounded-full shadow-lg text-xs font-semibold border cursor-grab ${
-            hasIssues
-              ? 'bg-yellow-500 text-white border-yellow-400'
-              : isDark
-                ? 'bg-dark-100 text-gray-200 border-dark-50'
-                : 'bg-white text-gray-800 border-light-400'
-          }`}
-          title="Open System Health Center"
-          style={{ touchAction: 'none' }}
-        >
-          🩺 Health
-          {hasIssues && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
-              {issueCount > 9 ? '9+' : issueCount}
-            </span>
-          )}
-        </button>
       )}
     </div>
   );

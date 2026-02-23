@@ -521,8 +521,8 @@ function AppContent() {
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onRemove={removeToast} position="top-right" />
 
-      {/* Unified System Health Center */}
-      <SystemHealthCenter />
+      {/* Unified System Health Center (mount only when enabled) */}
+      {state.healthMonitoringEnabled && <SystemHealthCenter />}
 
       {/* PWA Components */}
       <PWAInstallPrompt pwaStatus={pwaStatus} />
