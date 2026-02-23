@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { useObservability } from '../../context/ObservabilityContext';
 import { createLLMReport } from '../../utils/debug';
@@ -18,6 +18,17 @@ export default function SystemHealthCenter() {
   } = useObservability();
 
   const [open, setOpen] = useState(false);
+  // Pill corner position: 'br'|'bl'|'tr'|'tl'
+  const [corner, setCorner] = useState<'br'|'bl'|'tr'|'tl'>(() => {
+    try {
+      const saved = localStorage.getItem('healthPillCorner');
+      if (saved === 'br' || saved === 'bl' || saved === 'tr' || saved === 'tl') return saved;
+    } catch {}
+    return 'br';
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef<{x:number,y:number}>({x:0,y:0});
+  const pillRef = useRef<HTMLButtonElement | null>(null);
 
   const issueCount = useMemo(() => {
     const providerIssues = providerHealth.filter(p => p.status === 'offline').length;
@@ -37,8 +48,88 @@ export default function SystemHealthCenter() {
     return null;
   }
 
+  // Compute style for corner placement; respect bottom overlay height for bottom corners
+  const bottomOffset = `calc(var(--bottom-overlay-height, 0px) + 1rem)`;
+  const cornerStyle: React.CSSProperties = (() => {
+    const base: React.CSSProperties = { position: 'fixed', zIndex: 50 };
+    switch (corner) {
+      case 'br': return { ...base, right: '1rem', bottom: bottomOffset };
+      case 'bl': return { ...base, left: '1rem', bottom: bottomOffset };
+      case 'tr': return { ...base, right: '1rem', top: '1rem' };
+      case 'tl': return { ...base, left: '1rem', top: '1rem' };
+      default: return { ...base, right: '1rem', bottom: bottomOffset };
+    }
+  })();
+
+  const saveCorner = (c: 'br'|'bl'|'tr'|'tl') => {
+    setCorner(c);
+    try { localStorage.setItem('healthPillCorner', c); } catch {}
+  };
+
+  // Pointer drag handlers
+  useEffect(() => {
+    // local state used during dragging
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isDragging) return;
+      // move pill to pointer during drag
+      if (pillRef.current) {
+        pillRef.current.style.left = `${e.clientX - 28}px`;
+        pillRef.current.style.top = `${e.clientY - 20}px`;
+        pillRef.current.style.right = 'auto';
+        pillRef.current.style.bottom = 'auto';
+        pillRef.current.style.position = 'fixed';
+      }
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      if (!isDragging) return;
+      setIsDragging(false);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+
+      const w = window.innerWidth; const h = window.innerHeight;
+      const x = e.clientX; const y = e.clientY;
+      // decide nearest corner
+      const isLeft = x < w/2; const isTop = y < h/2;
+      const newCorner = isLeft ? (isTop ? 'tl' : 'bl') : (isTop ? 'tr' : 'br');
+      saveCorner(newCorner);
+      // reset inline positioning
+      if (pillRef.current) {
+        pillRef.current.style.left = '';
+        pillRef.current.style.top = '';
+        pillRef.current.style.position = '';
+      }
+    };
+
+    if (isDragging) {
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+    }
+
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, [isDragging]);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+    setIsDragging(true);
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (isDragging) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    setOpen(true);
+  };
+
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div style={cornerStyle as any}>
       {open ? (
         <div className={`w-[92vw] max-w-md rounded-xl border shadow-xl ${isDark ? 'bg-dark-200 border-dark-100' : 'bg-white border-light-400'}`}>
           <div className={`flex items-center justify-between px-3 py-2 border-b ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
@@ -147,8 +238,10 @@ export default function SystemHealthCenter() {
         </div>
       ) : (
         <button
-          onClick={() => setOpen(true)}
-          className={`relative px-3 py-2 rounded-full shadow-lg text-xs font-semibold border ${
+          ref={pillRef}
+          onPointerDown={handlePointerDown}
+          onClick={handleClick}
+          className={`relative px-3 py-2 rounded-full shadow-lg text-xs font-semibold border cursor-grab ${
             hasIssues
               ? 'bg-yellow-500 text-white border-yellow-400'
               : isDark
@@ -156,6 +249,7 @@ export default function SystemHealthCenter() {
                 : 'bg-white text-gray-800 border-light-400'
           }`}
           title="Open System Health Center"
+          style={{ touchAction: 'none' }}
         >
           🩺 Health
           {hasIssues && (
