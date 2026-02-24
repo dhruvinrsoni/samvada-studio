@@ -1,4 +1,6 @@
 import { useState, useCallback, KeyboardEvent, useEffect, useRef } from 'react';
+import { useObservability } from '../../context/ObservabilityContext';
+import { HealthService } from '../../utils/healthService';
 import { useChat } from '../../context/ChatContext';
 import { useToast } from '../../context/ToastContext';
 import { useIsMobile } from '../../hooks/useMediaQuery';
@@ -42,6 +44,14 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
   const chatProvider = activeChat?.providerId ? enabledProviders.find(p => p.id === activeChat.providerId) : null;
   const defaultProvider = enabledProviders.find(p => p.isDefault) || enabledProviders[0] || null;
   const [selectedProvider, setSelectedProvider] = useState<LLMProviderConfig | null>(chatProvider || defaultProvider);
+
+  const { providerHealth } = useObservability();
+
+  const getModelSizeForProvider = (providerId?: string) => {
+    if (!providerId) return undefined;
+    const h = providerHealth.find(p => p.providerId === providerId);
+    return h?.modelSize;
+  };
 
   // Update selectedProvider when activeChat or providers change
   useEffect(() => {
@@ -610,10 +620,26 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
                         setIsProviderDropdownOpen(false);
                       }}
                     >
-                      <div className="font-medium">{provider.name}</div>
-                      <div className={`text-xs ${selectedProvider?.id === provider.id ? 'text-white/70' : isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                        {provider.model}
-                      </div>
+                      {provider.type === 'ollama' ? (
+                        <div>
+                          <div className="font-medium">{provider.model}</div>
+                          <div className={`text-xs ${selectedProvider?.id === provider.id ? 'text-white/70' : isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {provider.name}
+                            {getModelSizeForProvider(provider.id) ? (
+                              <span className="ml-1 opacity-70"> • {HealthService.formatBytes(getModelSizeForProvider(provider.id)!)}</span>
+                            ) : (
+                              <span className="ml-1 opacity-50"> • size unknown</span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="font-medium">{provider.name}</div>
+                          <div className={`text-xs ${selectedProvider?.id === provider.id ? 'text-white/70' : isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {provider.model}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

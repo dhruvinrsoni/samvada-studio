@@ -3,6 +3,8 @@ import { useChat } from '../../context/ChatContext';
 import { searchInChat } from '../../utils/helpers';
 import { useIsMobile } from '../../hooks/useMediaQuery';
 import ChatListItem from './ChatListItem';
+import { useObservability } from '../../context/ObservabilityContext';
+import { HealthService } from '../../utils/healthService';
 import FoldersSection from './FoldersSection';
 import SearchBar from '../common/SearchBar';
 
@@ -32,6 +34,12 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
 
   const pinnedChats = filteredChats.filter(chat => chat.isPinned);
   const unpinnedChats = filteredChats.filter(chat => !chat.isPinned);
+  const { providerHealth } = useObservability();
+
+  const findModelSize = (providerId: string) => {
+    const h = providerHealth.find(p => p.providerId === providerId);
+    return h?.modelSize;
+  };
 
   const handleDeleteSelected = useCallback(() => {
     if (state.selectedChatIds.length > 0) {
@@ -169,7 +177,18 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
                         <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
-                        <span className="truncate">{provider.name} ({provider.model})</span>
+                        <span className="truncate">
+                          {provider.type === 'ollama' ? (
+                            <>
+                              {provider.model} <span className="opacity-75">({provider.name})</span>
+                              {findModelSize(provider.id) ? (
+                                <span className="ml-2 text-xs opacity-60">• {HealthService.formatBytes(findModelSize(provider.id)!)}</span>
+                              ) : null}
+                            </>
+                          ) : (
+                            <>{provider.name} <span className="opacity-60">({provider.model})</span></>
+                          )}
+                        </span>
                         {provider.isDefault && <span className="text-xs text-theme-secondary flex-shrink-0">(Default)</span>}
                       </span>
                     </button>
