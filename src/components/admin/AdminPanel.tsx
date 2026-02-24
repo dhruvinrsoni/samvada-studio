@@ -90,7 +90,9 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
         if (!payload?.id) return;
         const providerToEdit = state.providers.find(p => p.id === payload.id);
         if (providerToEdit) {
-          handleEditProvider(providerToEdit);
+          // Call asynchronously to avoid potential initialization order / TDZ issues
+          // (ensures `handleEditProvider` is initialized before invocation)
+          setTimeout(() => handleEditProvider(providerToEdit), 0);
         }
       } catch (err) {
         console.warn('Failed to handle edit-provider event', err);
