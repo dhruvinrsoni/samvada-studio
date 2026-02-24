@@ -32,6 +32,10 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
   const [chatTitleInput, setChatTitleInput] = useState('');
   const loadingRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<HTMLDivElement | null>(null);
+  const providerHoverCloseRef = useRef<number | null>(null);
+  const providerHoverOpenRef = useRef<number | null>(null);
+  const chatMenuHoverCloseRef = useRef<number | null>(null);
+  const chatMenuHoverOpenRef = useRef<number | null>(null);
   
   // Get available providers and selected provider
   const enabledProviders = state.providers.filter(p => p.isEnabled);
@@ -66,6 +70,16 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
     }
     return undefined;
   }, [isProviderDropdownOpen, isChatMenuOpen]);
+
+  // Hover behavior: auto-open dropdowns on hover (desktop only)
+  useEffect(() => {
+    return () => {
+      if (providerHoverCloseRef.current) window.clearTimeout(providerHoverCloseRef.current);
+      if (providerHoverOpenRef.current) window.clearTimeout(providerHoverOpenRef.current);
+      if (chatMenuHoverCloseRef.current) window.clearTimeout(chatMenuHoverCloseRef.current);
+      if (chatMenuHoverOpenRef.current) window.clearTimeout(chatMenuHoverOpenRef.current);
+    };
+  }, []);
 
   // Reset loading state when switching chats
   useEffect(() => {
@@ -271,6 +285,16 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
               <div className="relative chat-menu-dropdown flex-shrink-0 z-10">
                 <button
                   onClick={() => setIsChatMenuOpen(!isChatMenuOpen)}
+                  onMouseEnter={() => {
+                    if (isMobile) return;
+                    if (chatMenuHoverCloseRef.current) window.clearTimeout(chatMenuHoverCloseRef.current);
+                    chatMenuHoverOpenRef.current = window.setTimeout(() => setIsChatMenuOpen(true), 150) as unknown as number;
+                  }}
+                  onMouseLeave={() => {
+                    if (isMobile) return;
+                    if (chatMenuHoverOpenRef.current) window.clearTimeout(chatMenuHoverOpenRef.current);
+                    chatMenuHoverCloseRef.current = window.setTimeout(() => setIsChatMenuOpen(false), 250) as unknown as number;
+                  }}
                   className={`p-1 rounded-lg transition-colors min-w-[24px] min-h-[24px] flex items-center justify-center ${
                     isChatMenuOpen
                       ? 'bg-theme-primary text-white'
@@ -288,6 +312,14 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
                 {/* Dropdown Menu */}
                 {isChatMenuOpen && (
                   <div 
+                    onMouseEnter={() => {
+                      if (isMobile) return;
+                      if (chatMenuHoverCloseRef.current) window.clearTimeout(chatMenuHoverCloseRef.current);
+                    }}
+                    onMouseLeave={() => {
+                      if (isMobile) return;
+                      chatMenuHoverCloseRef.current = window.setTimeout(() => setIsChatMenuOpen(false), 200) as unknown as number;
+                    }}
                     className={`absolute top-full left-0 mt-1 w-48 sm:w-56 rounded-lg border shadow-2xl py-1 z-20 ${
                       isDark ? 'bg-dark-200 border-dark-300' : 'bg-white border-light-400'
                     }`}
@@ -508,10 +540,20 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
             </div>
           )}
           {/* Provider Selector - Mobile-friendly */}
-          {enabledProviders.length > 0 && (
+            {enabledProviders.length > 0 && (
             <div className="relative provider-dropdown flex-shrink-0">
               <button
                 onClick={() => setIsProviderDropdownOpen(!isProviderDropdownOpen)}
+                onMouseEnter={() => {
+                  if (isMobile) return;
+                  if (providerHoverCloseRef.current) window.clearTimeout(providerHoverCloseRef.current);
+                  providerHoverOpenRef.current = window.setTimeout(() => setIsProviderDropdownOpen(true), 120) as unknown as number;
+                }}
+                onMouseLeave={() => {
+                  if (isMobile) return;
+                  if (providerHoverOpenRef.current) window.clearTimeout(providerHoverOpenRef.current);
+                  providerHoverCloseRef.current = window.setTimeout(() => setIsProviderDropdownOpen(false), 220) as unknown as number;
+                }}
                 className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm border transition-colors ${
                   isDark
                     ? 'bg-dark-100 border-dark-300 text-gray-300 hover:bg-dark-200'
@@ -537,6 +579,14 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
               {/* Dropdown Options - Mobile responsive */}
               {isProviderDropdownOpen && (
                 <div 
+                  onMouseEnter={() => {
+                    if (isMobile) return;
+                    if (providerHoverCloseRef.current) window.clearTimeout(providerHoverCloseRef.current);
+                  }}
+                  onMouseLeave={() => {
+                    if (isMobile) return;
+                    providerHoverCloseRef.current = window.setTimeout(() => setIsProviderDropdownOpen(false), 200) as unknown as number;
+                  }}
                   className={`absolute ${isMobile ? 'top-full right-0' : 'top-full left-0'} mt-1 w-48 sm:w-56 md:w-64 rounded-lg border shadow-lg z-50 max-h-[60vh] overflow-y-auto ${
                     isDark ? 'bg-dark-200 border-dark-300' : 'bg-light-100 border-light-400'
                   }`}
