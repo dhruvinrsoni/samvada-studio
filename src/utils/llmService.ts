@@ -703,9 +703,11 @@ export const testProviderConnection = async (
           };
         }
         if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          // Show the actual configured endpoint (strip any /api/* suffix)
+          const endpointHint = (provider.apiEndpoint || '').replace('/api/generate', '').replace('/api/chat', '') || 'http://localhost:11434';
           return {
             success: false,
-            message: 'Cannot connect to Ollama. Is it running on http://localhost:11434? Try: ollama serve'
+            message: `Cannot connect to Ollama at ${endpointHint}. Try: ollama serve`
           };
         }
       }
