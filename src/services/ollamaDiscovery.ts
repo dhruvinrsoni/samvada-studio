@@ -205,7 +205,9 @@ class OllamaDiscoveryService {
    */
   private getEndpointUrl(endpoint: OllamaEndpoint): string {
     const { protocol, host, port, basePath = '' } = endpoint;
-    return `${protocol}://${host}:${port}${basePath}`;
+    // Ensure no trailing slash on basePath to avoid duplicate api segments
+    const cleanedBase = (basePath || '').replace(/\/api\/?$/, '').replace(/\/$/, '');
+    return `${protocol}://${host}:${port}${cleanedBase}`;
   }
 
   /**
@@ -243,7 +245,9 @@ class OllamaDiscoveryService {
       }
 
       // Try to get Ollama version info
-      const response = await fetch(`${url}/api/version`, {
+      // Normalize URL to avoid duplicate '/api' segments (some configs include '/api')
+      const cleanUrl = url.replace(/\/api\/?$/, '');
+      const response = await fetch(`${cleanUrl}/api/version`, {
         method: 'GET',
         headers,
         signal: controller.signal,
@@ -911,7 +915,8 @@ class OllamaDiscoveryService {
    */
   async fetchModelsFromEndpoint(baseUrl: string): Promise<{ name: string; size?: number }[]> {
     try {
-      const resp = await fetch(`${baseUrl}/api/tags`, {
+      const cleanBase = baseUrl.replace(/\/api\/?$/, '');
+      const resp = await fetch(`${cleanBase}/api/tags`, {
         method: 'GET',
         signal: AbortSignal.timeout(3000),
       });
