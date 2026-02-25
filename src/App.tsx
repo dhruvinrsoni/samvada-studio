@@ -134,7 +134,7 @@ function AppContent() {
       <div className={`flex flex-col h-screen-safe overflow-hidden ${isDark ? 'bg-dark-300 text-gray-200' : 'bg-light-200 text-gray-800'}`}>
       {/* Top Bar with Global Search - Theme-colored */}
       <div className={`flex items-center justify-between px-2 sm:px-3 md:px-4 py-2 sm:py-3 border-b relative overflow-hidden flex-shrink-0 ${
-        isDark ? 'bg-dark-200 border-dark-100' : 'bg-light-100 border-light-400'
+        isDark ? 'bg-theme-primary/15 border-theme-primary/30' : 'bg-theme-primary/10 border-theme-primary/25'
       }`}>
         {/* Theme color accent strip */}
         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-theme-primary via-theme-accent to-theme-primary opacity-80"></div>
@@ -173,8 +173,8 @@ function AppContent() {
             onClick={() => dispatch({ type: 'TOGGLE_GLOBAL_SEARCH' })}
             className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex-1 mx-2 sm:mx-3 md:mx-4 max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg ${
                 isDark
-                  ? 'bg-dark-100 text-gray-400 hover:bg-dark-200 border border-dark-300'
-                  : 'bg-light-200 text-gray-600 hover:bg-light-300 border border-light-400'
+                  ? 'bg-theme-primary/25 text-theme-primary-light hover:bg-theme-primary/35 border border-theme-primary/40'
+                  : 'bg-theme-primary/20 text-theme-primary-dark hover:bg-theme-primary/30 border border-theme-primary/35'
             }`}
             title="Search everywhere (Ctrl+Shift+F)"
           >
@@ -185,7 +185,7 @@ function AppContent() {
               Search everywhere...
             </span>
             <kbd className={`px-1 sm:px-1.5 py-0.5 text-xs rounded ml-auto hidden lg:inline flex-shrink-0 ${
-              isDark ? 'bg-dark-300' : 'bg-light-300'
+              isDark ? 'bg-theme-primary/30 text-theme-primary-light' : 'bg-theme-primary/25 text-theme-primary-dark'
             }`}>
               Ctrl+Shift+F
             </kbd>
