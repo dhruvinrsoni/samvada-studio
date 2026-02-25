@@ -462,10 +462,14 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
               <button
                 onClick={handleRegenerate}
                 disabled={isRegenerating}
-                className={`flex items-center gap-1 px-2 sm:px-3 py-1 text-xs sm:text-sm rounded disabled:opacity-50 min-h-[28px] sm:min-h-[32px] ${
-                  isDark 
-                    ? 'bg-dark-100 text-gray-300 hover:bg-dark-300' 
-                    : 'bg-light-300 text-gray-700 hover:bg-light-400'
+                className={`flex items-center gap-1 px-2 sm:px-3 py-1 text-xs sm:text-sm rounded min-h-[28px] sm:min-h-[32px] transition-colors ${
+                  isRegenerating
+                    ? isDark
+                      ? 'bg-theme-primary/30 text-theme-primary cursor-not-allowed'
+                      : 'bg-theme-primary/20 text-theme-primary cursor-not-allowed'
+                    : isDark
+                      ? 'bg-theme-primary/10 text-theme-primary hover:bg-theme-primary/20'
+                      : 'bg-theme-primary/5 text-theme-primary hover:bg-theme-primary/10'
                 }`}
               >
                 {isRegenerating ? (
@@ -480,10 +484,10 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                   navigator.clipboard.writeText(activeResponse?.content || '');
                   addToast('success', 'Copied!', 'Response copied to clipboard');
                 }}
-                className={`flex items-center gap-1 px-2 sm:px-3 py-1 text-xs sm:text-sm rounded min-h-[28px] sm:min-h-[32px] ${
+                className={`flex items-center gap-1 px-2 sm:px-3 py-1 text-xs sm:text-sm rounded min-h-[28px] sm:min-h-[32px] transition-colors ${
                   isDark 
-                    ? 'bg-dark-100 text-gray-300 hover:bg-dark-300' 
-                    : 'bg-light-300 text-gray-700 hover:bg-light-400'
+                    ? 'bg-theme-primary/10 text-theme-primary hover:bg-theme-primary/20' 
+                    : 'bg-theme-primary/5 text-theme-primary hover:bg-theme-primary/10'
                 }`}
               >
                 📋 <span className="hidden xs:inline">Copy</span>

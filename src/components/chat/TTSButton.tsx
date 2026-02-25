@@ -260,11 +260,11 @@ export default function TTSButton({ text }: TTSButtonProps) {
 
   const buttonBase = `flex items-center gap-1 px-2 sm:px-3 py-1 text-xs sm:text-sm rounded min-h-[28px] sm:min-h-[32px] transition-colors`;
   const buttonTheme = isDark
-    ? 'bg-dark-100 text-gray-300 hover:bg-dark-300'
-    : 'bg-light-300 text-gray-700 hover:bg-light-400';
+    ? 'bg-theme-primary/10 text-theme-primary hover:bg-theme-primary/20'
+    : 'bg-theme-primary/5 text-theme-primary hover:bg-theme-primary/10';
   const activeTheme = isDark
     ? 'bg-theme-primary/20 text-theme-primary hover:bg-theme-primary/30'
-    : 'bg-theme-primary-light text-theme-primary hover:bg-theme-primary/20';
+    : 'bg-theme-primary/10 text-theme-primary hover:bg-theme-primary/15';
 
   return (
     <div className="flex items-center gap-1 relative">
@@ -330,8 +330,8 @@ export default function TTSButton({ text }: TTSButtonProps) {
           <div
             className={`absolute bottom-full left-0 mb-1 py-1 rounded-lg shadow-lg border z-50 min-w-[80px] ${
               isDark
-                ? 'bg-dark-200 border-dark-100 text-gray-200'
-                : 'bg-white border-gray-200 text-gray-800'
+                ? 'bg-dark-200 border-dark-300'
+                : 'bg-white border-theme-primary/20'
             }`}
           >
             {SPEEDS.map((s) => (
@@ -341,9 +341,15 @@ export default function TTSButton({ text }: TTSButtonProps) {
                   setShowSpeedMenu(false);
                   cycleSpeed(s);
                 }}
-                className={`w-full px-3 py-1.5 text-xs text-left hover:${
-                  isDark ? 'bg-dark-300' : 'bg-gray-100'
-                } ${speed === s ? 'font-bold text-theme-primary' : ''} transition-colors`}
+                className={`w-full px-3 py-1.5 text-xs text-left transition-colors ${
+                  speed === s 
+                    ? isDark
+                      ? 'bg-theme-primary/20 font-bold text-theme-primary'
+                      : 'bg-theme-primary/10 font-bold text-theme-primary'
+                    : isDark
+                      ? 'text-gray-200 hover:bg-dark-300'
+                      : 'text-gray-800 hover:bg-gray-100'
+                }`}
               >
                 {s}x {s === 1 ? '(Normal)' : s >= 1.5 ? '(Fast)' : s <= 0.75 ? '(Slow)' : ''}
               </button>
