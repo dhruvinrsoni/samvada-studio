@@ -635,7 +635,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
           <button
             onClick={handleSend}
             disabled={disabled || !value.trim()}
-            className="p-1.5 sm:p-2 bg-theme-primary hover:bg-theme-primary-hover disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center"
+            className="p-1.5 sm:p-2 bg-theme-primary hover:bg-theme-primary-hover disabled:bg-theme-primary/50 disabled:cursor-not-allowed text-white rounded-lg transition-colors min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center"
             title="Send (Ctrl+Enter or Shift+Enter)"
           >
             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
