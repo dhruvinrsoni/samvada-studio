@@ -397,8 +397,8 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
               disabled={!canUndo}
               className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${
                 canUndo
-                  ? isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
-                  : isDark ? 'text-gray-600 cursor-not-allowed' : 'text-gray-300 cursor-not-allowed'
+                  ? isDark ? 'text-theme-primary hover:bg-theme-primary/10' : 'text-theme-primary hover:bg-theme-primary/5'
+                  : isDark ? 'text-theme-primary/30 cursor-not-allowed' : 'text-theme-primary/30 cursor-not-allowed'
               }`}
               title="Undo (Ctrl+Z)"
             >
@@ -410,8 +410,8 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
               disabled={!canRedo}
               className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${
                 canRedo
-                  ? isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
-                  : isDark ? 'text-gray-600 cursor-not-allowed' : 'text-gray-300 cursor-not-allowed'
+                  ? isDark ? 'text-theme-primary hover:bg-theme-primary/10' : 'text-theme-primary hover:bg-theme-primary/5'
+                  : isDark ? 'text-theme-primary/30 cursor-not-allowed' : 'text-theme-primary/30 cursor-not-allowed'
               }`}
               title="Redo (Ctrl+Y)"
             >
@@ -426,7 +426,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             <button
               type="button"
               onClick={() => applyFormatting('bold')}
-              className={`p-1 sm:p-1.5 rounded font-bold text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+              className={`p-1 sm:p-1.5 rounded font-bold text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'text-theme-primary hover:bg-theme-primary/10' : 'text-theme-primary hover:bg-theme-primary/5'}`}
               title="Bold (Ctrl+B)"
             >
               B
@@ -434,7 +434,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             <button
               type="button"
               onClick={() => applyFormatting('italic')}
-              className={`p-1 sm:p-1.5 rounded italic text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+              className={`p-1 sm:p-1.5 rounded italic text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'text-theme-primary hover:bg-theme-primary/10' : 'text-theme-primary hover:bg-theme-primary/5'}`}
               title="Italic (Ctrl+I)"
             >
               I
@@ -442,7 +442,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             <button
               type="button"
               onClick={() => applyFormatting('strikethrough')}
-              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm line-through transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm line-through transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'text-theme-primary hover:bg-theme-primary/10' : 'text-theme-primary hover:bg-theme-primary/5'}`}
               title="Strikethrough"
             >
               S
@@ -450,7 +450,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             <button
               type="button"
               onClick={() => applyFormatting('code')}
-              className={`p-1 sm:p-1.5 rounded font-mono text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+              className={`p-1 sm:p-1.5 rounded font-mono text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'text-theme-primary hover:bg-theme-primary/10' : 'text-theme-primary hover:bg-theme-primary/5'}`}
               title="Inline Code"
             >
               {'</>'}
@@ -464,7 +464,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             <button
               type="button"
               onClick={() => applyFormatting('heading')}
-              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm font-bold transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm font-bold transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'text-theme-primary hover:bg-theme-primary/10' : 'text-theme-primary hover:bg-theme-primary/5'}`}
               title="Heading"
             >
               H
@@ -472,7 +472,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             <button
               type="button"
               onClick={() => applyFormatting('quote')}
-              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'text-theme-primary hover:bg-theme-primary/10' : 'text-theme-primary hover:bg-theme-primary/5'}`}
               title="Quote"
             >
               &ldquo;
@@ -480,7 +480,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             <button
               type="button"
               onClick={() => applyFormatting('link')}
-              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+              className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${isDark ? 'text-theme-primary hover:bg-theme-primary/10' : 'text-theme-primary hover:bg-theme-primary/5'}`}
               title="Link"
             >
               🔗
@@ -501,8 +501,8 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
               }}
               className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${
                 listMode.active && listMode.type === 'numbered'
-                  ? 'bg-theme-primary/20 text-theme-primary'
-                  : isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
+                  ? isDark ? 'bg-theme-primary/20 text-theme-primary' : 'bg-theme-primary/15 text-theme-primary'
+                  : isDark ? 'text-theme-primary hover:bg-theme-primary/10' : 'text-theme-primary hover:bg-theme-primary/5'
               }`}
               title="Numbered List (type 1. to start)"
             >
@@ -518,8 +518,8 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
               }}
               className={`p-1 sm:p-1.5 rounded text-xs sm:text-sm transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${
                 listMode.active && listMode.type === 'bullet'
-                  ? 'bg-theme-primary/20 text-theme-primary'
-                  : isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
+                  ? isDark ? 'bg-theme-primary/20 text-theme-primary' : 'bg-theme-primary/15 text-theme-primary'
+                  : isDark ? 'text-theme-primary hover:bg-theme-primary/10' : 'text-theme-primary hover:bg-theme-primary/5'
               }`}
               title="Bullet List"
             >
@@ -602,8 +602,8 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
               onClick={() => onChange?.('')}
               className={`p-1.5 sm:p-2 rounded-lg transition-all min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center ${
                 isDark
-                  ? 'hover:bg-red-500/20 text-gray-400 hover:text-red-400'
-                  : 'hover:bg-red-100 text-gray-600 hover:text-red-600'
+                  ? 'text-theme-primary hover:bg-theme-primary/10'
+                  : 'text-theme-primary hover:bg-theme-primary/5'
               }`}
               title="Clear prompt input (Esc)"
             >
@@ -620,8 +620,8 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
               showToolbar
                 ? 'bg-theme-primary text-white'
                 : isDark
-                  ? 'hover:bg-dark-100 text-gray-400'
-                  : 'hover:bg-light-300 text-gray-600'
+                  ? 'text-theme-primary hover:bg-theme-primary/10'
+                  : 'text-theme-primary hover:bg-theme-primary/5'
             }`}
             title={showToolbar ? 'Hide formatting toolbar' : 'Show formatting toolbar'}
           >
