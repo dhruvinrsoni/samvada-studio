@@ -384,7 +384,11 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
           showToolbar ? 'max-h-48 sm:max-h-32 opacity-100 mb-2' : 'max-h-0 opacity-0 mb-0'
         }`}
       >
-        <div className={`flex flex-wrap items-center gap-0.5 sm:gap-1 pb-2 border-b ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
+        <div className={`flex flex-wrap items-center gap-0.5 sm:gap-1 pb-2 border-b rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 ${
+          isDark 
+            ? 'border-dark-300 bg-dark-100/40' 
+            : 'border-light-400 bg-theme-primary/5'
+        }`}>
           {/* Undo/Redo */}
           <div className="flex items-center gap-0.5 sm:gap-1">
             <button
