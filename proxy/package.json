@@ -1,0 +1,6 @@
+{
+  "name": "samvada-cors-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone CORS proxy for Samvada Studio — deploy to Vercel with one click"
+}

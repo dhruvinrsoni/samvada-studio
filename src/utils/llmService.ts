@@ -3,6 +3,7 @@ import { generateId } from './helpers';
 import type { Message, Draft, LLMProviderConfig, ChatSettings } from '../types';
 import { logDebug, logError, logWarning } from './debug';
 import { parseProviderError, type ProviderError } from './providerErrors';
+import { getAutoProxy } from '../services/proxyDiscovery';
 
 export interface LLMResponse {
   message: Message;
@@ -48,19 +49,51 @@ const buildProxiedUrl = (targetUrl: string, corsProxy?: string): string => {
 };
 
 /**
- * Make a proxied fetch request
- * Applies CORS proxy if configured, otherwise makes direct request
+ * Make a proxied fetch request.
+ *
+ * Resolution order:
+ *   1. Explicit corsProxy (per-provider setting, backward compatible, path-based)
+ *   2. Auto-discovered proxy (same-origin header-based, or external path-based)
+ *   3. Direct request (no proxy)
  */
 const proxiedFetch = async (
   url: string,
   options: RequestInit,
   corsProxy?: string
 ): Promise<Response> => {
-  const finalUrl = buildProxiedUrl(url, corsProxy);
-  
-  // When using a proxy, we may need to pass original headers differently
-  // Most CORS proxies just forward the request as-is
-  return fetch(finalUrl, options);
+  // 1. Explicit per-provider proxy override (path-based, backward compatible)
+  if (corsProxy) {
+    const finalUrl = buildProxiedUrl(url, corsProxy);
+    return fetch(finalUrl, options);
+  }
+
+  // 2. Auto-discovered proxy
+  const autoProxy = await getAutoProxy();
+  if (autoProxy) {
+    if (autoProxy.type === 'same-origin') {
+      // Same-origin proxy uses x-proxy-target header
+      logDebug('Using same-origin proxy', { proxy: autoProxy.url, target: url });
+      return fetch(autoProxy.url, {
+        ...options,
+        headers: {
+          ...Object.fromEntries(
+            options.headers instanceof Headers
+              ? options.headers.entries()
+              : Object.entries(options.headers || {})
+          ),
+          'x-proxy-target': url,
+        },
+      });
+    } else {
+      // External proxy uses path-based format
+      logDebug('Using external auto-proxy', { proxy: autoProxy.url, target: url });
+      const finalUrl = buildProxiedUrl(url, autoProxy.url);
+      return fetch(finalUrl, options);
+    }
+  }
+
+  // 3. Direct request (no proxy available)
+  return fetch(url, options);
 };
 
 /**

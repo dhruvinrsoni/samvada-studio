@@ -1,9 +1,10 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath } from 'url'
 import { readFileSync } from 'fs'
 import { execSync } from 'child_process'
+import type { IncomingMessage, ServerResponse } from 'http'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as { version?: string }
@@ -40,11 +41,122 @@ const buildTimestamp = (() => {
 // Determine if we're in development mode
 const isDev = process.env.NODE_ENV === 'development' || process.env.VITE_DEV_MODE === 'true'
 
+// Detect Vercel build environment (VERCEL env var is set automatically by Vercel)
+const isVercel = !!process.env.VERCEL
+
 // Use environment variable for base path (GitHub Pages needs /repo-name/)
-// Default to '/' in development, but when building for production default to the GitHub Pages subpath
-// so the generated service worker and assets are scoped to /samvada-studio/ and won't claim the whole domain.
-const defaultProdBase = '/samvada-studio/'
+// Default to '/' in development and on Vercel, '/samvada-studio/' for GitHub Pages builds.
+const defaultProdBase = isVercel ? '/' : '/samvada-studio/'
 const base = process.env.BASE_URL ?? (isDev ? '/' : defaultProdBase)
+
+/**
+ * Vite plugin that embeds a CORS proxy into the dev server.
+ * This means `npm run dev` is the ONLY command needed — no separate `npm run proxy`.
+ * In production, the Vercel serverless function at /api/proxy handles this instead.
+ */
+function corsProxyPlugin(): Plugin {
+  return {
+    name: 'samvada-cors-proxy',
+    configureServer(server) {
+      server.middlewares.use('/api/proxy', async (req: IncomingMessage, res: ServerResponse) => {
+        // CORS headers on all responses
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', '*');
+
+        // Preflight
+        if (req.method === 'OPTIONS') {
+          res.setHeader('Access-Control-Max-Age', '86400');
+          res.writeHead(200);
+          res.end();
+          return;
+        }
+
+        // Health check
+        if (req.method === 'GET') {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ status: 'ok', service: 'samvada-cors-proxy-dev' }));
+          return;
+        }
+
+        // Target URL from header
+        const targetUrl = req.headers['x-proxy-target'] as string | undefined;
+        if (!targetUrl) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Missing x-proxy-target header' }));
+          return;
+        }
+
+        let parsedTarget: URL;
+        try {
+          parsedTarget = new URL(targetUrl);
+        } catch {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Invalid target URL' }));
+          return;
+        }
+
+        // Read request body
+        let body = '';
+        for await (const chunk of req) {
+          body += chunk;
+        }
+
+        try {
+          // Build forwarded headers
+          const forwardHeaders: Record<string, string> = {};
+          const skipHeaders = new Set([
+            'host', 'x-proxy-target', 'connection', 'keep-alive',
+            'transfer-encoding', 'content-length',
+          ]);
+
+          for (const [key, value] of Object.entries(req.headers)) {
+            if (!skipHeaders.has(key.toLowerCase()) && typeof value === 'string') {
+              forwardHeaders[key] = value;
+            }
+          }
+
+          // Anthropic special header
+          if (parsedTarget.hostname.includes('anthropic.com')) {
+            forwardHeaders['anthropic-dangerous-direct-browser-access'] = 'true';
+          }
+
+          // Forward the request using Node.js native fetch
+          const proxyResponse = await fetch(targetUrl, {
+            method: req.method || 'POST',
+            headers: forwardHeaders,
+            body: body || undefined,
+          });
+
+          // Build response headers
+          const responseHeaders: Record<string, string> = {
+            'Access-Control-Allow-Origin': '*',
+          };
+          proxyResponse.headers.forEach((value, key) => {
+            const lower = key.toLowerCase();
+            if (
+              !lower.startsWith('access-control-') &&
+              lower !== 'content-encoding' &&
+              lower !== 'transfer-encoding' &&
+              lower !== 'content-length'
+            ) {
+              responseHeaders[key] = value;
+            }
+          });
+
+          const responseBody = await proxyResponse.text();
+          res.writeHead(proxyResponse.status, responseHeaders);
+          res.end(responseBody);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          console.error(`[CORS Proxy] Error: ${message}`);
+          res.writeHead(502, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Proxy error', message, target: targetUrl }));
+        }
+      });
+    },
+  };
+}
 
 // PWA configuration based on environment
 const pwaConfig = {
@@ -93,6 +205,7 @@ export default defineConfig({
     'import.meta.env.BUILD_TIMESTAMP': JSON.stringify(buildTimestamp)
   },
   plugins: [
+    corsProxyPlugin(),
     react(),
     VitePWA({
       disable: false, // Explicitly enable for all modes

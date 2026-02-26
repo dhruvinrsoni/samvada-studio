@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { fetchOllamaModels, fetchOpenAIModels, fetchAnthropicModels, fetchGoogleModels } from '../../utils/llmService';
 import { ollamaDiscovery } from '../../services/ollamaDiscovery';
+import { getAutoProxySync, checkProxyHealth, type ProxyHealthResult } from '../../services/proxyDiscovery';
 import type { LLMProviderConfig, LLMProviderType } from '../../types';
 
 // Check if app is running on localhost or hosted
@@ -55,6 +56,119 @@ const DEFAULT_MODELS: Record<LLMProviderType, string[]> = {
   azure: ['your-gpt-4-deployment', 'your-gpt-35-turbo-deployment'], // Azure uses deployment names, not model names
   custom: [],
 };
+
+/**
+ * Shows proxy auto-detection status for providers that need CORS proxy.
+ * Green = proxy found (auto or manual), Yellow = no proxy.
+ */
+function ProxyStatusBanner({ isDark, corsProxy }: { isDark: boolean; corsProxy: string }) {
+  const [healthResult, setHealthResult] = useState<ProxyHealthResult | null>(null);
+  const autoProxy = getAutoProxySync();
+
+  // Check proxy health on mount
+  useEffect(() => {
+    const urlToCheck = corsProxy || autoProxy?.url;
+    if (urlToCheck) {
+      checkProxyHealth(urlToCheck).then(setHealthResult);
+    }
+  }, [corsProxy, autoProxy?.url]);
+
+  // Auto-proxy is available and healthy
+  if (!corsProxy && autoProxy && healthResult?.isHealthy) {
+    return (
+      <div className={`mt-3 p-3 rounded-lg border ${
+        isDark
+          ? 'bg-green-900/20 border-green-800 text-green-300'
+          : 'bg-green-50 border-green-300 text-green-800'
+      }`}>
+        <div className="flex items-start gap-2">
+          <span className="text-lg flex-shrink-0">✓</span>
+          <div className="text-xs">
+            <p className="font-semibold">Proxy Connected</p>
+            <p className="mt-1">
+              Auto-detected {autoProxy.type === 'same-origin' ? 'built-in' : 'external'} proxy
+              {healthResult && ` (${healthResult.responseTime}ms)`}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Explicit proxy override set and healthy
+  if (corsProxy && healthResult?.isHealthy) {
+    return (
+      <div className={`mt-3 p-3 rounded-lg border ${
+        isDark
+          ? 'bg-green-900/20 border-green-800 text-green-300'
+          : 'bg-green-50 border-green-300 text-green-800'
+      }`}>
+        <div className="flex items-start gap-2">
+          <span className="text-lg flex-shrink-0">✓</span>
+          <div className="text-xs">
+            <p className="font-semibold">Proxy Connected (manual override)</p>
+            <p className="mt-1 font-mono">{corsProxy}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Proxy configured but unhealthy
+  if ((corsProxy || autoProxy) && healthResult && !healthResult.isHealthy) {
+    return (
+      <div className={`mt-3 p-3 rounded-lg border ${
+        isDark
+          ? 'bg-orange-900/20 border-orange-800 text-orange-300'
+          : 'bg-orange-50 border-orange-300 text-orange-800'
+      }`}>
+        <div className="flex items-start gap-2">
+          <span className="text-lg flex-shrink-0">⚠️</span>
+          <div className="text-xs">
+            <p className="font-semibold">Proxy Unreachable</p>
+            <p className="mt-1">
+              {healthResult.error || 'Could not connect to proxy'}. API calls may fail.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No proxy at all
+  if (!corsProxy && !autoProxy) {
+    return (
+      <div className={`mt-3 p-3 rounded-lg border ${
+        isDark
+          ? 'bg-yellow-900/20 border-yellow-800 text-yellow-300'
+          : 'bg-yellow-50 border-yellow-300 text-yellow-800'
+      }`}>
+        <div className="flex items-start gap-2">
+          <span className="text-lg flex-shrink-0">⚠️</span>
+          <div className="text-xs">
+            <p className="font-semibold mb-1">Proxy Required</p>
+            <p className="mb-2">
+              This API blocks direct browser requests. A CORS proxy is needed.
+            </p>
+            {isLocalhost() ? (
+              <p>
+                The dev server has a built-in proxy — just run <code className="px-1 py-0.5 rounded bg-opacity-50 bg-theme-primary">npm run dev</code> and it should auto-detect.
+                If not working, try reloading the page.
+              </p>
+            ) : (
+              <p>
+                Deploy the app on Vercel for a built-in proxy, or set a custom proxy URL in Advanced Settings below.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Discovery still running
+  return null;
+}
 
 export default function ProviderForm({ provider, onSave, onCancel, onFormChange }: ProviderFormProps) {
   const { isDark } = useChat();
@@ -420,86 +534,9 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
               : 'Your API key is stored locally and never sent to our servers'}
           </p>
           
-          {/* Anthropic CORS Warning */}
-          {formData.type === 'anthropic' && (
-            <div className={`mt-3 p-3 rounded-lg border ${
-              isDark 
-                ? 'bg-yellow-900/20 border-yellow-800 text-yellow-300' 
-                : 'bg-yellow-50 border-yellow-300 text-yellow-800'
-            }`}>
-              <div className="flex items-start gap-2">
-                <span className="text-lg flex-shrink-0">⚠️</span>
-                <div className="text-xs">
-                  <p className="font-semibold mb-1">⚡ Proxy Required</p>
-                  <p className="mb-2">
-                    Anthropic's API blocks direct browser requests for security.
-                  </p>
-                  {isLocalhost() ? (
-                    <>
-                      <p className="font-mono text-xs mb-1 text-green-500">💻 Running Locally</p>
-                      <p className="mb-1">Run the local CORS proxy:</p>
-                      <code className={`block px-2 py-1 rounded mt-1 ${
-                        isDark ? 'bg-dark-100' : 'bg-white'
-                      }`}>
-                        npm run proxy:insecure
-                      </code>
-                      <p className="mt-2">Then configure the proxy URL in <strong>Advanced Settings</strong> below.</p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="font-mono text-xs mb-1 text-blue-500">🌐 Running on Hosted Version</p>
-                      <p className="mb-2">
-                        Deploy a <strong>Cloudflare Worker</strong> (free tier available) to proxy requests, or use <strong>Google Gemini</strong> which works directly in browsers.
-                      </p>
-                    </>
-                  )}
-                  <p className="text-xs opacity-80 mt-2">
-                    📖 <a href="https://github.com/dhruvinrsoni/samvada-studio/blob/main/docs/CORS_PROXY.md" target="_blank" rel="noopener noreferrer" className="underline">Full CORS Proxy Guide</a>
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* OpenAI CORS Warning */}
-          {formData.type === 'openai' && (
-            <div className={`mt-3 p-3 rounded-lg border ${
-              isDark 
-                ? 'bg-yellow-900/20 border-yellow-800 text-yellow-300' 
-                : 'bg-yellow-50 border-yellow-300 text-yellow-800'
-            }`}>
-              <div className="flex items-start gap-2">
-                <span className="text-lg flex-shrink-0">⚠️</span>
-                <div className="text-xs">
-                  <p className="font-semibold mb-1">⚡ Proxy Required</p>
-                  <p className="mb-2">
-                    OpenAI's API blocks direct browser requests for security.
-                  </p>
-                  {isLocalhost() ? (
-                    <>
-                      <p className="font-mono text-xs mb-1 text-green-500">💻 Running Locally</p>
-                      <p className="mb-1">Run the local CORS proxy:</p>
-                      <code className={`block px-2 py-1 rounded mt-1 ${
-                        isDark ? 'bg-dark-100' : 'bg-white'
-                      }`}>
-                        npm run proxy:insecure
-                      </code>
-                      <p className="mt-2">Then configure the proxy URL in <strong>Advanced Settings</strong> below.</p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="font-mono text-xs mb-1 text-blue-500">🌐 Running on Hosted Version</p>
-                      <p className="mb-2">
-                        Deploy a <strong>Cloudflare Worker</strong> (free tier available) to proxy requests, or use <strong>Google Gemini</strong> which works directly in browsers.
-                      </p>
-                    </>
-                  )}
-                  <p className="text-xs opacity-80 mt-2">
-                    📖 <a href="https://github.com/dhruvinrsoni/samvada-studio/blob/main/docs/CORS_PROXY.md" target="_blank" rel="noopener noreferrer" className="underline">Full CORS Proxy Guide</a>
-                  </p>
-                </div>
-              </div>
-            </div>
+          {/* CORS Proxy Status - shown for providers that need a proxy */}
+          {(formData.type === 'openai' || formData.type === 'anthropic') && (
+            <ProxyStatusBanner isDark={isDark} corsProxy={formData.corsProxy} />
           )}
         </div>
 
@@ -603,7 +640,7 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
           )}
         </div>
 
-        {/* Advanced Settings (CORS Proxy) */}
+        {/* Advanced Settings (CORS Proxy Override) */}
         {(formData.type === 'openai' || formData.type === 'anthropic' || formData.type === 'azure' || formData.type === 'custom') && (
           <div className={`border rounded-lg ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
             <button
@@ -615,18 +652,18 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
             >
               <span className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                 🔧 Advanced Settings
-                {formData.corsProxy && <span className="ml-2 text-xs text-green-500">• Proxy configured</span>}
+                {formData.corsProxy && <span className="ml-2 text-xs text-green-500">• Proxy override set</span>}
               </span>
               <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>
                 {showAdvanced ? '▲' : '▼'}
               </span>
             </button>
-            
+
             {showAdvanced && (
               <div className={`p-4 border-t ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
                 <div>
                   <label className={labelClass}>
-                    CORS Proxy URL
+                    CORS Proxy URL Override
                     <span className={`ml-1 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>(optional)</span>
                   </label>
                   <input
@@ -634,60 +671,20 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
                     value={formData.corsProxy}
                     onChange={(e) => setFormData({ ...formData, corsProxy: e.target.value })}
                     className={inputClass}
-                    placeholder="https://your-cors-proxy.workers.dev"
+                    placeholder="https://your-proxy.vercel.app or http://localhost:8080"
                   />
                   <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                    OpenAI and Anthropic APIs block browser requests (CORS). Configure a proxy to relay API calls.
+                    Override the auto-detected proxy for this provider. Leave empty to use the auto-discovered proxy.
                   </p>
                 </div>
-                
-                {/* CORS Proxy Setup Instructions */}
-                <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-dark-200' : 'bg-light-300'}`}>
-                  <p className={`text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    🚀 Option 1: Local Proxy (Recommended for Development)
-                  </p>
-                  <div className={`text-xs space-y-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    <p>1. Open a <strong>NEW terminal</strong> (keep this app running!)</p>
-                    <p>2. Run: <code className="px-1 py-0.5 rounded bg-opacity-50 bg-theme-primary">npm run proxy</code></p>
-                    <p>3. Enter: <code className="px-1 py-0.5 rounded bg-opacity-50 bg-theme-primary">http://localhost:8080</code> in the field above</p>
-                    <p className="text-xs opacity-75">⚠️ Keep BOTH terminals running • ✓ Zero latency</p>
+
+                {/* Local proxy hint for development */}
+                {isLocalhost() && (
+                  <div className={`mt-3 p-2 rounded-lg text-xs ${isDark ? 'bg-dark-200 text-gray-400' : 'bg-light-300 text-gray-600'}`}>
+                    <p>💡 The dev server already has a built-in proxy — you typically don't need to set this.</p>
+                    <p className="mt-1">If you still want to use the standalone proxy: <code className="px-1 py-0.5 rounded bg-opacity-50 bg-theme-primary">npm run proxy</code> and enter <code className="px-1 py-0.5 rounded bg-opacity-50 bg-theme-primary">http://localhost:8080</code></p>
                   </div>
-                  
-                  <p className={`text-sm font-medium mt-4 mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    ☁️ Option 2: Cloudflare Worker (Recommended for Production)
-                  </p>
-                  <div className={`text-xs space-y-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    <p>1. Go to <a href="https://workers.cloudflare.com" target="_blank" rel="noopener noreferrer" className="text-theme-primary underline">workers.cloudflare.com</a> and create a free account</p>
-                    <p>2. Create a new Worker and paste this code:</p>
-                    <pre className={`p-2 rounded text-xs overflow-x-auto ${isDark ? 'bg-dark-300' : 'bg-white'}`}>
-{`export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    const targetUrl = url.pathname.slice(1) + url.search;
-    
-    if (!targetUrl) {
-      return new Response("CORS Proxy - Pass target URL as path", { status: 400 });
-    }
-    
-    const proxyReq = new Request(targetUrl, {
-      method: request.method,
-      headers: request.headers,
-      body: request.body,
-    });
-    
-    const response = await fetch(proxyReq);
-    const newResponse = new Response(response.body, response);
-    newResponse.headers.set("Access-Control-Allow-Origin", "*");
-    newResponse.headers.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-    newResponse.headers.set("Access-Control-Allow-Headers", "*");
-    
-    return newResponse;
-  }
-}`}</pre>
-                    <p>3. Deploy and copy your Worker URL (e.g., <code className="px-1 rounded bg-opacity-50 bg-theme-primary">https://your-proxy.workers.dev</code>)</p>
-                    <p>4. Paste the URL above. Requests will be routed as: <code className="px-1 rounded bg-opacity-50 bg-theme-primary">{'{proxy}/{api-url}'}</code></p>
-                  </div>
-                </div>
+                )}
               </div>
             )}
           </div>

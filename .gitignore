@@ -16,3 +16,7 @@ tsconfig.tsbuildinfo
 # These contain revision hashes that change with every build
 sw.js
 workbox-*.js
+
+# Custom ignore for Claude AI files
+.claude
+
