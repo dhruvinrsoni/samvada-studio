@@ -86,8 +86,7 @@ function ProxyStatusBanner({ isDark, corsProxy }: { isDark: boolean; corsProxy: 
           <div className="text-xs">
             <p className="font-semibold">Proxy Connected</p>
             <p className="mt-1">
-              Auto-detected {autoProxy.type === 'same-origin' ? 'built-in' : 'external'} proxy
-              {healthResult && ` (${healthResult.responseTime}ms)`}
+              Auto-detected proxy{healthResult && ` (${healthResult.responseTime}ms)`}
             </p>
           </div>
         </div>

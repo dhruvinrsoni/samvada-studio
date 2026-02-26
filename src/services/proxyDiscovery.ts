@@ -6,8 +6,9 @@
  *
  * Discovery priority:
  *   1. Same-origin /api/proxy  (Vercel deployment or Vite dev server)
- *   2. Cached external proxy   (user previously configured via one-click deploy)
- *   3. None                    (Google Gemini & Ollama don't need a proxy)
+ *   2. Known Vercel deployment  (cross-origin, derived from package name at build time)
+ *   3. Cached external proxy   (user previously configured)
+ *   4. None                    (Google Gemini & Ollama don't need a proxy)
  *
  * Modeled on the Ollama auto-discovery pattern (ollamaDiscovery.ts).
  */
@@ -17,9 +18,7 @@ import { logDebug, logWarning } from '../utils/debug';
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface ProxyInfo {
-  /** 'same-origin' uses header-based proxy; 'external' uses path-based proxy */
-  type: 'same-origin' | 'external';
-  /** Full URL of the proxy endpoint */
+  /** Full URL of the proxy endpoint (always ends with /api/proxy for our proxies) */
   url: string;
 }
 
@@ -34,6 +33,12 @@ export interface ProxyHealthResult {
 
 const STORAGE_KEY = 'samvada-proxy-url';
 const HEALTH_TIMEOUT_MS = 4000;
+
+/**
+ * Known Vercel proxy URL — injected at build time from vite.config.ts.
+ * e.g. "https://samvada-studio.vercel.app/api/proxy"
+ */
+const VERCEL_PROXY_URL: string = (import.meta.env['VERCEL_PROXY_URL'] as string) || '';
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -83,12 +88,13 @@ export function resetProxyDiscovery(): void {
 
 /**
  * Store an external proxy URL (from one-click deploy callback or manual input).
+ * Auto-normalizes the URL (e.g. bare .vercel.app → .vercel.app/api/proxy).
  */
 export function setExternalProxy(url: string): void {
-  const cleaned = url.replace(/\/+$/, '');
-  localStorage.setItem(STORAGE_KEY, cleaned);
-  cachedProxy = { type: 'external', url: cleaned };
-  logDebug('Proxy Discovery', { message: 'External proxy set', url: cleaned });
+  const normalized = normalizeProxyUrl(url);
+  localStorage.setItem(STORAGE_KEY, normalized);
+  cachedProxy = { url: normalized };
+  logDebug('Proxy Discovery', { message: 'External proxy set', url: normalized });
 }
 
 /**
@@ -101,28 +107,74 @@ export function clearExternalProxy(): void {
 }
 
 /**
- * Health-check a proxy URL.
+ * Normalize a proxy URL:
+ * - Strip trailing slashes
+ * - For known platforms (.vercel.app, .netlify.app), auto-append /api/proxy
+ *   e.g. "https://samvada-studio.vercel.app/" → "https://samvada-studio.vercel.app/api/proxy"
+ * - For localhost with no path, leave as-is (legacy cors-proxy-server.js)
+ */
+export function normalizeProxyUrl(url: string): string {
+  const cleaned = url.replace(/\/+$/, '');
+
+  // Already points to /api/proxy — good to go
+  if (cleaned.endsWith('/api/proxy')) {
+    return cleaned;
+  }
+
+  // Known platforms where our serverless proxy lives at /api/proxy
+  try {
+    const parsed = new URL(cleaned);
+    const isKnownPlatform =
+      parsed.hostname.endsWith('.vercel.app') ||
+      parsed.hostname.endsWith('.netlify.app');
+
+    if (isKnownPlatform && (parsed.pathname === '/' || parsed.pathname === '')) {
+      return `${cleaned}/api/proxy`;
+    }
+  } catch {
+    // Not a valid URL, return as-is
+  }
+
+  return cleaned;
+}
+
+/**
+ * Returns true when the URL points to an /api/proxy endpoint (header-based format).
+ * False means it's a legacy path-based proxy (cors-proxy-server.js, Cloudflare Workers).
+ */
+export function isHeaderBasedProxy(url: string): boolean {
+  return url.endsWith('/api/proxy');
+}
+
+/**
+ * Health-check a proxy URL. Auto-normalizes the URL first.
  */
 export async function checkProxyHealth(url: string): Promise<ProxyHealthResult> {
+  const normalized = normalizeProxyUrl(url);
   const start = Date.now();
   try {
-    const res = await fetch(url, {
+    const res = await fetch(normalized, {
       method: 'GET',
       signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
     });
     const elapsed = Date.now() - start;
 
     if (res.ok) {
+      // Guard against HTML responses (e.g. user entered bare domain, normalization missed)
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('json')) {
+        return { isHealthy: false, url: normalized, responseTime: elapsed, error: 'Not a proxy endpoint (returned HTML instead of JSON)' };
+      }
       const data = await res.json();
       if (data.status === 'ok') {
-        return { isHealthy: true, url, responseTime: elapsed };
+        return { isHealthy: true, url: normalized, responseTime: elapsed };
       }
     }
-    return { isHealthy: false, url, responseTime: elapsed, error: `HTTP ${res.status}` };
+    return { isHealthy: false, url: normalized, responseTime: elapsed, error: `HTTP ${res.status}` };
   } catch (err) {
     return {
       isHealthy: false,
-      url,
+      url: normalized,
       responseTime: Date.now() - start,
       error: err instanceof Error ? err.message : 'Unknown error',
     };
@@ -147,7 +199,7 @@ async function runDiscovery(): Promise<void> {
   const sameOriginResult = await checkProxyHealth(sameOriginUrl);
 
   if (sameOriginResult.isHealthy) {
-    cachedProxy = { type: 'same-origin', url: sameOriginUrl };
+    cachedProxy = { url: sameOriginUrl };
     logDebug('Proxy Discovery', {
       message: 'Same-origin proxy found',
       url: sameOriginUrl,
@@ -156,12 +208,38 @@ async function runDiscovery(): Promise<void> {
     return;
   }
 
-  // 2. Previously stored external proxy
+  // 2. Known Vercel deployment (cross-origin auto-discovery)
+  //    Only if we're NOT already on that host (already checked as same-origin above)
+  if (VERCEL_PROXY_URL) {
+    try {
+      const vercelHost = new URL(VERCEL_PROXY_URL).hostname;
+      const currentHost = window.location.hostname;
+
+      if (vercelHost !== currentHost) {
+        const vercelResult = await checkProxyHealth(VERCEL_PROXY_URL);
+        if (vercelResult.isHealthy) {
+          cachedProxy = { url: VERCEL_PROXY_URL };
+          // Cache for faster startups next time
+          localStorage.setItem(STORAGE_KEY, VERCEL_PROXY_URL);
+          logDebug('Proxy Discovery', {
+            message: 'Vercel proxy found (cross-origin)',
+            url: VERCEL_PROXY_URL,
+            responseTime: vercelResult.responseTime,
+          });
+          return;
+        }
+      }
+    } catch {
+      // Invalid URL, skip
+    }
+  }
+
+  // 3. Previously stored external proxy
   const storedUrl = localStorage.getItem(STORAGE_KEY);
   if (storedUrl) {
     const storedResult = await checkProxyHealth(storedUrl);
     if (storedResult.isHealthy) {
-      cachedProxy = { type: 'external', url: storedUrl };
+      cachedProxy = { url: storedUrl };
       logDebug('Proxy Discovery', {
         message: 'Cached external proxy healthy',
         url: storedUrl,
@@ -169,7 +247,6 @@ async function runDiscovery(): Promise<void> {
       });
       return;
     }
-    // Proxy is dead — keep the URL but warn
     logWarning('Proxy Discovery', {
       message: 'Cached external proxy unreachable',
       url: storedUrl,
@@ -177,7 +254,7 @@ async function runDiscovery(): Promise<void> {
     });
   }
 
-  // 3. No proxy available
+  // 4. No proxy available
   cachedProxy = null;
   logDebug('Proxy Discovery', {
     message: 'No proxy found. Google Gemini and Ollama will work without one.',

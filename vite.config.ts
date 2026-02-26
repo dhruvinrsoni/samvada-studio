@@ -7,7 +7,7 @@ import { execSync } from 'child_process'
 import type { IncomingMessage, ServerResponse } from 'http'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
-const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as { version?: string }
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as { version?: string; name?: string }
 const appVersion = pkg.version ?? '0.0.0'
 const gitCommit = (() => {
   try {
@@ -162,6 +162,20 @@ function corsProxyPlugin(): Plugin {
   };
 }
 
+// Derive Vercel proxy URL for cross-origin auto-discovery.
+// On Vercel: use the production URL env var. Otherwise: derive from package.json name.
+const vercelProxyUrl = (() => {
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/api/proxy`
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}/api/proxy`
+  }
+  // Fallback: derive from package name (matches default Vercel project naming)
+  const projectName = pkg.name || 'samvada-studio'
+  return `https://${projectName}.vercel.app/api/proxy`
+})()
+
 // PWA configuration based on environment
 const pwaConfig = {
   name: isDev ? 'Samvada Studio (Dev)' : 'Samvada Studio',
@@ -206,7 +220,8 @@ export default defineConfig({
     'import.meta.env.APP_VERSION': JSON.stringify(appVersion),
     'import.meta.env.GIT_COMMIT': JSON.stringify(gitCommit),
     'import.meta.env.GIT_COMMIT_DATE': JSON.stringify(gitCommitDate),
-    'import.meta.env.BUILD_TIMESTAMP': JSON.stringify(buildTimestamp)
+    'import.meta.env.BUILD_TIMESTAMP': JSON.stringify(buildTimestamp),
+    'import.meta.env.VERCEL_PROXY_URL': JSON.stringify(vercelProxyUrl)
   },
   plugins: [
     corsProxyPlugin(),

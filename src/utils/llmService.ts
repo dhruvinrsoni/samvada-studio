@@ -3,7 +3,7 @@ import { generateId } from './helpers';
 import type { Message, Draft, LLMProviderConfig, ChatSettings } from '../types';
 import { logDebug, logError, logWarning } from './debug';
 import { parseProviderError, type ProviderError } from './providerErrors';
-import { getAutoProxy } from '../services/proxyDiscovery';
+import { getAutoProxy, normalizeProxyUrl, isHeaderBasedProxy } from '../services/proxyDiscovery';
 
 export interface LLMResponse {
   message: Message;
@@ -49,47 +49,60 @@ const buildProxiedUrl = (targetUrl: string, corsProxy?: string): string => {
 };
 
 /**
+ * Send a request through the proxy using header-based format.
+ * The target URL is passed via x-proxy-target header.
+ */
+const headerBasedFetch = (
+  proxyUrl: string,
+  targetUrl: string,
+  options: RequestInit
+): Promise<Response> => {
+  logDebug('Using header-based proxy', { proxy: proxyUrl, target: targetUrl });
+  return fetch(proxyUrl, {
+    ...options,
+    headers: {
+      ...Object.fromEntries(
+        options.headers instanceof Headers
+          ? options.headers.entries()
+          : Object.entries(options.headers || {})
+      ),
+      'x-proxy-target': targetUrl,
+    },
+  });
+};
+
+/**
  * Make a proxied fetch request.
  *
  * Resolution order:
- *   1. Explicit corsProxy (per-provider setting, backward compatible, path-based)
- *   2. Auto-discovered proxy (same-origin header-based, or external path-based)
+ *   1. Explicit corsProxy (per-provider setting)
+ *   2. Auto-discovered proxy
  *   3. Direct request (no proxy)
+ *
+ * Format detection:
+ *   - URLs ending with /api/proxy → header-based (x-proxy-target header)
+ *   - Other URLs → path-based ({proxyUrl}/{targetUrl}) for legacy proxies
  */
 const proxiedFetch = async (
   url: string,
   options: RequestInit,
   corsProxy?: string
 ): Promise<Response> => {
-  // 1. Explicit per-provider proxy override (path-based, backward compatible)
+  // 1. Explicit per-provider proxy override
   if (corsProxy) {
-    const finalUrl = buildProxiedUrl(url, corsProxy);
+    const normalized = normalizeProxyUrl(corsProxy);
+    if (isHeaderBasedProxy(normalized)) {
+      return headerBasedFetch(normalized, url, options);
+    }
+    // Legacy path-based proxy (cors-proxy-server.js, Cloudflare Workers)
+    const finalUrl = buildProxiedUrl(url, normalized);
     return fetch(finalUrl, options);
   }
 
-  // 2. Auto-discovered proxy
+  // 2. Auto-discovered proxy (always header-based — all our proxies use /api/proxy)
   const autoProxy = await getAutoProxy();
   if (autoProxy) {
-    if (autoProxy.type === 'same-origin') {
-      // Same-origin proxy uses x-proxy-target header
-      logDebug('Using same-origin proxy', { proxy: autoProxy.url, target: url });
-      return fetch(autoProxy.url, {
-        ...options,
-        headers: {
-          ...Object.fromEntries(
-            options.headers instanceof Headers
-              ? options.headers.entries()
-              : Object.entries(options.headers || {})
-          ),
-          'x-proxy-target': url,
-        },
-      });
-    } else {
-      // External proxy uses path-based format
-      logDebug('Using external auto-proxy', { proxy: autoProxy.url, target: url });
-      const finalUrl = buildProxiedUrl(url, autoProxy.url);
-      return fetch(finalUrl, options);
-    }
+    return headerBasedFetch(autoProxy.url, url, options);
   }
 
   // 3. Direct request (no proxy available)
