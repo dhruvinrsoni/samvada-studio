@@ -52,7 +52,7 @@ const DEFAULT_MODELS: Record<LLMProviderType, string[]> = {
   openai: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o', 'gpt-4o-mini'],
   anthropic: ['claude-sonnet-4-20250514', 'claude-3-7-sonnet-20250219', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'],
   google: ['gemini-pro', 'gemini-pro-vision', 'gemini-1.5-pro', 'gemini-1.5-flash'],
-  ollama: ['llama2', 'llama3', 'mistral', 'codellama', 'phi', 'neural-chat'],
+  ollama: ['llama2:latest', 'llama3:latest', 'llama3.2:latest', 'mistral:latest', 'codellama:latest', 'phi:latest', 'gemma3:latest'],
   azure: ['your-gpt-4-deployment', 'your-gpt-35-turbo-deployment'], // Azure uses deployment names, not model names
   custom: [],
 };
@@ -296,10 +296,10 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
       
       switch (formData.type) {
         case 'openai':
-          result = await fetchOpenAIModels(formData.apiKey);
+          result = await fetchOpenAIModels(formData.apiKey, formData.apiEndpoint, formData.corsProxy || undefined);
           break;
         case 'anthropic':
-          result = await fetchAnthropicModels(formData.apiKey);
+          result = await fetchAnthropicModels(formData.apiKey, formData.apiEndpoint, formData.corsProxy || undefined);
           break;
         case 'google':
           result = await fetchGoogleModels(formData.apiKey);
@@ -327,7 +327,7 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
     // Debounce the fetch (wait for user to finish typing)
     const timeoutId = setTimeout(fetchDynamicModels, 800);
     return () => clearTimeout(timeoutId);
-  }, [formData.type, formData.apiKey]);
+  }, [formData.type, formData.apiKey, formData.apiEndpoint, formData.corsProxy]);
 
   // Update defaults when type changes
   useEffect(() => {

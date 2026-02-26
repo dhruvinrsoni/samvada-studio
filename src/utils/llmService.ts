@@ -1012,17 +1012,40 @@ export const fetchOllamaModels = async (
 };
 
 // Fetch available models from OpenAI
+// Derives the models URL from the provider's configured endpoint
 export const fetchOpenAIModels = async (
-  apiKey: string
+  apiKey: string,
+  endpoint?: string,
+  corsProxy?: string
 ): Promise<{ success: boolean; models: string[]; error?: string }> => {
   try {
-    const response = await fetch('https://api.openai.com/v1/models', {
+    // Derive models URL from the chat completions endpoint
+    // e.g. https://api.openai.com/v1/chat/completions → https://api.openai.com/v1/models
+    let modelsUrl = 'https://api.openai.com/v1/models';
+    if (endpoint) {
+      try {
+        const url = new URL(endpoint);
+        // Find /v1/ in the path and build /v1/models
+        const v1Index = url.pathname.indexOf('/v1/');
+        if (v1Index !== -1) {
+          url.pathname = url.pathname.substring(0, v1Index) + '/v1/models';
+        } else {
+          url.pathname = '/v1/models';
+        }
+        url.search = '';
+        modelsUrl = url.toString();
+      } catch {
+        // If endpoint parsing fails, fall back to default
+      }
+    }
+
+    const response = await proxiedFetch(modelsUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-    });
+    }, corsProxy);
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -1033,7 +1056,7 @@ export const fetchOpenAIModels = async (
 
     const data = await response.json();
     const models: string[] = (data.data || [])
-      .filter((m: { id: string; owned_by?: string }) => 
+      .filter((m: { id: string; owned_by?: string }) =>
         // Filter for chat models
         (m.id.includes('gpt') || m.id.includes('o1') || m.id.includes('o3')) &&
         !m.id.includes('instruct') &&
@@ -1047,7 +1070,7 @@ export const fetchOpenAIModels = async (
         if (!a.includes('gpt-4') && b.includes('gpt-4')) return 1;
         return a.localeCompare(b);
       });
-    
+
     return { success: true, models };
   } catch (error) {
     return {
@@ -1059,40 +1082,36 @@ export const fetchOpenAIModels = async (
 };
 
 // Fetch available models from Anthropic
+// Routes through the auto-discovered proxy to avoid CORS
 export const fetchAnthropicModels = async (
-  apiKey: string
+  apiKey: string,
+  endpoint?: string,
+  corsProxy?: string
 ): Promise<{ success: boolean; models: string[]; error?: string }> => {
-  // Anthropic doesn't have a models endpoint, but we validate the key with a test call
+  // Anthropic doesn't have a models listing endpoint, so we validate the key
+  // with a minimal API call and return known models on success.
   try {
-    // First, validate key format
+    // Validate key format
     if (!apiKey.startsWith('sk-ant-')) {
       throw new Error('Invalid API key format. Anthropic keys start with "sk-ant-"');
     }
-    
-    // Validate key by making a minimal API call
-    let response;
-    try {
-      response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-3-haiku-20240307', // Use cheapest model for validation
-          max_tokens: 10,
-          messages: [{ role: 'user', content: 'test' }],
-        }),
-      });
-    } catch (fetchError) {
-      // CORS error - this is expected for Anthropic API from browser
-      const errorMsg = fetchError instanceof Error ? fetchError.message : '';
-      if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') || errorMsg.includes('CORS')) {
-        throw new Error('CORS Error: Anthropic API cannot be called directly from browser. Solutions: 1) Use a CORS proxy browser extension (e.g., "CORS Unblock" for Chrome/Edge), 2) Run a local proxy server, or 3) Use Anthropic through a backend API. Note: Browser extensions may pose security risks.');
-      }
-      throw fetchError;
-    }
+
+    // Use configured endpoint or default
+    const messagesUrl = endpoint || 'https://api.anthropic.com/v1/messages';
+
+    const response = await proxiedFetch(messagesUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-3-haiku-20240307', // Use cheapest model for validation
+        max_tokens: 10,
+        messages: [{ role: 'user', content: 'test' }],
+      }),
+    }, corsProxy);
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -1103,9 +1122,8 @@ export const fetchAnthropicModels = async (
       }
       throw new Error(`API validation failed: ${response.status}`);
     }
-    
-    // Return known Claude models (Anthropic doesn't have a models listing API)
-    // These are curated and verified models as of the API version
+
+    // Return known Claude models
     const models = [
       'claude-sonnet-4-20250514',
       'claude-3-7-sonnet-20250219',
@@ -1115,19 +1133,18 @@ export const fetchAnthropicModels = async (
       'claude-3-sonnet-20240229',
       'claude-3-haiku-20240307',
     ];
-    
+
     return { success: true, models };
   } catch (error) {
-    // Check if it's a CORS-related error
     const errorMsg = error instanceof Error ? error.message : '';
     if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') || errorMsg.includes('CORS')) {
       return {
         success: false,
         models: [],
-        error: 'CORS Error: Anthropic API blocks browser requests. Use a CORS proxy extension or backend server. Learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS',
+        error: 'Cannot reach Anthropic API. If no proxy is available, deploy on Vercel or configure a proxy in Advanced Settings.',
       };
     }
-    
+
     return {
       success: false,
       models: [],
