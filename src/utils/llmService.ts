@@ -410,7 +410,7 @@ export const callLLMProvider = async (
           if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') || errorMsg.includes('CORS')) {
             throw new Error(
               'Anthropic API blocked by browser CORS policy. ' +
-              'Install a CORS proxy extension or use a different provider (OpenAI, Gemini, Ollama).'
+              'Deploy on Vercel for a built-in proxy, or configure one in Admin → Provider → Advanced Settings.'
             );
           }
           throw error;
@@ -783,6 +783,19 @@ export const testProviderConnection = async (
     }
   }
 
+  // For Anthropic: check proxy availability before attempting the API call.
+  // Anthropic never allows CORS, so without a proxy the test will always fail.
+  // Give a clear, actionable message instead of a cryptic CORS error.
+  if (provider.type === 'anthropic' && !provider.corsProxy) {
+    const autoProxy = await getAutoProxy();
+    if (!autoProxy) {
+      return {
+        success: false,
+        message: 'Anthropic requires a CORS proxy. Deploy on Vercel for a built-in proxy, or configure one in Advanced Settings → CORS Proxy URL.',
+      };
+    }
+  }
+
   // Perform actual API test with a simple prompt
   try {
     const response = await callLLMProvider(provider, 'Say "OK" if you can read this.');
@@ -875,19 +888,19 @@ export const testProviderConnection = async (
           const hasProxy = !!provider.corsProxy;
           return {
             success: false,
-            message: hasProxy 
+            message: hasProxy
               ? 'CORS proxy failed. Check if the proxy URL is correct and running.'
-              : 'CORS Error: Anthropic API blocks browser requests. Configure a CORS Proxy URL in Advanced Settings, or use a different provider (Google, Ollama).',
+              : 'Anthropic requires a CORS proxy. Deploy on Vercel for a built-in proxy, or configure one in Advanced Settings.',
             errorDetails,
-            rawResponse: rawResponse || JSON.stringify({ 
+            rawResponse: rawResponse || JSON.stringify({
               error: 'CORS policy blocked the request',
               provider: provider.type,
               endpoint: provider.apiEndpoint,
               corsProxy: provider.corsProxy || 'Not configured',
               details: 'Browser security prevents direct API calls to Anthropic from web applications',
-              solution: hasProxy 
+              solution: hasProxy
                 ? 'Verify your CORS proxy is running and accessible'
-                : 'Configure a CORS Proxy URL in Advanced Settings (e.g., a Cloudflare Worker)'
+                : 'Deploy on Vercel for a built-in proxy, or configure a CORS Proxy URL in Advanced Settings'
             }, null, 2)
           };
         }
@@ -895,11 +908,11 @@ export const testProviderConnection = async (
         // For OpenAI endpoints (including custom ones)
         if (provider.type === 'openai') {
           const hasProxy = !!provider.corsProxy;
-          return { 
-            success: false, 
-            message: hasProxy 
+          return {
+            success: false,
+            message: hasProxy
               ? 'CORS proxy failed. Check if the proxy URL is correct and running.'
-              : 'CORS Error: OpenAI API blocks browser requests. Configure a CORS Proxy URL in Advanced Settings.',
+              : 'OpenAI API blocks browser requests. Deploy on Vercel for a built-in proxy, or configure one in Advanced Settings.',
             errorDetails,
             rawResponse: rawResponse || JSON.stringify({
               error: 'Network request failed - likely CORS blocked',
@@ -1081,6 +1094,17 @@ export const fetchOpenAIModels = async (
   }
 };
 
+// Known Claude models — used when API validation is skipped (no proxy) or succeeds
+const KNOWN_ANTHROPIC_MODELS = [
+  'claude-sonnet-4-20250514',
+  'claude-3-7-sonnet-20250219',
+  'claude-3-5-sonnet-20241022',
+  'claude-3-5-haiku-20241022',
+  'claude-3-opus-20240229',
+  'claude-3-sonnet-20240229',
+  'claude-3-haiku-20240307',
+];
+
 // Fetch available models from Anthropic
 // Routes through the auto-discovered proxy to avoid CORS
 export const fetchAnthropicModels = async (
@@ -1088,15 +1112,26 @@ export const fetchAnthropicModels = async (
   endpoint?: string,
   corsProxy?: string
 ): Promise<{ success: boolean; models: string[]; error?: string }> => {
-  // Anthropic doesn't have a models listing endpoint, so we validate the key
-  // with a minimal API call and return known models on success.
   try {
-    // Validate key format
+    // Validate key format (client-side, works without proxy)
     if (!apiKey.startsWith('sk-ant-')) {
       throw new Error('Invalid API key format. Anthropic keys start with "sk-ant-"');
     }
 
-    // Use configured endpoint or default
+    // Check if a proxy is available before attempting the API call.
+    // Anthropic NEVER allows CORS from browsers, so without a proxy
+    // the call will always fail. Skip it and return known models.
+    if (!corsProxy) {
+      const autoProxy = await getAutoProxy();
+      if (!autoProxy) {
+        // No proxy — return known models based on key format validation only.
+        // The key will be fully validated when the user sends their first message
+        // (which will also fail without a proxy, but with a clear error).
+        return { success: true, models: KNOWN_ANTHROPIC_MODELS };
+      }
+    }
+
+    // Proxy is available — validate the key via a minimal API call
     const messagesUrl = endpoint || 'https://api.anthropic.com/v1/messages';
 
     const response = await proxiedFetch(messagesUrl, {
@@ -1107,7 +1142,7 @@ export const fetchAnthropicModels = async (
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-haiku-20240307', // Use cheapest model for validation
+        model: 'claude-3-haiku-20240307',
         max_tokens: 10,
         messages: [{ role: 'user', content: 'test' }],
       }),
@@ -1123,25 +1158,14 @@ export const fetchAnthropicModels = async (
       throw new Error(`API validation failed: ${response.status}`);
     }
 
-    // Return known Claude models
-    const models = [
-      'claude-sonnet-4-20250514',
-      'claude-3-7-sonnet-20250219',
-      'claude-3-5-sonnet-20241022',
-      'claude-3-5-haiku-20241022',
-      'claude-3-opus-20240229',
-      'claude-3-sonnet-20240229',
-      'claude-3-haiku-20240307',
-    ];
-
-    return { success: true, models };
+    return { success: true, models: KNOWN_ANTHROPIC_MODELS };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : '';
     if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') || errorMsg.includes('CORS')) {
       return {
         success: false,
         models: [],
-        error: 'Cannot reach Anthropic API. If no proxy is available, deploy on Vercel or configure a proxy in Advanced Settings.',
+        error: 'Cannot reach Anthropic API. Deploy on Vercel for a built-in proxy, or configure one in Advanced Settings.',
       };
     }
 
