@@ -405,14 +405,14 @@ export const OllamaConfigPanel: React.FC = () => {
                                       </button>
                                       <button
                                         onClick={() => {
-                                          // Remove provider
+                                          // Remove provider — endpoint health is unchanged, no status refresh needed.
+                                          // The model button switches back to "+ add" via React state automatically.
                                           const existing = state.providers.find(
                                             p => p.type === 'ollama' && p.apiEndpoint === `${ep.baseUrl}/api/generate` && p.model === model.name
                                           );
                                           if (existing) {
                                             dispatch({ type: 'DELETE_PROVIDER', payload: existing.id });
                                             addToast('info', 'Provider Removed', `${model.name} removed from providers`);
-                                            refreshStatuses();
                                           }
                                         }}
                                         className="inline-flex items-center px-2 py-1 rounded text-xs text-red-500 hover:bg-red-50"

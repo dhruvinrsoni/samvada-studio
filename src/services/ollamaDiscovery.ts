@@ -216,10 +216,11 @@ class OllamaDiscoveryService {
    * Accepts an optional external AbortSignal so callers can abort this test
    * when another worker finds a healthy endpoint.
    */
-  private async testEndpoint(endpoint: OllamaEndpoint, externalSignal?: AbortSignal): Promise<OllamaDiscoveryResult> {
+  private async testEndpoint(endpoint: OllamaEndpoint, externalSignal?: AbortSignal, timeoutOverride?: number): Promise<OllamaDiscoveryResult> {
     const startTime = Date.now();
     const url = this.getEndpointUrl(endpoint);
-    const timeout = endpoint.timeout || this.config.networkDetection.scanTimeout;
+    // timeoutOverride lets callers specify a longer timeout for health checks vs. rapid LAN scanning
+    const timeout = timeoutOverride !== undefined ? timeoutOverride : (endpoint.timeout || this.config.networkDetection.scanTimeout);
 
     let onExternalAbort: (() => void) | null = null;
     try {
@@ -943,22 +944,36 @@ class OllamaDiscoveryService {
     models: { name: string; size?: number }[];
     error?: string;
   }>> {
+    // Track which endpoints are explicitly configured (user-added or cached).
+    // Auto-discovered fallbacks (localhost etc.) are only shown when healthy,
+    // to avoid cluttering the UI with "connection timeout" for unrelated hosts.
+    const configuredKeys = new Set<string>();
     const candidates: OllamaEndpoint[] = [];
     let priority = 0;
 
-    // Gather all known endpoints (configured + cached + localhost)
+    // 1. Cached endpoint (highest priority)
     if (this.cachedEndpoint) {
+      const key = `${this.cachedEndpoint.protocol}://${this.cachedEndpoint.host}:${this.cachedEndpoint.port}`;
+      configuredKeys.add(key);
       candidates.push({ ...this.cachedEndpoint, priority: priority++ });
     }
+
+    // 2. User-configured endpoints
     for (const ep of this.config.endpoints) {
+      const key = `${ep.protocol}://${ep.host}:${ep.port}`;
+      configuredKeys.add(key);
       candidates.push({ ...ep, priority: priority++ });
     }
+
+    // 3. Current hostname (auto-discovered, not explicitly configured)
     if (typeof window !== 'undefined') {
       const currentHost = window.location.hostname;
       if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
         candidates.push({ host: currentHost, port: 11434, protocol: 'http', priority: priority++, label: 'Current Host' });
       }
     }
+
+    // 4. Localhost fallbacks (auto-discovered, not explicitly configured)
     candidates.push({ host: 'localhost', port: 11434, protocol: 'http', priority: priority++, label: 'Localhost' });
     candidates.push({ host: '127.0.0.1', port: 11434, protocol: 'http', priority: priority++, label: 'Localhost IP' });
 
@@ -971,10 +986,18 @@ class OllamaDiscoveryService {
       return true;
     });
 
-    // Test all in parallel with model fetching
-    const results = await Promise.all(unique.map(async (ep) => {
+    // Use appropriate timeouts:
+    // - Configured/cached endpoints: 3000ms (real health check, not a blind scan)
+    // - Auto-discovered fallbacks (localhost etc.): 1500ms (shorter but still fair)
+    // The scanTimeout (100ms) is only meant for rapid LAN discovery, not status checks.
+    const CONFIGURED_TIMEOUT = 3000;
+    const AUTO_TIMEOUT = 1500;
+
+    const rawResults = await Promise.all(unique.map(async (ep) => {
       const baseUrl = `${ep.protocol}://${ep.host}:${ep.port}`;
-      const healthResult = await this.testEndpoint(ep);
+      const isConfigured = configuredKeys.has(baseUrl);
+      const timeout = isConfigured ? CONFIGURED_TIMEOUT : AUTO_TIMEOUT;
+      const healthResult = await this.testEndpoint(ep, undefined, timeout);
       let models: { name: string; size?: number }[] = [];
       if (healthResult.isHealthy) {
         models = await this.fetchModelsFromEndpoint(baseUrl);
@@ -987,10 +1010,16 @@ class OllamaDiscoveryService {
         version: healthResult.version,
         models,
         error: healthResult.error,
+        _isConfigured: isConfigured,
       };
     }));
 
-    return results;
+    // Return:
+    //   • All configured/cached endpoints (healthy or not — user needs to know their status)
+    //   • Auto-discovered endpoints ONLY when healthy (avoids spurious "timeout" noise)
+    return rawResults
+      .filter(r => r._isConfigured || r.isHealthy)
+      .map(({ _isConfigured, ...r }) => r);
   }
 
   /**
