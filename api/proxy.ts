@@ -25,8 +25,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  // Health check
-  if (req.method === 'GET') {
+  // Target URL from header — check BEFORE health check so that
+  // GET requests with x-proxy-target are forwarded, not treated as health checks.
+  const targetUrl = req.headers['x-proxy-target'] as string | undefined;
+
+  // Health check: only when there's no target (plain GET /api/proxy)
+  if (!targetUrl && req.method === 'GET') {
     return res.status(200).json({
       status: 'ok',
       service: 'samvada-cors-proxy',
@@ -34,8 +38,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  // Target URL from header
-  const targetUrl = req.headers['x-proxy-target'] as string | undefined;
   if (!targetUrl) {
     return res.status(400).json({
       error: 'Missing x-proxy-target header',
@@ -72,11 +74,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       forwardHeaders['anthropic-dangerous-direct-browser-access'] = 'true';
     }
 
-    // Forward the request
+    // Forward the request (GET/HEAD must not have a body)
+    const method = req.method || 'POST';
+    const hasBody = method !== 'GET' && method !== 'HEAD' && req.body;
     const proxyResponse = await fetch(targetUrl, {
-      method: req.method || 'POST',
+      method,
       headers: forwardHeaders,
-      body: req.body
+      body: hasBody
         ? (typeof req.body === 'string' ? req.body : JSON.stringify(req.body))
         : undefined,
     });

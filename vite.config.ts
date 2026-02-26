@@ -72,15 +72,17 @@ function corsProxyPlugin(): Plugin {
           return;
         }
 
-        // Health check
-        if (req.method === 'GET') {
+        // Target URL from header — check BEFORE health check so that
+        // GET requests with x-proxy-target are forwarded (e.g. OpenAI /v1/models).
+        const targetUrl = req.headers['x-proxy-target'] as string | undefined;
+
+        // Health check: only when there's no target (plain GET /api/proxy)
+        if (!targetUrl && req.method === 'GET') {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ status: 'ok', service: 'samvada-cors-proxy-dev' }));
           return;
         }
 
-        // Target URL from header
-        const targetUrl = req.headers['x-proxy-target'] as string | undefined;
         if (!targetUrl) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Missing x-proxy-target header' }));
@@ -121,11 +123,13 @@ function corsProxyPlugin(): Plugin {
             forwardHeaders['anthropic-dangerous-direct-browser-access'] = 'true';
           }
 
-          // Forward the request using Node.js native fetch
+          // Forward the request (GET/HEAD must not have a body)
+          const method = req.method || 'POST';
+          const hasBody = method !== 'GET' && method !== 'HEAD' && body;
           const proxyResponse = await fetch(targetUrl, {
-            method: req.method || 'POST',
+            method,
             headers: forwardHeaders,
-            body: body || undefined,
+            body: hasBody ? body : undefined,
           });
 
           // Build response headers
