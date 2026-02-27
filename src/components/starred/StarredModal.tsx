@@ -6,14 +6,8 @@ interface StarredModalProps {
 }
 
 export default function StarredModal({ onClose }: StarredModalProps) {
-  const { dispatch, getStarredMessages, isDark } = useChat();
+  const { dispatch, getStarredMessages, navigateToMessage, isDark } = useChat();
   const starredMessages = getStarredMessages();
-
-  const handleNavigateToMessage = (chatId: string) => {
-    dispatch({ type: 'SET_ACTIVE_CHAT', payload: chatId });
-    // Could scroll to the specific message, but for now just switch to the chat
-    onClose();
-  };
 
   const handleUnstarMessage = (chatId: string, pnrId: string, messageId: string) => {
     dispatch({ type: 'TOGGLE_STAR_MESSAGE', payload: { chatId, pnrId, messageId } });
@@ -156,7 +150,7 @@ export default function StarredModal({ onClose }: StarredModalProps) {
                           {/* Actions */}
                           <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 flex-shrink-0">
                             <button
-                              onClick={() => handleNavigateToMessage(chat.id)}
+                              onClick={() => { navigateToMessage(chat.id, pnr.id, activeResponse.id, 'response'); onClose(); }}
                               className={`p-1.5 sm:p-2 rounded-lg transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${
                                 isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
                               }`}
@@ -247,7 +241,7 @@ export default function StarredModal({ onClose }: StarredModalProps) {
                         {/* Actions */}
                         <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 flex-shrink-0">
                           <button
-                            onClick={() => handleNavigateToMessage(chat.id)}
+                            onClick={() => { navigateToMessage(chat.id, pnr.id, message.id, message.role === 'user' ? 'prompt' : 'response'); onClose(); }}
                             className={`p-1.5 sm:p-2 rounded-lg transition-colors min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center ${
                               isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'
                             }`}

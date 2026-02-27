@@ -260,7 +260,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
   };
 
   return (
-    <div className={`rounded-lg border transition-colors mb-2 sm:mb-3 max-w-full overflow-hidden ${
+    <div id={`pnr-${promptResponse.id}`} className={`rounded-lg border transition-colors mb-2 sm:mb-3 max-w-full overflow-hidden ${
       promptResponse.isPinned 
         ? 'border-yellow-500/50 bg-yellow-500/5' 
         : isDark 

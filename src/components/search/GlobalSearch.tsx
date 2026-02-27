@@ -3,7 +3,7 @@ import { useChat } from '../../context/ChatContext';
 import { formatDate } from '../../utils/helpers';
 
 export default function GlobalSearch() {
-  const { state, dispatch, searchGlobal, isDark } = useChat();
+  const { state, dispatch, searchGlobal, navigateToMessage, isDark } = useChat();
   const inputRef = useRef<HTMLInputElement>(null);
   const { globalSearch } = state;
 
@@ -52,18 +52,8 @@ export default function GlobalSearch() {
   };
 
   const handleResultClick = (result: typeof globalSearch.results[0]) => {
-    dispatch({ type: 'NAVIGATE_TO_SEARCH_RESULT', payload: result });
     handleClose();
-    
-    // Scroll to the message after navigation
-    setTimeout(() => {
-      const element = document.getElementById(`pnr-${result.pnrId}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        element.classList.add('highlight-flash');
-        setTimeout(() => element.classList.remove('highlight-flash'), 2000);
-      }
-    }, 100);
+    navigateToMessage(result.chatId, result.pnrId, result.messageId, result.messageType, result.promptVersionIndex);
   };
 
   const handleKeyNavigation = (e: React.KeyboardEvent) => {

@@ -261,6 +261,7 @@ export interface SearchResult {
   matchedText: string;
   matchIndex: number;
   timestamp: Date;
+  promptVersionIndex?: number;
 }
 
 export interface GlobalSearchState {

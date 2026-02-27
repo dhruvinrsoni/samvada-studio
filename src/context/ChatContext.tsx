@@ -502,6 +502,38 @@ function chatReducer(state: AppState, action: ChatAction): AppState {
       return {
         ...state,
         activeChat: result.chatId,
+        chats: state.chats.map(chat => {
+          if (chat.id !== result.chatId) return chat;
+          return {
+            ...chat,
+            promptResponses: chat.promptResponses.map(pnr => {
+              if (pnr.id !== result.pnrId) return pnr;
+              // Expand this PnR so the content is visible
+              const updated: PromptResponse = { ...pnr, isCollapsed: false };
+
+              if (result.messageType === 'prompt') {
+                // Navigate to the matched prompt version
+                updated.activePromptIndex = result.promptVersionIndex ?? pnr.activePromptIndex ?? 0;
+              } else {
+                // Navigate to the matched response's prompt version + draft
+                const matchedResponse = pnr.responses.find(r => r.id === result.messageId);
+                if (matchedResponse) {
+                  const versionIdx = matchedResponse.promptVersionIndex ?? 0;
+                  updated.activePromptIndex = versionIdx;
+                  updated.activeResponseIndex = pnr.responses.indexOf(matchedResponse);
+                  const versionResponses = pnr.responses.filter(
+                    r => (r.promptVersionIndex ?? 0) === versionIdx
+                  );
+                  updated.activeResponseIndexPerVersion = {
+                    ...(pnr.activeResponseIndexPerVersion ?? {}),
+                    [versionIdx]: versionResponses.indexOf(matchedResponse),
+                  };
+                }
+              }
+              return updated;
+            }),
+          };
+        }),
         globalSearch: {
           ...state.globalSearch,
           selectedResultIndex: state.globalSearch.results.findIndex(
@@ -712,6 +744,7 @@ interface ChatContextType {
   getFolder: (id: string) => ChatFolder | undefined;
   getStarredMessages: () => { chat: Chat; pnr: PromptResponse; message?: Message; isPnrStar?: boolean }[];
   exportChat: (chatId: string, format: 'json' | 'markdown' | 'html') => string;
+  navigateToMessage: (chatId: string, pnrId: string, messageId?: string, messageType?: 'prompt' | 'response', promptVersionIndex?: number) => void;
   estimateTokens: (text: string) => number;
   speakText: (text: string) => void;
   stopSpeaking: () => void;
@@ -814,10 +847,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     state.chats.forEach(chat => {
       chat.promptResponses.forEach(pnr => {
+        // Search by PnR ID
+        if (pnr.id.toLowerCase().includes(lowerQuery)) {
+          results.push({
+            chatId: chat.id,
+            chatTitle: chat.title,
+            pnrId: pnr.id,
+            messageId: pnr.prompt.id,
+            messageType: 'prompt',
+            content: pnr.prompt.content,
+            matchedText: `PnR #${pnr.id.slice(0, 8)}`,
+            matchIndex: 0,
+            timestamp: pnr.prompt.timestamp,
+          });
+        }
+
         // Search in all prompt versions (fall back to single prompt for old data)
         const allPrompts = pnr.prompts?.length ? pnr.prompts : [pnr.prompt];
         const seenPromptIds = new Set<string>();
-        for (const prompt of allPrompts) {
+        for (let pi = 0; pi < allPrompts.length; pi++) {
+          const prompt = allPrompts[pi]!;
           if (seenPromptIds.has(prompt.id)) continue;
           seenPromptIds.add(prompt.id);
           const promptContent = prompt.content.toLowerCase();
@@ -835,6 +884,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               matchedText: prompt.content.substring(start, end),
               matchIndex,
               timestamp: prompt.timestamp,
+              promptVersionIndex: pi,
             });
           }
         }
@@ -975,6 +1025,30 @@ h1{border-bottom:1px solid #333;padding-bottom:8px}</style></head><body>`;
     }
   };
 
+  // Deep navigation: switch chat → expand PnR → set version/draft → scroll
+  const navigateToMessage = (chatId: string, pnrId: string, messageId?: string, messageType?: 'prompt' | 'response', promptVersionIndex?: number) => {
+    dispatch({
+      type: 'NAVIGATE_TO_SEARCH_RESULT',
+      payload: {
+        chatId, pnrId,
+        messageId: messageId || '',
+        messageType: messageType || 'prompt',
+        chatTitle: '', content: '', matchedText: '', matchIndex: 0,
+        timestamp: new Date(),
+        promptVersionIndex,
+      },
+    });
+    // Scroll after React re-renders the target chat + expanded PnR
+    setTimeout(() => {
+      const el = document.getElementById(`pnr-${pnrId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('highlight-flash');
+        setTimeout(() => el.classList.remove('highlight-flash'), 2000);
+      }
+    }, 150);
+  };
+
   // Simple token estimation (approx 4 chars per token)
   const estimateTokens = (text: string): number => {
     return Math.ceil(text.length / 4);
@@ -1014,6 +1088,7 @@ h1{border-bottom:1px solid #333;padding-bottom:8px}</style></head><body>`;
       getFolder,
       getStarredMessages,
       exportChat,
+      navigateToMessage,
       estimateTokens,
       speakText,
       stopSpeaking,
