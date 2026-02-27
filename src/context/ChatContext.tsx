@@ -21,22 +21,6 @@ const defaultThemeSettings: ThemeSettings = {
   compactMode: false,
 };
 
-// Create default providers (local ones that don't require API keys)
-const createDefaultProviders = (): LLMProviderConfig[] => {
-  const ollamaProvider: LLMProviderConfig = {
-    id: 'ollama-default',
-    name: 'Ollama (Local)',
-    type: 'ollama',
-    apiEndpoint: 'http://localhost:11434/api/generate',
-    model: 'llama2',
-    isEnabled: true,
-    isDefault: true,
-    settings: { temperature: 0.7, maxTokens: 4096 },
-    testStatus: 'untested',
-  };
-
-  return [ollamaProvider];
-};
 
 const initialState: AppState = {
   chats: [],
@@ -46,9 +30,9 @@ const initialState: AppState = {
   selectedChatIds: [],
   isContextPanelMode: false,
   theme: 'light',
-  // LLM Providers - Start empty, LOAD_STATE will add defaults if needed
+  // LLM Providers - empty on fresh install, user adds via Settings or Ollama tab
   providers: [],
-  defaultProviderId: 'ollama-default',
+  defaultProviderId: '',
   // Global Search
   globalSearch: {
     query: '',
@@ -387,19 +371,12 @@ function chatReducer(state: AppState, action: ChatAction): AppState {
       };
 
     case 'LOAD_STATE':
-      // Replace state with loaded state, ensuring providers exist
       const loadedState = action.payload;
-      const defaultProviders = createDefaultProviders();
-      const loadedProviders = loadedState.providers || [];
-
-      // If no providers in loaded state, use defaults
-      // Otherwise, use loaded providers (they take precedence)
-      const finalProviders = loadedProviders.length > 0 ? loadedProviders : defaultProviders;
 
       return {
         ...loadedState,
-        providers: finalProviders,
-        defaultProviderId: loadedState.defaultProviderId || 'ollama-default',
+        providers: loadedState.providers || [],
+        defaultProviderId: loadedState.defaultProviderId || '',
       };
 
     case 'SET_THEME':
@@ -752,8 +729,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     if (savedState) {
       dispatch({ type: 'LOAD_STATE', payload: savedState });
     } else {
-      // Fresh install: apply defaults so users get the local Ollama provider
-      dispatch({ type: 'LOAD_STATE', payload: { ...initialState, providers: createDefaultProviders() } });
+      // Fresh install: start with empty providers — user adds via Settings or Ollama tab
+      dispatch({ type: 'LOAD_STATE', payload: initialState });
     }
     
     // Mark that initial mount is complete

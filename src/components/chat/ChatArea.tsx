@@ -236,7 +236,13 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
       <div className={`chat-area flex-1 flex items-center justify-center p-4 ${isDark ? 'bg-dark-300' : 'bg-light-200'}`}>
         <div className="text-center max-w-sm">
           <h2 className={`text-xl sm:text-2xl font-semibold mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{'Samvada Studio'}</h2>
-          <p className={`text-sm sm:text-base ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Select a chat or create a new one to get started</p>
+          {state.providers.length === 0 ? (
+            <p className={`text-sm sm:text-base ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+              No providers yet — add one via <strong>Settings ⚙️</strong> or use the <strong>Ollama</strong> tab to auto-discover local models.
+            </p>
+          ) : (
+            <p className={`text-sm sm:text-base ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Select a chat or create a new one to get started</p>
+          )}
         </div>
       </div>
     );
