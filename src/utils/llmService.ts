@@ -475,20 +475,40 @@ export const callLLMProvider = async (
         // Auto-correct old endpoint format (backward compatibility)
         const baseEndpoint = endpoint.replace(/\/models$/, '');
         const geminiEndpoint = `${baseEndpoint}/models/${provider.model}:generateContent?key=${provider.apiKey}`;
-        
+
+        // Legacy models (gemini-pro, gemini-1.0-pro, gemini-pro-vision) reject system_instruction
+        // with a 400 "Developer instruction is not enabled" error.
+        // All gemini-1.5+, gemini-2.0+, gemini-2.5+ models support it natively.
+        const supportsSystemInstruction =
+          !['gemini-pro', 'gemini-1.0-pro'].some(m => provider.model === m) &&
+          !provider.model.startsWith('gemini-pro-vision');
+
         logDebug('Google API Request', {
           requestId,
           endpoint: geminiEndpoint,
           model: provider.model,
+          systemPartCount: systemParts?.length ?? 0,
+          supportsSystemInstruction,
         });
-        
+
         response = await fetch(geminiEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
+            // For modern models: each SystemMessagePart becomes its own { text } part in system_instruction.
+            // For legacy models: parts are joined and prepended directly to the user message.
+            ...(systemParts?.length && supportsSystemInstruction
+              ? { system_instruction: { parts: systemParts.map(p => ({ text: p.content })) } }
+              : {}),
+            contents: [{
+              parts: [{
+                text: systemParts?.length && !supportsSystemInstruction
+                  ? `${systemParts.map(p => p.content).join('\n\n')}\n\n${prompt}`
+                  : prompt,
+              }],
+            }],
             generationConfig: {
               temperature: provider.settings.temperature,
               maxOutputTokens: provider.settings.maxTokens,
