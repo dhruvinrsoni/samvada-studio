@@ -11,6 +11,15 @@ export interface LLMResponse {
 }
 
 /**
+ * A single, self-contained system instruction.
+ * Using an array of these (one per rule) avoids concatenated blobs with
+ * metadata labels that models tend to echo back in responses.
+ */
+export interface SystemMessagePart {
+  content: string;
+}
+
+/**
  * Custom error class that includes raw API response
  */
 export class LLMError extends Error {
@@ -152,74 +161,100 @@ const checkLocalNetworkPermission = (endpoint: string): boolean => {
 };
 
 /**
- * Build system prompt with formatting profile instructions
+ * Convert a single FormattingRule into a natural-language imperative instruction.
+ * No metadata labels or type headers — just a clean directive the model follows
+ * without echoing internal structure back.
  */
-export const buildSystemPromptWithFormatting = (
+const ruleToInstruction = (rule: { type: string; value: string }): string => {
+  const val = rule.value.trim();
+  if (!val) return '';
+  switch (rule.type) {
+    case 'response-format':
+      return `Format your responses as follows: ${val}`;
+    case 'always-include':
+      return `Always include in your responses: ${val}`;
+    case 'always-exclude':
+      return `Never include in your responses: ${val}`;
+    case 'style-guide':
+      // Style guide rules are already written as direct style directives — pass through.
+      return val;
+    default:
+      return val;
+  }
+};
+
+/**
+ * Build an ordered list of standalone system-message parts from chat settings.
+ *
+ * Each part is a single, self-contained imperative instruction with no metadata
+ * labels (no "## FORMATTING REQUIREMENTS", no "RESPONSE-FORMAT:", no "[TAG]").
+ * This prevents models from echoing the structural labels back in their responses.
+ *
+ * Providers that support multiple system entries (OpenAI-compatible) spread these
+ * as separate `{ role: "system" }` messages.  Anthropic receives them as an array
+ * of content blocks.  Ollama joins them with double-newlines.
+ */
+export const buildSystemMessageParts = (
   baseSystemPrompt: string | undefined,
   chatSettings: ChatSettings
-): string => {
-  let systemPrompt = baseSystemPrompt || '';
-  
-  // Add role if specified
-  if (chatSettings.role) {
-    systemPrompt += `\n\nYou are a ${chatSettings.role}.`;
+): SystemMessagePart[] => {
+  const parts: SystemMessagePart[] = [];
+
+  // 1. Base system prompt (kept verbatim — caller-supplied context)
+  if (baseSystemPrompt?.trim()) {
+    parts.push({ content: baseSystemPrompt.trim() });
   }
-  
-  // Add custom instructions
-  if (chatSettings.customInstructions) {
-    systemPrompt += `\n\n${chatSettings.customInstructions}`;
+
+  // 2. Role identity
+  if (chatSettings.role?.trim()) {
+    parts.push({ content: `You are a ${chatSettings.role.trim()}.` });
   }
-  
-  // Add formatting profile instructions (avoid emitting internal bracketed tags)
+
+  // 3. Custom free-form instructions (one block, not split further)
+  if (chatSettings.customInstructions?.trim()) {
+    parts.push({ content: chatSettings.customInstructions.trim() });
+  }
+
+  // 4. Formatting profile — each concern becomes its own part
   if (chatSettings.formattingProfile) {
-    const profile = chatSettings.formattingProfile;
+    const { responseFormat, stylePreferences, rules } = chatSettings.formattingProfile;
 
-    systemPrompt += `\n\n## FORMATTING REQUIREMENTS`;
-    systemPrompt += `\nProfile: ${profile.name}`;
-
-    // Instruct the model not to echo any internal metadata tags
-    systemPrompt += `\n\nIMPORTANT: Do not print or include any internal tag markers such as [STYLE-GUIDE] or [ALWAYS-INCLUDE] in your response. These are internal metadata markers only.`;
-
-    if (profile.responseFormat) {
-      systemPrompt += `\nResponse Format: ${profile.responseFormat}`;
+    if (responseFormat?.trim()) {
+      parts.push({ content: `Use ${responseFormat.trim()} format for all responses.` });
     }
 
-    if (profile.stylePreferences) {
-      systemPrompt += `\n\nStyle Preferences: ${profile.stylePreferences}`;
+    if (stylePreferences?.trim()) {
+      parts.push({ content: stylePreferences.trim() });
     }
 
-    // Add enabled rules (avoid square-bracket markers to reduce echo risk)
-    const enabledRules = profile.rules.filter(r => r.isEnabled);
-    if (enabledRules.length > 0) {
-      systemPrompt += `\n\nFormatting Rules:`;
-      enabledRules.forEach((rule, index) => {
-        // Use a colon-based type label instead of bracketed tags
-        systemPrompt += `\n${index + 1}. ${rule.type.toUpperCase()}: ${rule.name} — ${rule.value}`;
-      });
+    // One part per enabled rule — fully isolated, no numbered list, no section header
+    for (const rule of rules.filter(r => r.isEnabled)) {
+      const instruction = ruleToInstruction(rule);
+      if (instruction) parts.push({ content: instruction });
     }
   }
-  
-  // Add always include items
-  if (chatSettings.alwaysInclude.length > 0) {
-    systemPrompt += `\n\nAlways Include: ${chatSettings.alwaysInclude.join(', ')}`;
+
+  // 5. Always-include items (one combined part to stay concise)
+  const includes = chatSettings.alwaysInclude.filter(s => s.trim());
+  if (includes.length > 0) {
+    parts.push({ content: `Always include in your responses: ${includes.join(', ')}.` });
   }
-  
-  // Add always exclude items
-  if (chatSettings.alwaysExclude.length > 0) {
-    systemPrompt += `\n\nAlways Exclude: ${chatSettings.alwaysExclude.join(', ')}`;
+
+  // 6. Always-exclude items (one combined part)
+  const excludes = chatSettings.alwaysExclude.filter(s => s.trim());
+  if (excludes.length > 0) {
+    parts.push({ content: `Never include in your responses: ${excludes.join(', ')}.` });
   }
-  
-  // Add examples if provided
+
+  // 7. Few-shot examples (kept together so input/output pairs remain coherent)
   if (chatSettings.examples.length > 0) {
-    systemPrompt += `\n\n## EXAMPLES`;
-    chatSettings.examples.forEach((example, index) => {
-      systemPrompt += `\n\nExample ${index + 1}:`;
-      systemPrompt += `\nInput: ${example.input}`;
-      systemPrompt += `\nOutput: ${example.output}`;
-    });
+    const examplesText = chatSettings.examples
+      .map((ex, i) => `Example ${i + 1}:\nInput: ${ex.input}\nOutput: ${ex.output}`)
+      .join('\n\n');
+    parts.push({ content: examplesText });
   }
-  
-  return systemPrompt.trim();
+
+  return parts;
 };
 
 /**
@@ -262,7 +297,7 @@ const sanitizeLLMResponse = (content: string | null | undefined): string => {
 export const callLLMProvider = async (
   provider: LLMProviderConfig,
   prompt: string,
-  systemPrompt?: string
+  systemParts?: SystemMessagePart[]
 ): Promise<LLMResponse> => {
   const startTime = Date.now();
   const requestId = generateId();
@@ -274,7 +309,7 @@ export const callLLMProvider = async (
     endpoint: provider.apiEndpoint,
     model: provider.model,
     promptLength: prompt.length,
-    hasSystemPrompt: !!systemPrompt,
+    systemPartCount: systemParts?.length ?? 0,
   });
 
   // Ensure API endpoint is defined
@@ -321,8 +356,10 @@ export const callLLMProvider = async (
         const requestBody: Record<string, unknown> = {
           model: provider.model,
           messages: [
-            ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-            { role: 'user', content: prompt },
+            // Each SystemMessagePart becomes its own { role: "system" } entry.
+            // Separate entries are less likely to be echoed than a single concatenated blob.
+            ...(systemParts ?? []).map(p => ({ role: 'system' as const, content: p.content })),
+            { role: 'user' as const, content: prompt },
           ],
         };
         
@@ -370,8 +407,8 @@ export const callLLMProvider = async (
           },
           body: JSON.stringify({
             messages: [
-              ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-              { role: 'user', content: prompt },
+              ...(systemParts ?? []).map(p => ({ role: 'system' as const, content: p.content })),
+              { role: 'user' as const, content: prompt },
             ],
             temperature: provider.settings.temperature,
             max_tokens: provider.settings.maxTokens,
@@ -406,7 +443,11 @@ export const callLLMProvider = async (
               model: provider.model,
               max_tokens: provider.settings.maxTokens,
               messages: [{ role: 'user', content: prompt }],
-              system: systemPrompt,
+              // Anthropic accepts system as an array of { type, text } content blocks —
+              // each rule arrives as a separate block rather than a concatenated string.
+              ...(systemParts?.length
+                ? { system: systemParts.map(p => ({ type: 'text' as const, text: p.content })) }
+                : {}),
             }),
           }, provider.corsProxy);
 
@@ -488,7 +529,10 @@ export const callLLMProvider = async (
             },
             body: JSON.stringify({
               model: provider.model,
-              prompt: systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt,
+              // Ollama /api/generate has no native system-message array — join parts then prepend.
+              prompt: systemParts?.length
+                ? `${systemParts.map(p => p.content).join('\n\n')}\n\n${prompt}`
+                : prompt,
               stream: false,
               options: {
                 temperature: provider.settings.temperature,
@@ -559,8 +603,8 @@ export const callLLMProvider = async (
           body: JSON.stringify({
             model: provider.model,
             messages: [
-              ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-              { role: 'user', content: prompt },
+              ...(systemParts ?? []).map(p => ({ role: 'system' as const, content: p.content })),
+              { role: 'user' as const, content: prompt },
             ],
             temperature: provider.settings.temperature,
             max_tokens: provider.settings.maxTokens,
@@ -654,13 +698,16 @@ export const getLLMResponse = async (
     throw error;
   }
 
-  // Build enhanced system prompt with formatting profile if chatSettings provided
-  const enhancedSystemPrompt = chatSettings 
-    ? buildSystemPromptWithFormatting(systemPrompt, chatSettings)
-    : systemPrompt;
+  // Build structured system-message parts (one per rule, no concatenated labels)
+  let systemParts: SystemMessagePart[] | undefined;
+  if (chatSettings) {
+    systemParts = buildSystemMessageParts(systemPrompt, chatSettings);
+  } else if (systemPrompt) {
+    systemParts = [{ content: systemPrompt }];
+  }
 
   try {
-    return await callLLMProvider(provider, prompt, enhancedSystemPrompt);
+    return await callLLMProvider(provider, prompt, systemParts);
   } catch (error) {
     console.error('LLM API call failed:', error);
     throw new Error(`Failed to get response from ${provider.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
