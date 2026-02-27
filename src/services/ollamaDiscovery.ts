@@ -944,21 +944,19 @@ class OllamaDiscoveryService {
     models: { name: string; size?: number }[];
     error?: string;
   }>> {
-    // Track which endpoints are explicitly configured (user-added or cached).
-    // Auto-discovered fallbacks (localhost etc.) are only shown when healthy,
-    // to avoid cluttering the UI with "connection timeout" for unrelated hosts.
+    // Only explicitly user-added endpoints (config.endpoints) are "configured".
+    // The cached endpoint is a discovery optimisation — it should only appear when healthy,
+    // just like any other auto-discovered host, to avoid stale network IPs showing as errors.
     const configuredKeys = new Set<string>();
     const candidates: OllamaEndpoint[] = [];
     let priority = 0;
 
-    // 1. Cached endpoint (highest priority)
+    // 1. Cached endpoint (highest priority for testing, NOT treated as user-configured)
     if (this.cachedEndpoint) {
-      const key = `${this.cachedEndpoint.protocol}://${this.cachedEndpoint.host}:${this.cachedEndpoint.port}`;
-      configuredKeys.add(key);
       candidates.push({ ...this.cachedEndpoint, priority: priority++ });
     }
 
-    // 2. User-configured endpoints
+    // 2. User-configured endpoints (always shown, even when unhealthy)
     for (const ep of this.config.endpoints) {
       const key = `${ep.protocol}://${ep.host}:${ep.port}`;
       configuredKeys.add(key);
