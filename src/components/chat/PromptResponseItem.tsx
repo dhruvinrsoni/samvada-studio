@@ -25,7 +25,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
   // Prompt versioning — backward-compat: old data has no `prompts` array
   const allPrompts = promptResponse.prompts?.length ? promptResponse.prompts : [promptResponse.prompt];
   const activePromptIdx = promptResponse.activePromptIndex ?? 0;
-  const activePrompt = allPrompts[activePromptIdx] ?? allPrompts[0];
+  const activePrompt = allPrompts[activePromptIdx] ?? allPrompts[0] ?? promptResponse.prompt;
 
   // Responses that belong to the currently viewed prompt version
   const versionResponses = promptResponse.responses.filter(
@@ -82,7 +82,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
 
     const curPromptIdx = promptResponse.activePromptIndex ?? 0;
     const curAllPrompts = promptResponse.prompts?.length ? promptResponse.prompts : [promptResponse.prompt];
-    const curPrompt = curAllPrompts[curPromptIdx] ?? curAllPrompts[0];
+    const curPrompt = curAllPrompts[curPromptIdx] ?? curAllPrompts[0] ?? promptResponse.prompt;
     const curVersionResponses = promptResponse.responses.filter(
       r => (r.promptVersionIndex ?? 0) === curPromptIdx
     );
@@ -206,7 +206,9 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
   };
 
   const handleSelectDraft = (versionDraftIndex: number) => {
-    const globalIndex = promptResponse.responses.indexOf(versionResponses[versionDraftIndex]);
+    const targetDraft = versionResponses[versionDraftIndex];
+    if (!targetDraft) return;
+    const globalIndex = promptResponse.responses.indexOf(targetDraft);
     dispatch({
       type: 'UPDATE_PROMPT_RESPONSE',
       payload: {
@@ -231,8 +233,9 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
     const clampedDraftIdx = storedDraftIdx !== undefined
       ? Math.min(storedDraftIdx, Math.max(0, targetResponses.length - 1))
       : Math.max(0, targetResponses.length - 1);
-    const globalIndex = targetResponses.length > 0
-      ? promptResponse.responses.indexOf(targetResponses[clampedDraftIdx])
+    const clampedTarget = targetResponses[clampedDraftIdx];
+    const globalIndex = clampedTarget !== undefined
+      ? promptResponse.responses.indexOf(clampedTarget)
       : -1;
     dispatch({
       type: 'UPDATE_PROMPT_RESPONSE',
