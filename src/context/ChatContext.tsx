@@ -814,30 +814,36 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     state.chats.forEach(chat => {
       chat.promptResponses.forEach(pnr => {
-        // Search in prompt
-        const promptContent = pnr.prompt.content.toLowerCase();
-        let matchIndex = promptContent.indexOf(lowerQuery);
-        if (matchIndex !== -1) {
-          const start = Math.max(0, matchIndex - 30);
-          const end = Math.min(pnr.prompt.content.length, matchIndex + query.length + 30);
-          results.push({
-            chatId: chat.id,
-            chatTitle: chat.title,
-            pnrId: pnr.id,
-            messageId: pnr.prompt.id,
-            messageType: 'prompt',
-            content: pnr.prompt.content,
-            matchedText: pnr.prompt.content.substring(start, end),
-            matchIndex,
-            timestamp: pnr.prompt.timestamp,
-          });
+        // Search in all prompt versions (fall back to single prompt for old data)
+        const allPrompts = pnr.prompts?.length ? pnr.prompts : [pnr.prompt];
+        const seenPromptIds = new Set<string>();
+        for (const prompt of allPrompts) {
+          if (seenPromptIds.has(prompt.id)) continue;
+          seenPromptIds.add(prompt.id);
+          const promptContent = prompt.content.toLowerCase();
+          const matchIndex = promptContent.indexOf(lowerQuery);
+          if (matchIndex !== -1) {
+            const start = Math.max(0, matchIndex - 30);
+            const end = Math.min(prompt.content.length, matchIndex + query.length + 30);
+            results.push({
+              chatId: chat.id,
+              chatTitle: chat.title,
+              pnrId: pnr.id,
+              messageId: prompt.id,
+              messageType: 'prompt',
+              content: prompt.content,
+              matchedText: prompt.content.substring(start, end),
+              matchIndex,
+              timestamp: prompt.timestamp,
+            });
+          }
         }
 
         // Search in PnR name
         if (pnr.name) {
           const nameContent = pnr.name.toLowerCase();
-          matchIndex = nameContent.indexOf(lowerQuery);
-          if (matchIndex !== -1) {
+          const nameMatchIndex = nameContent.indexOf(lowerQuery);
+          if (nameMatchIndex !== -1) {
             results.push({
               chatId: chat.id,
               chatTitle: chat.title,
@@ -846,7 +852,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               messageType: 'prompt',
               content: pnr.prompt.content,
               matchedText: `PnR Name: ${pnr.name}`,
-              matchIndex,
+              matchIndex: nameMatchIndex,
               timestamp: pnr.prompt.timestamp,
             });
           }
@@ -855,10 +861,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         // Search in responses
         pnr.responses.forEach(response => {
           const responseContent = response.content.toLowerCase();
-          matchIndex = responseContent.indexOf(lowerQuery);
-          if (matchIndex !== -1) {
-            const start = Math.max(0, matchIndex - 30);
-            const end = Math.min(response.content.length, matchIndex + query.length + 30);
+          const respMatchIndex = responseContent.indexOf(lowerQuery);
+          if (respMatchIndex !== -1) {
+            const start = Math.max(0, respMatchIndex - 30);
+            const end = Math.min(response.content.length, respMatchIndex + query.length + 30);
             results.push({
               chatId: chat.id,
               chatTitle: chat.title,
@@ -867,7 +873,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               messageType: 'response',
               content: response.content,
               matchedText: response.content.substring(start, end),
-              matchIndex,
+              matchIndex: respMatchIndex,
               timestamp: response.timestamp,
             });
           }
@@ -932,8 +938,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         let md = `# ${chat.title}\n\n`;
         md += `*Created: ${new Date(chat.createdAt).toLocaleString()}*\n\n---\n\n`;
         chat.promptResponses.forEach(pnr => {
-          md += `## 🧑 User\n${pnr.prompt.content}\n\n`;
           const response = pnr.responses[pnr.activeResponseIndex];
+          // Show the prompt version that matches the active response
+          const allPrompts = pnr.prompts?.length ? pnr.prompts : [pnr.prompt];
+          const promptIdx = response?.promptVersionIndex ?? pnr.activePromptIndex ?? 0;
+          const matchingPrompt = allPrompts[promptIdx] ?? pnr.prompt;
+          md += `## 🧑 User\n${matchingPrompt.content}\n\n`;
           if (response) {
             md += `## 🤖 Assistant\n${response.content}\n\n---\n\n`;
           }
@@ -948,8 +958,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 h1{border-bottom:1px solid #333;padding-bottom:8px}</style></head><body>`;
         html += `<h1>${chat.title}</h1><p><em>Created: ${new Date(chat.createdAt).toLocaleString()}</em></p>`;
         chat.promptResponses.forEach(pnr => {
-          html += `<div class="user"><strong>🧑 User</strong><p>${pnr.prompt.content.replace(/\n/g, '<br>')}</p></div>`;
           const response = pnr.responses[pnr.activeResponseIndex];
+          const allPrompts = pnr.prompts?.length ? pnr.prompts : [pnr.prompt];
+          const promptIdx = response?.promptVersionIndex ?? pnr.activePromptIndex ?? 0;
+          const matchingPrompt = allPrompts[promptIdx] ?? pnr.prompt;
+          html += `<div class="user"><strong>🧑 User</strong><p>${matchingPrompt.content.replace(/\n/g, '<br>')}</p></div>`;
           if (response) {
             html += `<div class="assistant"><strong>🤖 Assistant</strong><p>${response.content.replace(/\n/g, '<br>')}</p></div>`;
           }

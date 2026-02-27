@@ -82,7 +82,16 @@ export default function StarredModal({ onClose }: StarredModalProps) {
                       console.error('No active response for starred PnR:', pnr);
                       return null;
                     }
-                    
+                    // Show the prompt version matching the active response
+                    const allPrompts = pnr.prompts?.length ? pnr.prompts : [pnr.prompt];
+                    const promptIdx = activeResponse.promptVersionIndex ?? pnr.activePromptIndex ?? 0;
+                    const matchingPrompt = allPrompts[promptIdx] ?? pnr.prompt;
+                    // Version-scoped draft count
+                    const versionResponses = pnr.responses.filter(
+                      r => (r.promptVersionIndex ?? 0) === promptIdx
+                    );
+                    const versionDraftIdx = versionResponses.indexOf(activeResponse);
+
                     return (
                       <div key={`pnr-${pnr.id}`} className={`p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-l-4 border-yellow-500`}>
                         <div className="flex items-start justify-between gap-2 sm:gap-4">
@@ -114,9 +123,14 @@ export default function StarredModal({ onClose }: StarredModalProps) {
                               <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
                                 <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-theme-primary flex items-center justify-center text-white text-[10px] sm:text-xs font-medium flex-shrink-0">U</span>
                                 <span className={`text-[10px] sm:text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>You</span>
+                                {allPrompts.length > 1 && (
+                                  <span className={`text-[10px] sm:text-xs hidden xs:inline ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                                    (v{promptIdx + 1})
+                                  </span>
+                                )}
                               </div>
                               <div className={`text-xs sm:text-sm pl-6 sm:pl-8 line-clamp-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                                {toPlainTextPreview(pnr.prompt.content, 200)}
+                                {toPlainTextPreview(matchingPrompt.content, 200)}
                               </div>
                             </div>
 
@@ -126,9 +140,9 @@ export default function StarredModal({ onClose }: StarredModalProps) {
                                 <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
                                   <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-green-600 flex items-center justify-center text-white text-[10px] sm:text-xs font-medium flex-shrink-0">AI</span>
                                   <span className={`text-[10px] sm:text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Assistant</span>
-                                  {pnr.responses.length > 1 && (
+                                  {versionResponses.length > 1 && (
                                     <span className={`text-[10px] sm:text-xs hidden xs:inline ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                                      (Draft {pnr.activeResponseIndex + 1} of {pnr.responses.length})
+                                      (Draft {versionDraftIdx + 1} of {versionResponses.length})
                                     </span>
                                   )}
                                 </div>
