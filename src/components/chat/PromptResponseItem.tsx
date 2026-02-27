@@ -19,10 +19,6 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isEditingPrompt, setIsEditingPrompt] = useState(false);
   const [editedPrompt, setEditedPrompt] = useState(promptResponse.prompt.content);
-  const [isEditingResponse, setIsEditingResponse] = useState(false);
-  const [editedResponse, setEditedResponse] = useState(
-    promptResponse.responses[promptResponse.activeResponseIndex]?.content || ''
-  );
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(promptResponse.name || '');
 
@@ -114,24 +110,6 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
       payload: { chatId, promptResponse: updatedPnR },
     });
     setIsEditingPrompt(false);
-  };
-
-  const handleSaveResponseEdit = () => {
-    if (!activeResponse) return;
-    const updatedResponses = [...promptResponse.responses];
-    updatedResponses[promptResponse.activeResponseIndex] = {
-      ...activeResponse,
-      content: editedResponse,
-    };
-    const updatedPnR = {
-      ...promptResponse,
-      responses: updatedResponses,
-    };
-    dispatch({
-      type: 'UPDATE_PROMPT_RESPONSE',
-      payload: { chatId, promptResponse: updatedPnR },
-    });
-    setIsEditingResponse(false);
   };
 
   const handleSaveNameEdit = () => {
@@ -410,47 +388,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                     </div>
                   )}
 
-                  {isEditingResponse ? (
-                    <div className="space-y-2">
-                      <textarea
-                        value={editedResponse}
-                        onChange={(e) => setEditedResponse(e.target.value)}
-                        className={`w-full p-2 border rounded resize-none text-xs sm:text-sm ${
-                          isDark 
-                            ? 'bg-dark-300 border-dark-100 text-gray-200' 
-                            : 'bg-white border-light-400 text-gray-800'
-                        }`}
-                        rows={5}
-                      />
-                      <div className="flex gap-1.5 sm:gap-2">
-                        <button
-                          onClick={handleSaveResponseEdit}
-                          className="px-2 sm:px-3 py-1 bg-theme-primary text-white rounded text-xs sm:text-sm hover:bg-theme-primary-hover"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => { setIsEditingResponse(false); setEditedResponse(activeResponse.content); }}
-                          className={`px-2 sm:px-3 py-1 rounded text-xs sm:text-sm ${isDark ? 'bg-dark-100 text-gray-300' : 'bg-light-300 text-gray-700'}`}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <MessageContent content={activeResponse.content} />
-                      <button
-                        onClick={() => setIsEditingResponse(true)}
-                        className={`absolute top-0 right-0 opacity-0 group-hover:opacity-100 p-1 rounded text-xs sm:text-sm ${
-                          isDark ? 'text-gray-500 hover:bg-dark-100' : 'text-gray-500 hover:bg-light-300'
-                        }`}
-                        title="Edit response (Gemini-style inline edit)"
-                      >
-                        ✏️
-                      </button>
-                    </div>
-                  )}
+                  <MessageContent content={activeResponse.content} />
                 </div>
               </div>
             </div>
