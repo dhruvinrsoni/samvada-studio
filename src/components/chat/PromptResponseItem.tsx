@@ -100,17 +100,55 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
     }
   }, [chatId, promptResponse, getChat, state.providers, dispatch, addToast]);
 
-  const handleSavePromptEdit = () => {
-    const updatedPnR = {
+  const handleSavePromptEdit = useCallback(async () => {
+    const chat = getChat(chatId);
+    if (!chat) return;
+
+    setIsEditingPrompt(false);
+    setIsRegenerating(true);
+
+    // Persist the edited prompt text first
+    const withUpdatedPrompt = {
       ...promptResponse,
       prompt: { ...promptResponse.prompt, content: editedPrompt },
     };
     dispatch({
       type: 'UPDATE_PROMPT_RESPONSE',
-      payload: { chatId, promptResponse: updatedPnR },
+      payload: { chatId, promptResponse: withUpdatedPrompt },
     });
-    setIsEditingPrompt(false);
-  };
+
+    try {
+      const { message, processingTime } = await regenerateResponse(
+        editedPrompt,
+        chat.providerId ? state.providers.find(p => p.id === chat.providerId) : undefined,
+        chat.settings
+      );
+
+      const now = new Date();
+      dispatch({
+        type: 'UPDATE_PROMPT_RESPONSE',
+        payload: {
+          chatId,
+          promptResponse: {
+            ...withUpdatedPrompt,
+            responses: [...promptResponse.responses, message],
+            activeResponseIndex: promptResponse.responses.length,
+            processingTime,
+            updatedAt: now,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Failed to resubmit prompt:', error);
+      addToast(
+        'error',
+        'Resubmit failed',
+        error instanceof Error ? error.message : 'An unexpected error occurred'
+      );
+    } finally {
+      setIsRegenerating(false);
+    }
+  }, [chatId, promptResponse, editedPrompt, getChat, state.providers, dispatch, addToast]);
 
   const handleSaveNameEdit = () => {
     const updatedPnR = {
@@ -314,13 +352,15 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                     <div className="flex gap-1.5 sm:gap-2">
                       <button
                         onClick={handleSavePromptEdit}
-                        className="px-2 sm:px-3 py-1 bg-theme-primary text-white rounded text-xs sm:text-sm hover:bg-theme-primary-hover"
+                        disabled={isRegenerating}
+                        className="px-2 sm:px-3 py-1 bg-theme-primary text-white rounded text-xs sm:text-sm hover:bg-theme-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Save
+                        {isRegenerating ? '⟳ Sending…' : '🔄 Resubmit'}
                       </button>
                       <button
                         onClick={() => { setIsEditingPrompt(false); setEditedPrompt(promptResponse.prompt.content); }}
-                        className={`px-2 sm:px-3 py-1 rounded text-xs sm:text-sm ${isDark ? 'bg-dark-100 text-gray-300' : 'bg-light-300 text-gray-700'}`}
+                        disabled={isRegenerating}
+                        className={`px-2 sm:px-3 py-1 rounded text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed ${isDark ? 'bg-dark-100 text-gray-300' : 'bg-light-300 text-gray-700'}`}
                       >
                         Cancel
                       </button>
