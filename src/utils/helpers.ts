@@ -48,6 +48,9 @@ export const createPromptResponse = (prompt: Message): PromptResponse => ({
   isStarred: false,
   createdAt: new Date(),
   updatedAt: new Date(),
+  prompts: [prompt],
+  activePromptIndex: 0,
+  activeResponseIndexPerVersion: {},
 });
 
 export const createExample = (input: string = '', output: string = ''): Example => ({

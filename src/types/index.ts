@@ -281,6 +281,7 @@ export interface Message {
   reaction?: ReactionType;
   replyTo?: string; // Message ID this is replying to
   tokenCount?: number;
+  promptVersionIndex?: number; // which prompt version generated this response (undefined = 0)
 }
 
 export interface Draft {
@@ -292,10 +293,10 @@ export interface Draft {
 export interface PromptResponse {
   id: string; // PnR ID - unique identifier
   name?: string; // Custom name for the PnR (optional)
-  prompt: Message;
+  prompt: Message; // legacy: always mirrors prompts[activePromptIndex ?? last]
   responses: Message[];
   drafts: Draft[];
-  activeResponseIndex: number;
+  activeResponseIndex: number; // global index into responses[] — kept in sync for backward compat
   isCollapsed: boolean;
   isPinned: boolean;
   isStarred: boolean;
@@ -303,6 +304,10 @@ export interface PromptResponse {
   createdAt: Date;
   updatedAt: Date;
   providerId?: string; // Which LLM provider was used
+  // Prompt versioning (added in v2; undefined on old data → treated as single version)
+  prompts?: Message[];                          // all prompt versions, index = version number
+  activePromptIndex?: number;                   // currently displayed version (default 0)
+  activeResponseIndexPerVersion?: Record<number, number>; // per-version active draft index
 }
 
 // Formatting Rules

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { useToast } from '../../context/ToastContext';
-import { getFirstWords, formatTimestamp, formatDuration } from '../../utils/helpers';
+import { getFirstWords, formatTimestamp, formatDuration, generateId } from '../../utils/helpers';
 import { regenerateResponse } from '../../utils/llmService';
 import type { PromptResponse } from '../../types';
 import MessageContent from './MessageContent';
@@ -22,8 +22,22 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(promptResponse.name || '');
 
-  
-  const activeResponse = promptResponse.responses[promptResponse.activeResponseIndex];
+  // Prompt versioning — backward-compat: old data has no `prompts` array
+  const allPrompts = promptResponse.prompts?.length ? promptResponse.prompts : [promptResponse.prompt];
+  const activePromptIdx = promptResponse.activePromptIndex ?? 0;
+  const activePrompt = allPrompts[activePromptIdx] ?? allPrompts[0];
+
+  // Responses that belong to the currently viewed prompt version
+  const versionResponses = promptResponse.responses.filter(
+    r => (r.promptVersionIndex ?? 0) === activePromptIdx
+  );
+
+  // Active draft index within this version
+  const storedVersionDraftIdx = promptResponse.activeResponseIndexPerVersion?.[activePromptIdx];
+  const activeVersionDraftIdx = storedVersionDraftIdx !== undefined
+    ? Math.min(storedVersionDraftIdx, Math.max(0, versionResponses.length - 1))
+    : Math.max(0, versionResponses.length - 1);
+  const activeResponse = versionResponses[activeVersionDraftIdx];
 
   const handleToggleCollapse = () => {
     dispatch({
@@ -66,27 +80,43 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
     const chat = getChat(chatId);
     if (!chat) return;
 
+    const curPromptIdx = promptResponse.activePromptIndex ?? 0;
+    const curAllPrompts = promptResponse.prompts?.length ? promptResponse.prompts : [promptResponse.prompt];
+    const curPrompt = curAllPrompts[curPromptIdx] ?? curAllPrompts[0];
+    const curVersionResponses = promptResponse.responses.filter(
+      r => (r.promptVersionIndex ?? 0) === curPromptIdx
+    );
+
     setIsRegenerating(true);
     try {
       const { message, processingTime } = await regenerateResponse(
-        promptResponse.prompt.content,
+        curPrompt.content,
         chat.providerId ? state.providers.find(p => p.id === chat.providerId) : undefined,
-        chat.settings // Pass chat settings for formatting profile
+        chat.settings
       );
 
+      const taggedMessage = { ...message, promptVersionIndex: curPromptIdx };
+      const newGlobalIndex = promptResponse.responses.length;
+      const newVersionDraftIndex = curVersionResponses.length;
       const now = new Date();
-      const updatedPnR = {
-        ...promptResponse,
-        responses: [...promptResponse.responses, message],
-        activeResponseIndex: promptResponse.responses.length,
-        processingTime,
-        createdAt: now, // Update timestamp to reflect regeneration time
-        updatedAt: now,
-      };
 
       dispatch({
         type: 'UPDATE_PROMPT_RESPONSE',
-        payload: { chatId, promptResponse: updatedPnR },
+        payload: {
+          chatId,
+          promptResponse: {
+            ...promptResponse,
+            responses: [...promptResponse.responses, taggedMessage],
+            activeResponseIndex: newGlobalIndex,
+            activeResponseIndexPerVersion: {
+              ...(promptResponse.activeResponseIndexPerVersion ?? {}),
+              [curPromptIdx]: newVersionDraftIndex,
+            },
+            processingTime,
+            createdAt: now,
+            updatedAt: now,
+          },
+        },
       });
     } catch (error) {
       console.error('Failed to regenerate response:', error);
@@ -104,18 +134,29 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
     const chat = getChat(chatId);
     if (!chat) return;
 
+    const curAllPrompts = promptResponse.prompts?.length ? promptResponse.prompts : [promptResponse.prompt];
+    const newVersionIndex = curAllPrompts.length;
+
+    const newPromptMsg = {
+      ...promptResponse.prompt,
+      id: generateId(),
+      content: editedPrompt,
+      timestamp: new Date(),
+    };
+
+    // Snapshot of PnR with the new prompt version added
+    const withNewVersion = {
+      ...promptResponse,
+      prompt: newPromptMsg,
+      prompts: [...curAllPrompts, newPromptMsg],
+      activePromptIndex: newVersionIndex,
+    };
+
     setIsEditingPrompt(false);
     setIsRegenerating(true);
 
-    // Persist the edited prompt text first
-    const withUpdatedPrompt = {
-      ...promptResponse,
-      prompt: { ...promptResponse.prompt, content: editedPrompt },
-    };
-    dispatch({
-      type: 'UPDATE_PROMPT_RESPONSE',
-      payload: { chatId, promptResponse: withUpdatedPrompt },
-    });
+    // Persist new version first so the UI shows it immediately
+    dispatch({ type: 'UPDATE_PROMPT_RESPONSE', payload: { chatId, promptResponse: withNewVersion } });
 
     try {
       const { message, processingTime } = await regenerateResponse(
@@ -124,15 +165,21 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
         chat.settings
       );
 
+      const taggedMessage = { ...message, promptVersionIndex: newVersionIndex };
       const now = new Date();
+
       dispatch({
         type: 'UPDATE_PROMPT_RESPONSE',
         payload: {
           chatId,
           promptResponse: {
-            ...withUpdatedPrompt,
-            responses: [...promptResponse.responses, message],
+            ...withNewVersion,
+            responses: [...promptResponse.responses, taggedMessage],
             activeResponseIndex: promptResponse.responses.length,
+            activeResponseIndexPerVersion: {
+              ...(promptResponse.activeResponseIndexPerVersion ?? {}),
+              [newVersionIndex]: 0,
+            },
             processingTime,
             updatedAt: now,
           },
@@ -140,11 +187,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
       });
     } catch (error) {
       console.error('Failed to resubmit prompt:', error);
-      addToast(
-        'error',
-        'Resubmit failed',
-        error instanceof Error ? error.message : 'An unexpected error occurred'
-      );
+      addToast('error', 'Resubmit failed', error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
       setIsRegenerating(false);
     }
@@ -162,14 +205,45 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
     setIsEditingName(false);
   };
 
-  const handleSelectDraft = (index: number) => {
-    const updatedPnR = {
-      ...promptResponse,
-      activeResponseIndex: index,
-    };
+  const handleSelectDraft = (versionDraftIndex: number) => {
+    const globalIndex = promptResponse.responses.indexOf(versionResponses[versionDraftIndex]);
     dispatch({
       type: 'UPDATE_PROMPT_RESPONSE',
-      payload: { chatId, promptResponse: updatedPnR },
+      payload: {
+        chatId,
+        promptResponse: {
+          ...promptResponse,
+          activeResponseIndex: Math.max(0, globalIndex),
+          activeResponseIndexPerVersion: {
+            ...(promptResponse.activeResponseIndexPerVersion ?? {}),
+            [activePromptIdx]: versionDraftIndex,
+          },
+        },
+      },
+    });
+  };
+
+  const handleSelectVersion = (versionIndex: number) => {
+    const targetResponses = promptResponse.responses.filter(
+      r => (r.promptVersionIndex ?? 0) === versionIndex
+    );
+    const storedDraftIdx = promptResponse.activeResponseIndexPerVersion?.[versionIndex];
+    const clampedDraftIdx = storedDraftIdx !== undefined
+      ? Math.min(storedDraftIdx, Math.max(0, targetResponses.length - 1))
+      : Math.max(0, targetResponses.length - 1);
+    const globalIndex = targetResponses.length > 0
+      ? promptResponse.responses.indexOf(targetResponses[clampedDraftIdx])
+      : -1;
+    dispatch({
+      type: 'UPDATE_PROMPT_RESPONSE',
+      payload: {
+        chatId,
+        promptResponse: {
+          ...promptResponse,
+          activePromptIndex: versionIndex,
+          activeResponseIndex: Math.max(0, globalIndex),
+        },
+      },
     });
   };
 
@@ -337,14 +411,36 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                     {promptResponse.prompt.isStarred ? '⭐' : '☆'}
                   </button>
                 </div>
+                {/* Prompt Version Navigator */}
+                {allPrompts.length > 1 && !isEditingPrompt && (
+                  <div className="flex items-center gap-1 sm:gap-2 mb-2 flex-wrap">
+                    <span className="text-[10px] sm:text-xs text-gray-500">v</span>
+                    {allPrompts.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSelectVersion(index)}
+                        className={`w-5 h-5 sm:w-6 sm:h-6 rounded text-[10px] sm:text-xs flex items-center justify-center ${
+                          index === activePromptIdx
+                            ? 'bg-theme-primary text-white'
+                            : isDark
+                              ? 'bg-dark-100 text-gray-400 hover:bg-dark-300'
+                              : 'bg-light-300 text-gray-600 hover:bg-light-400'
+                        }`}
+                      >
+                        {index + 1}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {isEditingPrompt ? (
                   <div className="space-y-2">
                     <textarea
                       value={editedPrompt}
                       onChange={(e) => setEditedPrompt(e.target.value)}
                       className={`w-full p-2 border rounded resize-none text-xs sm:text-sm ${
-                        isDark 
-                          ? 'bg-dark-300 border-dark-100 text-gray-200' 
+                        isDark
+                          ? 'bg-dark-300 border-dark-100 text-gray-200'
                           : 'bg-white border-light-400 text-gray-800'
                       }`}
                       rows={3}
@@ -358,7 +454,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                         {isRegenerating ? '⟳ Sending…' : '🔄 Resubmit'}
                       </button>
                       <button
-                        onClick={() => { setIsEditingPrompt(false); setEditedPrompt(promptResponse.prompt.content); }}
+                        onClick={() => { setIsEditingPrompt(false); setEditedPrompt(activePrompt.content); }}
                         disabled={isRegenerating}
                         className={`px-2 sm:px-3 py-1 rounded text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed ${isDark ? 'bg-dark-100 text-gray-300' : 'bg-light-300 text-gray-700'}`}
                       >
@@ -368,13 +464,13 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                   </div>
                 ) : (
                   <div className="relative">
-                    <MessageContent content={promptResponse.prompt.content} />
+                    <MessageContent content={activePrompt.content} />
                     <button
-                      onClick={() => setIsEditingPrompt(true)}
+                      onClick={() => { setEditedPrompt(activePrompt.content); setIsEditingPrompt(true); }}
                       className={`absolute top-0 right-0 opacity-0 group-hover:opacity-100 p-1 rounded text-xs sm:text-sm ${
                         isDark ? 'text-gray-500 hover:bg-dark-100' : 'text-gray-500 hover:bg-light-300'
                       }`}
-                      title="Edit prompt"
+                      title="Edit prompt (creates new version)"
                     >
                       ✏️
                     </button>
@@ -406,18 +502,18 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
                     </button>
                   </div>
 
-                  {/* Draft Navigation - responsive */}
-                  {promptResponse.responses.length > 1 && (
+                  {/* Draft Navigation - scoped to current prompt version */}
+                  {versionResponses.length > 1 && (
                     <div className="flex items-center gap-1 sm:gap-2 mb-2 flex-wrap">
                       <span className="text-[10px] sm:text-xs text-gray-500">Draft</span>
-                      {promptResponse.responses.map((_, index) => (
+                      {versionResponses.map((_, index) => (
                         <button
                           key={index}
                           onClick={() => handleSelectDraft(index)}
                           className={`w-5 h-5 sm:w-6 sm:h-6 rounded text-[10px] sm:text-xs flex items-center justify-center ${
-                            index === promptResponse.activeResponseIndex
+                            index === activeVersionDraftIdx
                               ? 'bg-theme-primary text-white'
-                              : isDark 
+                              : isDark
                                 ? 'bg-dark-100 text-gray-400 hover:bg-dark-300'
                                 : 'bg-light-300 text-gray-600 hover:bg-light-400'
                           }`}
