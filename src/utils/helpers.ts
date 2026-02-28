@@ -106,7 +106,8 @@ export const searchInChat = (chat: Chat, query: string): boolean => {
   if (chat.title.toLowerCase().includes(lowerQuery)) return true;
   
   for (const pnr of chat.promptResponses) {
-    if (pnr.prompt.content.toLowerCase().includes(lowerQuery)) return true;
+    const allPrompts = pnr.prompts?.length ? pnr.prompts : [pnr.prompt];
+    if (allPrompts.some(p => p.content.toLowerCase().includes(lowerQuery))) return true;
     for (const response of pnr.responses) {
       if (response.content.toLowerCase().includes(lowerQuery)) return true;
     }
