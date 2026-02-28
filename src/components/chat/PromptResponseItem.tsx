@@ -2,7 +2,9 @@ import { useState, useCallback } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { useToast } from '../../context/ToastContext';
 import { getFirstWords, formatTimestamp, formatDuration, generateId } from '../../utils/helpers';
-import { regenerateResponse } from '../../utils/llmService';
+import { regenerateResponse, buildSystemMessageParts } from '../../utils/llmService';
+import { buildChatHistory, truncateHistory } from '../../utils/chatHistoryBuilder';
+import { getModelContextWindow } from '../../types';
 import type { PromptResponse } from '../../types';
 import MessageContent from './MessageContent';
 import TTSButton from './TTSButton';
@@ -10,10 +12,11 @@ import TTSButton from './TTSButton';
 interface PromptResponseItemProps {
   chatId: string;
   promptResponse: PromptResponse;
+  pnrIndex: number;
   onQuote?: (text: string) => void;
 }
 
-export default function PromptResponseItem({ chatId, promptResponse, onQuote }: PromptResponseItemProps) {
+export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, onQuote }: PromptResponseItemProps) {
   const { state, dispatch, getChat, isDark } = useChat();
   const { addToast } = useToast();
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -87,12 +90,26 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
       r => (r.promptVersionIndex ?? 0) === curPromptIdx
     );
 
+    // Build chat history up to (but not including) this PnR
+    const provider = chat.providerId ? state.providers.find(p => p.id === chat.providerId) : undefined;
+    const sendHistory = chat.settings.sendChatHistory ?? true;
+    let chatHistory = sendHistory ? buildChatHistory(chat.promptResponses, pnrIndex) : [];
+    if (chatHistory.length > 0 && provider?.model) {
+      const contextWindow = getModelContextWindow(provider.model);
+      if (contextWindow) {
+        const systemParts = buildSystemMessageParts(undefined, chat.settings);
+        const systemTokens = systemParts.reduce((s, p) => s + Math.ceil(p.content.length / 4), 0);
+        chatHistory = truncateHistory(chatHistory, systemTokens, Math.ceil(curPrompt.content.length / 4), contextWindow);
+      }
+    }
+
     setIsRegenerating(true);
     try {
       const { message, processingTime } = await regenerateResponse(
         curPrompt.content,
-        chat.providerId ? state.providers.find(p => p.id === chat.providerId) : undefined,
-        chat.settings
+        provider,
+        chat.settings,
+        chatHistory
       );
 
       const taggedMessage = { ...message, promptVersionIndex: curPromptIdx };
@@ -128,7 +145,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
     } finally {
       setIsRegenerating(false);
     }
-  }, [chatId, promptResponse, getChat, state.providers, dispatch, addToast]);
+  }, [chatId, promptResponse, pnrIndex, getChat, state.providers, dispatch, addToast]);
 
   const handleSavePromptEdit = useCallback(async () => {
     const chat = getChat(chatId);
@@ -158,11 +175,25 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
     // Persist new version first so the UI shows it immediately
     dispatch({ type: 'UPDATE_PROMPT_RESPONSE', payload: { chatId, promptResponse: withNewVersion } });
 
+    // Build chat history up to (but not including) this PnR
+    const provider = chat.providerId ? state.providers.find(p => p.id === chat.providerId) : undefined;
+    const sendHistory = chat.settings.sendChatHistory ?? true;
+    let chatHistory = sendHistory ? buildChatHistory(chat.promptResponses, pnrIndex) : [];
+    if (chatHistory.length > 0 && provider?.model) {
+      const contextWindow = getModelContextWindow(provider.model);
+      if (contextWindow) {
+        const systemParts = buildSystemMessageParts(undefined, chat.settings);
+        const systemTokens = systemParts.reduce((s, p) => s + Math.ceil(p.content.length / 4), 0);
+        chatHistory = truncateHistory(chatHistory, systemTokens, Math.ceil(editedPrompt.length / 4), contextWindow);
+      }
+    }
+
     try {
       const { message, processingTime } = await regenerateResponse(
         editedPrompt,
-        chat.providerId ? state.providers.find(p => p.id === chat.providerId) : undefined,
-        chat.settings
+        provider,
+        chat.settings,
+        chatHistory
       );
 
       const taggedMessage = { ...message, promptVersionIndex: newVersionIndex };
@@ -191,7 +222,7 @@ export default function PromptResponseItem({ chatId, promptResponse, onQuote }: 
     } finally {
       setIsRegenerating(false);
     }
-  }, [chatId, promptResponse, editedPrompt, getChat, state.providers, dispatch, addToast]);
+  }, [chatId, promptResponse, pnrIndex, editedPrompt, getChat, state.providers, dispatch, addToast]);
 
   const handleSaveNameEdit = () => {
     const updatedPnR = {

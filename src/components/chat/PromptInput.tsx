@@ -3,6 +3,7 @@ import { useChat } from '../../context/ChatContext';
 import { usePromptNavigation } from '../../hooks/usePromptNavigation';
 import VoiceInput from './VoiceInput';
 import TokenCounter from './TokenCounter';
+import ContextUtilization from './ContextUtilization';
 
 interface PromptInputProps {
   onSend: (content: string) => void;
@@ -11,9 +12,10 @@ interface PromptInputProps {
   value?: string;
   onChange?: (value: string) => void;
   hasProvider?: boolean;
+  providerId?: string;
 }
 
-export default function PromptInput({ onSend, onKeyDown, disabled, value = '', onChange, hasProvider = true }: PromptInputProps) {
+export default function PromptInput({ onSend, onKeyDown, disabled, value = '', onChange, hasProvider = true, providerId }: PromptInputProps) {
   const { state } = useChat();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isDark = state.themeSettings.mode === 'dark' ||
@@ -648,15 +650,16 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
           </button>
         </div>
       </div>
-      {/* Footer hints - responsive, hidden on very small screens */}
-      <div className={`hidden xs:flex items-center justify-between mt-1.5 sm:mt-2 text-[10px] sm:text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-        <div className="hidden sm:flex items-center gap-2 sm:gap-4">
-          <span className="hidden md:inline">
-            <kbd className={`px-1 py-0.5 rounded text-[10px] sm:text-xs ${isDark ? 'bg-dark-300' : 'bg-light-400'}`}>Ctrl</kbd>+
-            <kbd className={`px-1 py-0.5 rounded text-[10px] sm:text-xs ${isDark ? 'bg-dark-300' : 'bg-light-400'}`}>Enter</kbd> to send
+      {/* Footer hints - compact, hidden below 475px */}
+      <div className={`hidden xs:flex items-center justify-between mt-1 sm:mt-1.5 text-[10px] sm:text-xs leading-none ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+        <div className="hidden md:flex items-center gap-2">
+          <span>
+            <kbd className={`px-1 py-0.5 rounded text-[10px] ${isDark ? 'bg-dark-300' : 'bg-light-400'}`}>Ctrl</kbd>+
+            <kbd className={`px-1 py-0.5 rounded text-[10px] ${isDark ? 'bg-dark-300' : 'bg-light-400'}`}>Enter</kbd> to send
           </span>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3 ml-auto">
+        <div className="flex items-center gap-1.5 sm:gap-2 ml-auto">
+          <ContextUtilization currentInputText={value} providerId={providerId} />
           <TokenCounter text={value} />
           <span className="whitespace-nowrap">{value.length} <span className="hidden sm:inline">chars</span></span>
         </div>

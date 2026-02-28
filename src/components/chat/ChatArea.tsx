@@ -5,7 +5,9 @@ import { useChat } from '../../context/ChatContext';
 import { useToast } from '../../context/ToastContext';
 import { useIsMobile } from '../../hooks/useMediaQuery';
 import { createMessage, createPromptResponse } from '../../utils/helpers';
-import { getLLMResponse } from '../../utils/llmService';
+import { getLLMResponse, buildSystemMessageParts } from '../../utils/llmService';
+import { buildChatHistory, truncateHistory } from '../../utils/chatHistoryBuilder';
+import { getModelContextWindow } from '../../types';
 import PromptResponseItem from './PromptResponseItem';
 import PromptInput from './PromptInput';
 import ChatSettings from './ChatSettings';
@@ -184,6 +186,23 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
     const prompt = createMessage('user', content);
     const pnr = createPromptResponse(prompt);
 
+    // Build chat history BEFORE adding the new PnR (so it only includes prior turns)
+    const sendHistory = activeChat.settings.sendChatHistory ?? true;
+    const provider = selectedProvider?.id
+      ? state.providers.find(p => p.id === selectedProvider.id && p.isEnabled) || selectedProvider
+      : selectedProvider;
+    let chatHistory = sendHistory ? buildChatHistory(activeChat.promptResponses) : [];
+
+    // Auto-truncate if context window is known
+    if (chatHistory.length > 0 && provider?.model) {
+      const contextWindow = getModelContextWindow(provider.model);
+      if (contextWindow) {
+        const systemParts = buildSystemMessageParts(undefined, activeChat.settings);
+        const systemTokens = systemParts.reduce((s, p) => s + Math.ceil(p.content.length / 4), 0);
+        chatHistory = truncateHistory(chatHistory, systemTokens, Math.ceil(fullPrompt.length / 4), contextWindow);
+      }
+    }
+
     dispatch({
       type: 'ADD_PROMPT_RESPONSE',
       payload: { chatId: activeChat.id, promptResponse: pnr },
@@ -193,13 +212,12 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
     setIsLoading(true);
 
     try {
-      // Get the current provider from state to ensure it's fresh
-      const currentProvider = selectedProvider?.id ? state.providers.find(p => p.id === selectedProvider.id && p.isEnabled) : null;
       const { message, processingTime } = await getLLMResponse(
-        fullPrompt, // Use the full prompt with context
-        undefined, // System prompt will be built from chat settings
-        currentProvider || selectedProvider,
-        activeChat.settings // Pass chat settings for formatting profile
+        fullPrompt,
+        undefined,
+        provider,
+        activeChat.settings,
+        chatHistory
       );
 
       const updatedPnR = {
@@ -692,6 +710,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
                 key={pnr.id}
                 chatId={activeChat.id}
                 promptResponse={pnr}
+                pnrIndex={activeChat.promptResponses.indexOf(pnr)}
                 onQuote={onQuote}
               />
             ))}
@@ -704,6 +723,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
             key={pnr.id}
             chatId={activeChat.id}
             promptResponse={pnr}
+            pnrIndex={activeChat.promptResponses.indexOf(pnr)}
             onQuote={onQuote}
           />
         ))}
@@ -725,6 +745,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
         value={inputValue}
         onChange={setInputValue}
         hasProvider={!!selectedProvider}
+        providerId={selectedProvider?.id}
       />
     </div>
   );

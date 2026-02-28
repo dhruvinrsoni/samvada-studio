@@ -1,6 +1,6 @@
 // LLM Service - Supports multiple providers
 import { generateId } from './helpers';
-import type { Message, Draft, LLMProviderConfig, ChatSettings } from '../types';
+import type { Message, Draft, LLMProviderConfig, ChatSettings, ChatHistoryMessage } from '../types';
 import { logDebug, logError, logWarning } from './debug';
 import { parseProviderError, type ProviderError } from './providerErrors';
 import { getAutoProxy, normalizeProxyUrl, isHeaderBasedProxy } from '../services/proxyDiscovery';
@@ -297,7 +297,8 @@ const sanitizeLLMResponse = (content: string | null | undefined): string => {
 export const callLLMProvider = async (
   provider: LLMProviderConfig,
   prompt: string,
-  systemParts?: SystemMessagePart[]
+  systemParts?: SystemMessagePart[],
+  history?: ChatHistoryMessage[]
 ): Promise<LLMResponse> => {
   const startTime = Date.now();
   const requestId = generateId();
@@ -353,12 +354,17 @@ export const callLLMProvider = async (
                                  provider.model.includes('o3') ||
                                  provider.model.includes('gpt-5');
         
+        const historyMessages = (history ?? []).map(m => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+        }));
         const requestBody: Record<string, unknown> = {
           model: provider.model,
           messages: [
             // Each SystemMessagePart becomes its own { role: "system" } entry.
             // Separate entries are less likely to be echoed than a single concatenated blob.
             ...(systemParts ?? []).map(p => ({ role: 'system' as const, content: p.content })),
+            ...historyMessages,
             { role: 'user' as const, content: prompt },
           ],
         };
@@ -408,6 +414,7 @@ export const callLLMProvider = async (
           body: JSON.stringify({
             messages: [
               ...(systemParts ?? []).map(p => ({ role: 'system' as const, content: p.content })),
+              ...(history ?? []).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
               { role: 'user' as const, content: prompt },
             ],
             temperature: provider.settings.temperature,
@@ -442,7 +449,10 @@ export const callLLMProvider = async (
             body: JSON.stringify({
               model: provider.model,
               max_tokens: provider.settings.maxTokens,
-              messages: [{ role: 'user', content: prompt }],
+              messages: [
+                ...(history ?? []).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+                { role: 'user', content: prompt },
+              ],
               // Anthropic accepts system as an array of { type, text } content blocks —
               // each rule arrives as a separate block rather than a concatenated string.
               ...(systemParts?.length
@@ -491,6 +501,12 @@ export const callLLMProvider = async (
           supportsSystemInstruction,
         });
 
+        // Gemini uses role: 'user' | 'model' in contents array
+        const geminiHistory = (history ?? []).map(m => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }],
+        }));
+
         response = await fetch(geminiEndpoint, {
           method: 'POST',
           headers: {
@@ -502,13 +518,17 @@ export const callLLMProvider = async (
             ...(systemParts?.length && supportsSystemInstruction
               ? { system_instruction: { parts: systemParts.map(p => ({ text: p.content })) } }
               : {}),
-            contents: [{
-              parts: [{
-                text: systemParts?.length && !supportsSystemInstruction
-                  ? `${systemParts.map(p => p.content).join('\n\n')}\n\n${prompt}`
-                  : prompt,
-              }],
-            }],
+            contents: [
+              ...geminiHistory,
+              {
+                role: 'user',
+                parts: [{
+                  text: systemParts?.length && !supportsSystemInstruction
+                    ? `${systemParts.map(p => p.content).join('\n\n')}\n\n${prompt}`
+                    : prompt,
+                }],
+              },
+            ],
             generationConfig: {
               temperature: provider.settings.temperature,
               maxOutputTokens: provider.settings.maxTokens,
@@ -533,63 +553,104 @@ export const callLLMProvider = async (
         content = sanitizeLLMResponse(googleData.candidates[0].content.parts[0].text);
         break;
 
-      case 'ollama':
+      case 'ollama': {
+        const baseUrl = endpoint.replace(/\/api\/(generate|chat)$/, '');
+        const hasHistory = history && history.length > 0;
+
         logDebug('Ollama Request', {
           requestId,
-          endpoint,
+          endpoint: hasHistory ? `${baseUrl}/api/chat` : endpoint,
+          mode: hasHistory ? 'multi-turn (/api/chat)' : 'single-turn (/api/generate)',
           model: provider.model,
           temperature: provider.settings.temperature,
+          historyLength: history?.length ?? 0,
         });
 
         try {
-          response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: provider.model,
-              // Ollama /api/generate has no native system-message array — join parts then prepend.
-              prompt: systemParts?.length
-                ? `${systemParts.map(p => p.content).join('\n\n')}\n\n${prompt}`
-                : prompt,
-              stream: false,
-              options: {
-                temperature: provider.settings.temperature,
-              },
-            }),
-          });
+          if (hasHistory) {
+            // ── Multi-turn: /api/chat — native messages array ──
+            const chatEndpoint = `${baseUrl}/api/chat`;
+            const ollamaMessages: { role: string; content: string }[] = [];
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            logError('Ollama API Error', new Error(`HTTP ${response.status}`), {
-              requestId,
-              status: response.status,
-              statusText: response.statusText,
-              errorBody: errorText,
-              endpoint,
+            if (systemParts?.length) {
+              ollamaMessages.push({
+                role: 'system',
+                content: systemParts.map(p => p.content).join('\n\n'),
+              });
+            }
+            for (const m of history) {
+              ollamaMessages.push({ role: m.role, content: m.content });
+            }
+            ollamaMessages.push({ role: 'user', content: prompt });
+
+            response = await fetch(chatEndpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                model: provider.model,
+                messages: ollamaMessages,
+                stream: false,
+                options: { temperature: provider.settings.temperature },
+              }),
             });
 
-            // Provide helpful error messages
-            if (response.status === 404) {
-              throw new Error(
-                `Ollama model "${provider.model}" not found. ` +
-                `Please ensure Ollama is running and the model is installed. ` +
-                `Run: ollama pull ${provider.model}`
-              );
-            } else if (response.status === 500) {
-              throw new Error(
-                `Ollama server error. Please check if the model is loaded correctly. ` +
-                `Error: ${errorText}`
-              );
-            } else {
+            if (!response.ok) {
+              const errorText = await response.text();
+              logError('Ollama /api/chat Error', new Error(`HTTP ${response.status}`), {
+                requestId, status: response.status, errorBody: errorText, endpoint: chatEndpoint,
+              });
+              if (response.status === 404) {
+                throw new Error(
+                  `Ollama /api/chat not available. Your Ollama version may be too old. ` +
+                  `Please update Ollama to v0.1.14+ for multi-turn support, ` +
+                  `or disable "Send Chat History" in Chat Settings.`
+                );
+              }
               throw new Error(`Ollama API error: ${response.status} - ${errorText}`);
             }
+
+            const chatData = await response.json();
+            content = sanitizeLLMResponse(chatData.message?.content ?? chatData.response ?? '');
+          } else {
+            // ── Single-turn: /api/generate (existing behavior) ──
+            response = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                model: provider.model,
+                prompt: systemParts?.length
+                  ? `${systemParts.map(p => p.content).join('\n\n')}\n\n${prompt}`
+                  : prompt,
+                stream: false,
+                options: { temperature: provider.settings.temperature },
+              }),
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              logError('Ollama API Error', new Error(`HTTP ${response.status}`), {
+                requestId, status: response.status, statusText: response.statusText,
+                errorBody: errorText, endpoint,
+              });
+              if (response.status === 404) {
+                throw new Error(
+                  `Ollama model "${provider.model}" not found. ` +
+                  `Please ensure Ollama is running and the model is installed. ` +
+                  `Run: ollama pull ${provider.model}`
+                );
+              } else if (response.status === 500) {
+                throw new Error(
+                  `Ollama server error. Please check if the model is loaded correctly. ` +
+                  `Error: ${errorText}`
+                );
+              }
+              throw new Error(`Ollama API error: ${response.status} - ${errorText}`);
+            }
+
+            const ollamaData = await response.json();
+            content = sanitizeLLMResponse(ollamaData.response);
           }
 
-          const ollamaData = await response.json();
-          content = sanitizeLLMResponse(ollamaData.response);
-          
           logDebug('Ollama Response', {
             requestId,
             responseLength: content.length,
@@ -599,11 +660,11 @@ export const callLLMProvider = async (
           if (error instanceof TypeError && error.message.includes('fetch')) {
             logError('Ollama Connection Error', error, {
               requestId,
-              endpoint,
+              endpoint: baseUrl,
               suggestion: 'Is Ollama running? Start with: ollama serve',
             });
             throw new Error(
-              `Cannot connect to Ollama at ${endpoint}. ` +
+              `Cannot connect to Ollama at ${baseUrl}. ` +
               `Please ensure Ollama is installed and running. ` +
               `Start Ollama with: ollama serve`
             );
@@ -611,6 +672,7 @@ export const callLLMProvider = async (
           throw error;
         }
         break;
+      }
 
       default:
         // Custom provider - try OpenAI-compatible format
@@ -624,6 +686,7 @@ export const callLLMProvider = async (
             model: provider.model,
             messages: [
               ...(systemParts ?? []).map(p => ({ role: 'system' as const, content: p.content })),
+              ...(history ?? []).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
               { role: 'user' as const, content: prompt },
             ],
             temperature: provider.settings.temperature,
@@ -688,7 +751,8 @@ export const getLLMResponse = async (
   prompt: string,
   systemPrompt?: string,
   provider?: LLMProviderConfig | null,
-  chatSettings?: ChatSettings
+  chatSettings?: ChatSettings,
+  history?: ChatHistoryMessage[]
 ): Promise<LLMResponse> => {
   if (!provider) {
     const error = new Error('No LLM provider selected. Please configure a provider in Admin Settings.');
@@ -727,7 +791,7 @@ export const getLLMResponse = async (
   }
 
   try {
-    return await callLLMProvider(provider, prompt, systemParts);
+    return await callLLMProvider(provider, prompt, systemParts, history);
   } catch (error) {
     console.error('LLM API call failed:', error);
     throw new Error(`Failed to get response from ${provider.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -757,9 +821,10 @@ export const generateDrafts = async (
 export const regenerateResponse = async (
   prompt: string,
   provider?: LLMProviderConfig | null,
-  chatSettings?: ChatSettings
+  chatSettings?: ChatSettings,
+  history?: ChatHistoryMessage[]
 ): Promise<LLMResponse> => {
-  return getLLMResponse(prompt, undefined, provider, chatSettings);
+  return getLLMResponse(prompt, undefined, provider, chatSettings, history);
 };
 
 // Test provider connection

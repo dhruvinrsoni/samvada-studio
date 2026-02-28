@@ -272,6 +272,12 @@ export interface GlobalSearchState {
   isOpen: boolean;
 }
 
+// Provider-agnostic conversation turn for chat history
+export interface ChatHistoryMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -343,6 +349,7 @@ export interface ChatSettings {
   maxTokens?: number;
   providerId?: string; // Override provider for this chat
   formattingProfile?: FormattingProfile; // NEW: Per-chat formatting profile
+  sendChatHistory?: boolean; // Send conversation history to LLM (undefined → true)
 }
 
 export interface Example {
@@ -670,4 +677,78 @@ export interface Toast {
   message?: string;
   duration?: number; // in milliseconds
   timestamp: Date;
+}
+
+// Context window sizes (in tokens) for common models.
+// Key is a prefix or exact model name; lookup uses longest-prefix match.
+export const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
+  // OpenAI
+  'gpt-3.5-turbo': 16_385,
+  'gpt-4': 8_192,
+  'gpt-4-turbo': 128_000,
+  'gpt-4o': 128_000,
+  'gpt-4o-mini': 128_000,
+  'gpt-4.1': 1_000_000,
+  'gpt-4.1-mini': 1_000_000,
+  'gpt-4.1-nano': 1_000_000,
+  'gpt-5': 1_000_000,
+  'o1': 200_000,
+  'o1-mini': 128_000,
+  'o1-pro': 200_000,
+  'o3': 200_000,
+  'o3-mini': 200_000,
+  'o3-pro': 200_000,
+  'o4-mini': 200_000,
+  // Anthropic
+  'claude-3-opus': 200_000,
+  'claude-3-sonnet': 200_000,
+  'claude-3-haiku': 200_000,
+  'claude-3.5-sonnet': 200_000,
+  'claude-3.5-haiku': 200_000,
+  'claude-3-5-sonnet': 200_000,
+  'claude-3-5-haiku': 200_000,
+  'claude-sonnet-4': 200_000,
+  'claude-opus-4': 200_000,
+  // Google
+  'gemini-pro': 32_000,
+  'gemini-1.5-pro': 2_000_000,
+  'gemini-1.5-flash': 1_000_000,
+  'gemini-2.0-flash': 1_000_000,
+  'gemini-2.5-pro': 1_000_000,
+  'gemini-2.5-flash': 1_000_000,
+  // Ollama (conservative defaults — actual varies by model/quantization)
+  'llama2': 4_096,
+  'llama3': 8_192,
+  'llama3.1': 128_000,
+  'llama3.2': 128_000,
+  'llama3.3': 128_000,
+  'mistral': 32_000,
+  'mixtral': 32_000,
+  'codellama': 16_384,
+  'deepseek': 128_000,
+  'phi': 4_096,
+  'phi3': 128_000,
+  'gemma': 8_192,
+  'gemma2': 8_192,
+  'gemma3': 128_000,
+  'qwen': 32_000,
+  'qwen2': 128_000,
+};
+
+/**
+ * Look up the context window for a model name.
+ * Exact match first, then longest-prefix match.
+ * e.g. "gpt-4o-2024-08-06" matches "gpt-4o" (128k).
+ */
+export function getModelContextWindow(modelName: string): number | undefined {
+  if (MODEL_CONTEXT_WINDOWS[modelName] !== undefined) {
+    return MODEL_CONTEXT_WINDOWS[modelName];
+  }
+  let bestMatch = '';
+  for (const key of Object.keys(MODEL_CONTEXT_WINDOWS)) {
+    if (modelName.startsWith(key) && key.length > bestMatch.length) {
+      bestMatch = key;
+    }
+  }
+  return bestMatch ? MODEL_CONTEXT_WINDOWS[bestMatch] : undefined;
 }

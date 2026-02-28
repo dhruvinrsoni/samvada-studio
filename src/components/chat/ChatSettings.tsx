@@ -533,6 +533,30 @@ export default function ChatSettings({ chat, onClose }: ChatSettingsProps) {
               )}
             </div>
 
+            {/* Chat History Toggle */}
+            <div className={`flex items-center justify-between p-3 rounded-lg ${isDark ? 'bg-dark-300' : 'bg-light-300'}`}>
+              <div>
+                <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  Send Chat History
+                </span>
+                <p className={`text-xs mt-0.5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Include previous messages for multi-turn conversation context
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSettings({ ...settings, sendChatHistory: !(settings.sendChatHistory ?? true) })}
+                className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${
+                  (settings.sendChatHistory ?? true)
+                    ? 'bg-theme-primary' : isDark ? 'bg-dark-100' : 'bg-gray-300'
+                }`}
+              >
+                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+                  (settings.sendChatHistory ?? true) ? 'translate-x-5' : 'translate-x-0.5'
+                }`} />
+              </button>
+            </div>
+
             {/* Model Parameters */}
             <div className="grid grid-cols-2 gap-4">
               <div>
