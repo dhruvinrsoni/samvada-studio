@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { useToast } from '../../context/ToastContext';
-import { getFirstWords, formatTimestamp, formatDuration, generateId } from '../../utils/helpers';
+import { formatTimestamp, formatDuration, generateId } from '../../utils/helpers';
 import { regenerateResponse, buildSystemMessageParts } from '../../utils/llmService';
 import { buildChatHistory, truncateHistory } from '../../utils/chatHistoryBuilder';
 import { getModelContextWindow } from '../../types';
@@ -346,7 +346,7 @@ export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, o
                     setEditedName(promptResponse.name || '');
                   }
                 }}
-                className={`text-xs sm:text-sm px-1.5 sm:px-2 py-0.5 sm:py-1 border rounded w-full max-w-[120px] sm:max-w-[200px] md:max-w-xs ${isDark ? 'bg-dark-100 border-dark-300 text-gray-200' : 'bg-white border-light-400 text-gray-800'}`}
+                className={`text-xs sm:text-sm px-1.5 sm:px-2 py-0.5 sm:py-1 border rounded flex-1 min-w-0 ${isDark ? 'bg-dark-100 border-dark-300 text-gray-200' : 'bg-white border-light-400 text-gray-800'}`}
                 placeholder="Enter name..."
                 autoFocus
               />
@@ -371,10 +371,10 @@ export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, o
           ) : (
             <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1 group/name">
               <span
-                className={`text-xs sm:text-sm truncate max-w-[100px] sm:max-w-[150px] md:max-w-xs ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
-                title={promptResponse.name || getFirstWords(promptResponse.prompt.content, 10)}
+                className={`text-xs sm:text-sm truncate ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
+                title={promptResponse.name || promptResponse.prompt.content}
               >
-                {promptResponse.name || getFirstWords(promptResponse.prompt.content, 4)}
+                {promptResponse.name || promptResponse.prompt.content}
               </span>
               <button
                 onClick={(e) => {
