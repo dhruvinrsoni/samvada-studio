@@ -36,6 +36,8 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
   const [chatTitleInput, setChatTitleInput] = useState('');
   const loadingRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<HTMLDivElement | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const prevIsLoadingRef = useRef(false);
   const providerHoverCloseRef = useRef<number | null>(null);
   const providerHoverOpenRef = useRef<number | null>(null);
   const chatMenuHoverCloseRef = useRef<number | null>(null);
@@ -153,6 +155,17 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
     messagesRef.current.scrollTo({ top: messagesRef.current.scrollHeight, behavior });
   };
 
+  // Auto-focus input when loading ends (response arrived, error, or cancel)
+  useEffect(() => {
+    if (prevIsLoadingRef.current && !isLoading) {
+      setTimeout(() => {
+        const textarea = document.querySelector<HTMLTextAreaElement>('.chat-area textarea');
+        textarea?.focus();
+      }, 100);
+    }
+    prevIsLoadingRef.current = isLoading;
+  }, [isLoading]);
+
   // Close provider dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -168,13 +181,22 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isProviderDropdownOpen, isChatMenuOpen]);
 
+  const handleCancelGeneration = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false);
+    addToast('info', 'Generation cancelled');
+  }, [addToast]);
+
   const handleSendPrompt = useCallback(async (content: string) => {
     if (!activeChat || !content.trim() || isLoading) return;
 
     // Build the full prompt with active context panels
     const activeContextPanels = state.contextPanels.filter(panel => panel.isActive);
     let fullPrompt = content;
-    
+
     // Prepend active context panels to the prompt
     if (activeContextPanels.length > 0) {
       const contextText = activeContextPanels
@@ -211,6 +233,10 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
     setInputValue('');
     setIsLoading(true);
 
+    // Create AbortController for cancellation
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     try {
       const { message, processingTime } = await getLLMResponse(
         fullPrompt,
@@ -219,6 +245,9 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
         activeChat.settings,
         chatHistory
       );
+
+      // Check if cancelled while awaiting
+      if (abortController.signal.aborted) return;
 
       const updatedPnR = {
         ...pnr,
@@ -231,6 +260,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
         payload: { chatId: activeChat.id, promptResponse: updatedPnR },
       });
     } catch (error) {
+      if (abortController.signal.aborted) return; // User cancelled — don't show error
       console.error('Failed to get response:', error);
       addToast(
         'error',
@@ -238,6 +268,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
         error instanceof Error ? error.message : 'An unexpected error occurred'
       );
     } finally {
+      abortControllerRef.current = null;
       setIsLoading(false);
     }
   }, [activeChat, dispatch, isLoading, state.contextPanels, selectedProvider, state.providers, addToast]);
@@ -728,11 +759,19 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
           />
         ))}
 
-        {/* Loading Indicator - responsive */}
+        {/* Loading Indicator with Cancel */}
         {isLoading && (
           <div ref={loadingRef} className={`flex items-center gap-2 p-2 sm:p-3 md:p-4 rounded-lg ${isDark ? 'bg-dark-200' : 'bg-light-300'}`}>
             <div className="animate-spin w-4 h-4 sm:w-5 sm:h-5 border-2 border-theme-primary border-t-transparent rounded-full flex-shrink-0" />
-            <span className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Generating response...</span>
+            <span className={`text-xs sm:text-sm flex-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Generating response...</span>
+            <button
+              onClick={handleCancelGeneration}
+              className={`px-2 py-1 text-[10px] sm:text-xs rounded transition-colors flex-shrink-0 ${
+                isDark ? 'text-gray-400 hover:text-white hover:bg-dark-300' : 'text-gray-500 hover:text-gray-900 hover:bg-light-400'
+              }`}
+            >
+              Cancel
+            </button>
           </div>
         )}
       </div>
