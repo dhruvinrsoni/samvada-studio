@@ -1,7 +1,7 @@
 import { callLLMProvider } from '../utils/llmService';
 import { generateId } from '../utils/helpers';
 import type { LLMProviderConfig } from '../types';
-import type { MemoryEntry, MemorySettings } from '../types/memory';
+import type { MemoryEntry, MemorySettings, OllamaModel } from '../types/memory';
 
 const MIN_CONTENT_LENGTH = 20;
 
@@ -129,7 +129,8 @@ export async function extractMemories(
   assistantMessage: string,
   existingEntries: MemoryEntry[],
   settings: MemorySettings,
-  extractedFromPnrId: string
+  extractedFromPnrId: string,
+  providerOverride?: LLMProviderConfig
 ): Promise<MemoryEntry[]> {
   if (
     userMessage.trim().length < MIN_CONTENT_LENGTH &&
@@ -138,7 +139,7 @@ export async function extractMemories(
     return [];
   }
 
-  const provider = buildExtractionProvider(settings);
+  const provider = providerOverride ?? buildExtractionProvider(settings);
   const prompt = buildExtractionPrompt(
     userMessage,
     assistantMessage,
@@ -171,13 +172,25 @@ export function buildMemoryInjectionText(entries: MemoryEntry[]): string {
   return `The following are known facts about the user. Use them to personalise your responses:\n${facts}`;
 }
 
-export async function fetchOllamaModels(baseUrl: string): Promise<string[]> {
+export function formatModelSize(bytes: number): string {
+  if (!bytes || bytes <= 0) return '';
+  const gb = bytes / 1_073_741_824;
+  if (gb >= 1) return `${gb.toFixed(1)} GB`;
+  const mb = bytes / 1_048_576;
+  return `${Math.round(mb)} MB`;
+}
+
+export async function fetchOllamaModels(baseUrl: string): Promise<OllamaModel[]> {
   try {
     const url = `${baseUrl.replace(/\/$/, '')}/api/tags`;
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) return [];
     const data = await res.json();
-    return (data.models ?? []).map((m: { name: string }) => m.name);
+    const models: OllamaModel[] = (data.models ?? []).map(
+      (m: { name: string; size?: number }) => ({ name: m.name, size: m.size ?? 0 })
+    );
+    // Sort largest first — more parameters = better for memory extraction
+    return models.sort((a, b) => b.size - a.size);
   } catch {
     return [];
   }

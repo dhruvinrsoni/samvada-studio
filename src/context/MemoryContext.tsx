@@ -1,5 +1,6 @@
 import { createContext, useContext, useReducer, useEffect, useRef, type ReactNode } from 'react';
-import type { MemoryState, MemoryAction, MemoryEntry, MemorySettings } from '../types/memory';
+import type { MemoryState, MemoryAction, MemoryEntry, MemorySettings, OllamaModel } from '../types/memory';
+import type { LLMProviderConfig } from '../types';
 import {
   extractMemories,
   buildCompactionPrompt,
@@ -14,8 +15,10 @@ export const MEMORY_STORAGE_KEY = 'samvada-studio-memory';
 
 const defaultSettings: MemorySettings = {
   isEnabled: false,
+  extractionSource: 'ollama',
   extractionModelEndpoint: 'http://localhost:11434',
   extractionModelName: '',
+  extractionProviderId: undefined,
   maxEntries: 100,
   maxCharsPerEntry: 150,
   autoCompact: true,
@@ -77,8 +80,9 @@ function dateReplacer(_key: string, value: unknown) {
 }
 
 function dateReviver(_key: string, value: unknown) {
-  if (value && typeof value === 'object' && (value as Record<string, unknown>).__type === 'Date') {
-    return new Date((value as Record<string, string>).value);
+  if (value && typeof value === 'object' && (value as Record<string, unknown>)['__type'] === 'Date') {
+    const iso = (value as Record<string, unknown>)['value'];
+    return new Date(iso as string);
   }
   return value;
 }
@@ -116,7 +120,8 @@ interface MemoryContextType {
   triggerExtraction: (userMsg: string, assistantMsg: string, pnrId: string) => void;
   compactMemories: () => Promise<void>;
   getInjectionText: () => string;
-  fetchAvailableModels: (baseUrl: string) => Promise<string[]>;
+  fetchAvailableModels: (baseUrl: string) => Promise<OllamaModel[]>;
+  setExtractionProviderOverride: (provider: LLMProviderConfig | null) => void;
 }
 
 const MemoryContext = createContext<MemoryContextType | undefined>(undefined);
@@ -130,6 +135,8 @@ export function MemoryProvider({ children }: { children: ReactNode }) {
 
   const isInitialMount = useRef(true);
   const extractionInFlightRef = useRef(false);
+  // Optional override: when user picks an existing configured LLM provider for extraction
+  const extractionProviderOverrideRef = useRef<LLMProviderConfig | null>(null);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -154,7 +161,7 @@ export function MemoryProvider({ children }: { children: ReactNode }) {
 
     dispatch({ type: 'SET_COMPACTING', payload: true });
     try {
-      const provider = {
+      const provider: LLMProviderConfig = extractionProviderOverrideRef.current ?? {
         id: '__memory-compactor__',
         name: 'Memory Compactor (Ollama)',
         type: 'ollama' as const,
@@ -192,7 +199,8 @@ export function MemoryProvider({ children }: { children: ReactNode }) {
   const triggerExtraction = (userMsg: string, assistantMsg: string, pnrId: string): void => {
     const { settings } = stateRef.current;
     if (!settings.isEnabled) return;
-    if (!settings.extractionModelName) return;
+    // Must have either an Ollama model name OR a provider override configured
+    if (!settings.extractionModelName && !extractionProviderOverrideRef.current) return;
     if (extractionInFlightRef.current) return;
 
     extractionInFlightRef.current = true;
@@ -212,7 +220,8 @@ export function MemoryProvider({ children }: { children: ReactNode }) {
           assistantMsg,
           stateRef.current.entries,
           stateRef.current.settings,
-          pnrId
+          pnrId,
+          extractionProviderOverrideRef.current ?? undefined
         );
 
         if (newEntries.length > 0) {
@@ -239,6 +248,10 @@ export function MemoryProvider({ children }: { children: ReactNode }) {
     return buildMemoryInjectionText(entries);
   };
 
+  const setExtractionProviderOverride = (provider: LLMProviderConfig | null): void => {
+    extractionProviderOverrideRef.current = provider;
+  };
+
   return (
     <MemoryContext.Provider
       value={{
@@ -248,6 +261,7 @@ export function MemoryProvider({ children }: { children: ReactNode }) {
         compactMemories,
         getInjectionText,
         fetchAvailableModels: fetchOllamaModels,
+        setExtractionProviderOverride,
       }}
     >
       {children}

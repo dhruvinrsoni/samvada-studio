@@ -1,5 +1,10 @@
 export type MemorySource = 'extraction' | 'manual' | 'compaction';
 
+export interface OllamaModel {
+  name: string;
+  size: number; // bytes
+}
+
 export interface MemoryEntry {
   id: string;
   content: string;
@@ -11,8 +16,10 @@ export interface MemoryEntry {
 
 export interface MemorySettings {
   isEnabled: boolean;
+  extractionSource: 'ollama' | 'provider'; // NEW
   extractionModelEndpoint: string;
   extractionModelName: string;
+  extractionProviderId?: string; // NEW - id of configured LLM provider to use
   maxEntries: number;
   maxCharsPerEntry: number;
   autoCompact: boolean;

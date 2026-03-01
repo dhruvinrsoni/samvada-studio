@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { generateId } from '../../utils/helpers';
 import { testProviderConnection } from '../../utils/llmService';
@@ -27,6 +27,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [pendingEditProvider, setPendingEditProvider] = useState<LLMProviderConfig | 'add' | null>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const tabBarRef = useRef<HTMLDivElement>(null);
   const isDark =
     state.themeSettings.mode === 'dark' ||
     (state.themeSettings.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -168,6 +169,20 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
         window.speechSynthesis.onvoiceschanged = null;
       }
     };
+  }, []);
+
+  // Horizontal scroll on mouse wheel for tab bar
+  useEffect(() => {
+    const el = tabBarRef.current;
+    if (!el) return;
+    const handleWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY;
+      }
+    };
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
   }, []);
 
   if (!state.isAdminPanelOpen) return null;
@@ -346,7 +361,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
             </button>
           </div>
           {/* Tabs - horizontal scroll on mobile, always show labels */}
-          <div className="flex gap-1 sm:gap-1.5 overflow-x-auto pb-1 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0 snap-x snap-mandatory scroll-smooth">
+          <div ref={tabBarRef} className="flex gap-1 sm:gap-1.5 overflow-x-auto pb-1 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0 snap-x snap-mandatory scroll-smooth">
             <button
               onClick={() => setActiveTab('providers')}
               className={`px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1 sm:gap-1.5 snap-start ${

@@ -650,19 +650,11 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
           </button>
         </div>
       </div>
-      {/* Footer hints - compact, hidden below 475px */}
-      <div className={`hidden xs:flex items-center justify-between mt-1 sm:mt-1.5 text-[10px] sm:text-xs leading-none ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-        <div className="hidden md:flex items-center gap-2">
-          <span>
-            <kbd className={`px-1 py-0.5 rounded text-[10px] ${isDark ? 'bg-dark-300' : 'bg-light-400'}`}>Ctrl</kbd>+
-            <kbd className={`px-1 py-0.5 rounded text-[10px] ${isDark ? 'bg-dark-300' : 'bg-light-400'}`}>Enter</kbd> to send
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5 sm:gap-2 ml-auto">
-          <ContextUtilization currentInputText={value} providerId={providerId} />
-          <TokenCounter text={value} />
-          <span className="whitespace-nowrap">{value.length} <span className="hidden sm:inline">chars</span></span>
-        </div>
+      {/* Footer — token/context info only, no Ctrl+Enter hint (it's in the button tooltip) */}
+      <div className={`hidden xs:flex items-center justify-end gap-1.5 sm:gap-2 mt-0.5 text-[10px] leading-none ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+        <ContextUtilization currentInputText={value} providerId={providerId} />
+        <TokenCounter text={value} />
+        <span className="whitespace-nowrap">{value.length}c</span>
       </div>
     </div>
   );
