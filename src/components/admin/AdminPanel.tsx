@@ -11,6 +11,7 @@ import DeveloperTools from './DeveloperTools';
 import LocalNetworkAccess from './LocalNetworkAccess';
 import PWAStatusPanel from './PWAStatusPanel';
 import PWAAdvancedControls from './PWAAdvancedControls';
+import MemoryPanel from '../memory/MemoryPanel';
 import useProviderHealthMonitor from '../../hooks/useProviderHealthMonitor';
 import type { PWAStatus } from '../../hooks/usePWA';
 
@@ -20,7 +21,7 @@ interface AdminPanelProps {
 
 export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
   const { state, dispatch } = useChat();
-  const [activeTab, setActiveTab] = useState<'providers' | 'settings' | 'pwa' | 'developer' | 'ollama'>('providers');
+  const [activeTab, setActiveTab] = useState<'providers' | 'settings' | 'pwa' | 'developer' | 'ollama' | 'memory'>('providers');
   const [editingProvider, setEditingProvider] = useState<LLMProviderConfig | null>(null);
   const [isAddingProvider, setIsAddingProvider] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -403,13 +404,26 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
               className={`px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1 sm:gap-1.5 snap-start ${
                 activeTab === 'ollama'
                   ? 'bg-theme-primary text-white shadow-lg'
-                  : isDark 
-                    ? 'text-gray-400 hover:bg-dark-100 hover:text-gray-200' 
+                  : isDark
+                    ? 'text-gray-400 hover:bg-dark-100 hover:text-gray-200'
                     : 'text-gray-600 hover:bg-light-300 hover:text-gray-800'
               }`}
             >
               <span className="text-sm sm:text-base">🦙</span>
               <span className="text-[11px] sm:text-xs md:text-sm">Ollama</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('memory')}
+              className={`px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1 sm:gap-1.5 snap-start ${
+                activeTab === 'memory'
+                  ? 'bg-theme-primary text-white shadow-lg'
+                  : isDark
+                    ? 'text-gray-400 hover:bg-dark-100 hover:text-gray-200'
+                    : 'text-gray-600 hover:bg-light-300 hover:text-gray-800'
+              }`}
+            >
+              <span className="text-sm sm:text-base">🧠</span>
+              <span className="text-[11px] sm:text-xs md:text-sm">Memory</span>
             </button>
           </div>
           <button
@@ -992,6 +1006,13 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
           {activeTab === 'ollama' && (
             <div className="space-y-6">
               <OllamaConfigPanel />
+            </div>
+          )}
+
+          {/* Memory Tab */}
+          {activeTab === 'memory' && (
+            <div className="space-y-4">
+              <MemoryPanel />
             </div>
           )}
         </div>

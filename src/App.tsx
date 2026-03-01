@@ -23,6 +23,7 @@ import { useState, useEffect } from 'react';
 import BRAND from './constants/brand';
 import { HealthService } from './utils/healthService';
 import { ObservabilityProvider } from './context/ObservabilityContext';
+import { MemoryProvider } from './context/MemoryContext';
 
 function AppContent() {
   const { state, dispatch, createChat, isDark } = useChat();
@@ -539,7 +540,9 @@ export default function App() {
     <ToastProvider>
       <ChatProvider>
         <ObservabilityProvider>
-          <AppContent />
+          <MemoryProvider>
+            <AppContent />
+          </MemoryProvider>
         </ObservabilityProvider>
       </ChatProvider>
     </ToastProvider>

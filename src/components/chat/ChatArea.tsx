@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import { useIsMobile } from '../../hooks/useMediaQuery';
 import { createMessage, createPromptResponse } from '../../utils/helpers';
 import { getLLMResponse, buildSystemMessageParts } from '../../utils/llmService';
+import { useMemory } from '../../context/MemoryContext';
 import { buildChatHistory, truncateHistory } from '../../utils/chatHistoryBuilder';
 import { getModelContextWindow } from '../../types';
 import PromptResponseItem from './PromptResponseItem';
@@ -26,6 +27,7 @@ interface ChatAreaProps {
 export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templateContent = '', onClearTemplate }: ChatAreaProps) {
   const { state, activeChat, dispatch, isDark } = useChat();
   const { addToast } = useToast();
+  const { getInjectionText, triggerExtraction, memoryState } = useMemory();
   const isMobile = useIsMobile();
   const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -237,12 +239,26 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
+    // ── Memory injection: build a local copy of settings with memories appended ──
+    let effectiveChatSettings = activeChat.settings;
+    if (memoryState.settings.isEnabled) {
+      const injectionText = getInjectionText();
+      if (injectionText) {
+        effectiveChatSettings = {
+          ...activeChat.settings,
+          customInstructions: activeChat.settings.customInstructions
+            ? `${activeChat.settings.customInstructions}\n\n${injectionText}`
+            : injectionText,
+        };
+      }
+    }
+
     try {
       const { message, processingTime } = await getLLMResponse(
         fullPrompt,
         undefined,
         provider,
-        activeChat.settings,
+        effectiveChatSettings,
         chatHistory
       );
 
@@ -259,6 +275,10 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
         type: 'UPDATE_PROMPT_RESPONSE',
         payload: { chatId: activeChat.id, promptResponse: updatedPnR },
       });
+
+      // ── Memory extraction: fire-and-forget, never blocks chat ──
+      // Uses raw 'content' (user's words only), not 'fullPrompt' (which may have context panels)
+      triggerExtraction(content, message.content, pnr.id);
     } catch (error) {
       if (abortController.signal.aborted) return; // User cancelled — don't show error
       console.error('Failed to get response:', error);
