@@ -13,6 +13,7 @@ import PWAStatusPanel from './PWAStatusPanel';
 import PWAAdvancedControls from './PWAAdvancedControls';
 import MemoryPanel from '../memory/MemoryPanel';
 import useProviderHealthMonitor from '../../hooks/useProviderHealthMonitor';
+import { Toggle } from '../ui';
 import type { PWAStatus } from '../../hooks/usePWA';
 
 interface AdminPanelProps {
@@ -661,17 +662,11 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                         Read AI responses aloud with natural voice
                       </p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={state.voiceSettings.isTTSEnabled}
-                        onChange={(e) => dispatch({ type: 'UPDATE_VOICE_SETTINGS', payload: { isTTSEnabled: e.target.checked } })}
-                        className="sr-only peer"
-                      />
-                      <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme-primary ${
-                        isDark ? 'bg-gray-600' : 'bg-gray-300'
-                      }`}></div>
-                    </label>
+                    <Toggle
+                      checked={state.voiceSettings.isTTSEnabled}
+                      onChange={(v) => dispatch({ type: 'UPDATE_VOICE_SETTINGS', payload: { isTTSEnabled: v } })}
+                      label="Text-to-Speech"
+                    />
                   </div>
 
                   {state.voiceSettings.isTTSEnabled && (
@@ -750,17 +745,11 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                         Dictate your prompts using voice (Ctrl+M)
                       </p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={state.voiceSettings.isVoiceInputEnabled}
-                        onChange={(e) => dispatch({ type: 'UPDATE_VOICE_SETTINGS', payload: { isVoiceInputEnabled: e.target.checked } })}
-                        className="sr-only peer"
-                      />
-                      <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme-primary ${
-                        isDark ? 'bg-gray-600' : 'bg-gray-300'
-                      }`}></div>
-                    </label>
+                    <Toggle
+                      checked={state.voiceSettings.isVoiceInputEnabled}
+                      onChange={(v) => dispatch({ type: 'UPDATE_VOICE_SETTINGS', payload: { isVoiceInputEnabled: v } })}
+                      label="Voice Input (Speech-to-Text)"
+                    />
                   </div>
                 </div>
               </div>
@@ -881,17 +870,11 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                         </p>
                       )}
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={state.healthMonitoringEnabled ?? true}
-                        onChange={(e) => dispatch({ type: 'TOGGLE_HEALTH_MONITORING', payload: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme-primary ${
-                        isDark ? 'bg-gray-600' : 'bg-gray-300'
-                      }`}></div>
-                    </label>
+                    <Toggle
+                      checked={state.healthMonitoringEnabled ?? true}
+                      onChange={(v) => dispatch({ type: 'TOGGLE_HEALTH_MONITORING', payload: v })}
+                      label="Health Monitoring"
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -906,17 +889,11 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                         ↑ on first line = previous prompt, ↓ on last line = next prompt, ESC = exit
                       </p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={state.promptNavigationEnabled ?? true}
-                        onChange={(e) => dispatch({ type: 'TOGGLE_PROMPT_NAVIGATION', payload: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme-primary ${
-                        isDark ? 'bg-gray-600' : 'bg-gray-300'
-                      }`}></div>
-                    </label>
+                    <Toggle
+                      checked={state.promptNavigationEnabled ?? true}
+                      onChange={(v) => dispatch({ type: 'TOGGLE_PROMPT_NAVIGATION', payload: v })}
+                      label="Prompt Navigation"
+                    />
                   </div>
                 </div>
               </div>

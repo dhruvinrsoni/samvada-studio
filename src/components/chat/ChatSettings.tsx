@@ -4,6 +4,7 @@ import { createExample } from '../../utils/helpers';
 import type { Chat, Example, FormattingProfile, FormattingRule } from '../../types';
 import { DEFAULT_FORMATTING_PROFILES } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
+import { Toggle } from '../ui';
 
 
 interface ChatSettingsProps {
@@ -543,18 +544,11 @@ export default function ChatSettings({ chat, onClose }: ChatSettingsProps) {
                   Include previous messages for multi-turn conversation context
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setSettings({ ...settings, sendChatHistory: !(settings.sendChatHistory ?? true) })}
-                className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${
-                  (settings.sendChatHistory ?? true)
-                    ? 'bg-theme-primary' : isDark ? 'bg-dark-100' : 'bg-gray-300'
-                }`}
-              >
-                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
-                  (settings.sendChatHistory ?? true) ? 'translate-x-5' : 'translate-x-0.5'
-                }`} />
-              </button>
+              <Toggle
+                checked={settings.sendChatHistory ?? true}
+                onChange={(v) => setSettings({ ...settings, sendChatHistory: v })}
+                label="Send Chat History"
+              />
             </div>
 
             {/* Model Parameters */}

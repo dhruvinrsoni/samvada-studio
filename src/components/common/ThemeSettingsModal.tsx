@@ -4,6 +4,7 @@ import { createLLMReport } from '../../utils/debug';
 import { getAllThemePresets, getThemePreset } from '../../utils/theme';
 import type { CustomTheme, ThemeMode } from '../../types';
 import ColorPicker from './ColorPicker';
+import { Toggle } from '../ui';
 
 interface ThemeSettingsModalProps {
   onClose: () => void;
@@ -236,16 +237,11 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                           }`}>{item.desc}</p>
                         </div>
                       </div>
-                      <button
-                        onClick={item.toggle}
-                        className={`relative inline-flex h-6 sm:h-7 w-10 sm:w-12 items-center rounded-full transition-colors flex-shrink-0 ${
-                          item.enabled ? 'bg-theme-primary' : isDark ? 'bg-gray-700' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span className={`inline-block h-4 sm:h-5 w-4 sm:w-5 transform rounded-full bg-white shadow-lg transition-transform ${
-                          item.enabled ? 'translate-x-5 sm:translate-x-6' : 'translate-x-1'
-                        }`} />
-                      </button>
+                      <Toggle
+                        checked={item.enabled}
+                        onChange={item.toggle}
+                        label={item.title}
+                      />
                     </div>
                   ))}
                 </div>

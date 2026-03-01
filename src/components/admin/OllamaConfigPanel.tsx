@@ -6,6 +6,7 @@ import { useChat } from '../../context/ChatContext';
 import { useToast } from '../../context/ToastContext';
 import { generateId } from '../../utils/helpers';
 import type { LLMProviderConfig } from '../../types';
+import { Toggle } from '../ui';
 
 // Utility to format bytes
 const formatBytes = (bytes: number): string => {
@@ -454,17 +455,12 @@ export const OllamaConfigPanel: React.FC = () => {
       <div className={cardClass}>
         <div className="flex items-center justify-between mb-3">
           <h4 className={`font-semibold text-sm ${textPrimary}`}>🔍 Auto Discovery</h4>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={config.autoDiscovery}
-              onChange={(e) => handleConfigChange('autoDiscovery', e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className={`w-9 h-5 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all ${
-              isDark ? 'bg-dark-100 peer-checked:bg-theme-primary' : 'bg-light-400 peer-checked:bg-theme-primary'
-            }`} />
-          </label>
+          <Toggle
+            checked={config.autoDiscovery}
+            onChange={(v) => handleConfigChange('autoDiscovery', v)}
+            size="sm"
+            label="Auto Discovery"
+          />
         </div>
 
         {/* Deployment Mode Warning */}

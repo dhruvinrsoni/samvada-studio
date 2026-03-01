@@ -8,6 +8,7 @@ import { formatModelSize } from '../../services/memoryService';
 import type { OllamaModel } from '../../types/memory';
 import MemoryIndicator from './MemoryIndicator';
 import MemoryEntryItem from './MemoryEntryItem';
+import { Toggle } from '../ui';
 
 export default function MemoryPanel() {
   const { state } = useChat();
@@ -131,32 +132,11 @@ export default function MemoryPanel() {
             Learns your preferences and personalises responses over time.
           </p>
         </div>
-        {/* Toggle — state-driven (CSS peer nesting doesn't work for nested elements) */}
-        <div
-          className="relative inline-flex items-center cursor-pointer flex-shrink-0"
-          onClick={() =>
-            memoryDispatch({ type: 'UPDATE_SETTINGS', payload: { isEnabled: !settings.isEnabled } })
-          }
-          role="switch"
-          aria-checked={settings.isEnabled}
-          tabIndex={0}
-          onKeyDown={e =>
-            e.key === ' ' &&
-            memoryDispatch({ type: 'UPDATE_SETTINGS', payload: { isEnabled: !settings.isEnabled } })
-          }
-        >
-          <div
-            className={`w-11 h-6 rounded-full transition-colors ${
-              settings.isEnabled ? 'bg-theme-primary' : isDark ? 'bg-dark-100' : 'bg-light-400'
-            }`}
-          >
-            <div
-              className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                settings.isEnabled ? 'translate-x-5' : ''
-              }`}
-            />
-          </div>
-        </div>
+        <Toggle
+          checked={settings.isEnabled}
+          onChange={(v) => memoryDispatch({ type: 'UPDATE_SETTINGS', payload: { isEnabled: v } })}
+          label="Enable AI Memory"
+        />
       </div>
 
       {!settings.isEnabled ? (
@@ -392,31 +372,13 @@ export default function MemoryPanel() {
                   Automatically merges entries when memory reaches its limit.
                 </p>
               </div>
-              <div
-                className="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0"
-                onClick={() =>
-                  memoryDispatch({ type: 'UPDATE_SETTINGS', payload: { autoCompact: !settings.autoCompact } })
-                }
-                role="switch"
-                aria-checked={settings.autoCompact}
-                tabIndex={0}
-                onKeyDown={e =>
-                  e.key === ' ' &&
-                  memoryDispatch({ type: 'UPDATE_SETTINGS', payload: { autoCompact: !settings.autoCompact } })
-                }
-              >
-                <div
-                  className={`w-9 h-5 rounded-full transition-colors ${
-                    settings.autoCompact ? 'bg-theme-primary' : isDark ? 'bg-dark-100' : 'bg-light-400'
-                  }`}
-                >
-                  <div
-                    className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                      settings.autoCompact ? 'translate-x-4' : ''
-                    }`}
-                  />
-                </div>
-              </div>
+              <Toggle
+                checked={settings.autoCompact}
+                onChange={(v) => memoryDispatch({ type: 'UPDATE_SETTINGS', payload: { autoCompact: v } })}
+                size="sm"
+                label="Auto-compact when full"
+                className="ml-3"
+              />
             </div>
 
             {/* Warning when auto-compact is off and memory is nearly full */}
