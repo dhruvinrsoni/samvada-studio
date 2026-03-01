@@ -2,8 +2,6 @@ import { useRef, KeyboardEvent, useEffect, useState } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { usePromptNavigation } from '../../hooks/usePromptNavigation';
 import VoiceInput from './VoiceInput';
-import TokenCounter from './TokenCounter';
-import ContextUtilization from './ContextUtilization';
 
 interface PromptInputProps {
   onSend: (content: string) => void;
@@ -12,10 +10,9 @@ interface PromptInputProps {
   value?: string;
   onChange?: (value: string) => void;
   hasProvider?: boolean;
-  providerId?: string;
 }
 
-export default function PromptInput({ onSend, onKeyDown, disabled, value = '', onChange, hasProvider = true, providerId }: PromptInputProps) {
+export default function PromptInput({ onSend, onKeyDown, disabled, value = '', onChange, hasProvider = true }: PromptInputProps) {
   const { state } = useChat();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isDark = state.themeSettings.mode === 'dark' ||
@@ -649,12 +646,6 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
             </svg>
           </button>
         </div>
-      </div>
-      {/* Footer — token/context info only, no Ctrl+Enter hint (it's in the button tooltip) */}
-      <div className={`hidden xs:flex items-center justify-end gap-1.5 sm:gap-2 compact:gap-1 mt-0.5 text-[10px] leading-none ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-        <ContextUtilization currentInputText={value} providerId={providerId} />
-        <TokenCounter text={value} />
-        <span className="whitespace-nowrap">{value.length}c</span>
       </div>
     </div>
   );

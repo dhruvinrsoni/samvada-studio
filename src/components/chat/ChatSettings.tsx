@@ -5,13 +5,16 @@ import type { Chat, Example, FormattingProfile, FormattingRule } from '../../typ
 import { DEFAULT_FORMATTING_PROFILES } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 import { Toggle } from '../ui';
-
+import ContextUtilization from './ContextUtilization';
+import TokenCounter from './TokenCounter';
 
 interface ChatSettingsProps {
   chat: Chat;
   onClose: () => void;
+  inputValue?: string;
+  providerId?: string;
 }
-export default function ChatSettings({ chat, onClose }: ChatSettingsProps) {
+export default function ChatSettings({ chat, onClose, inputValue = '', providerId }: ChatSettingsProps) {
   const { dispatch, isDark } = useChat();
   const [settings, setSettings] = useState(chat.settings);
   const [title, setTitle] = useState(chat.title);
@@ -154,6 +157,13 @@ export default function ChatSettings({ chat, onClose }: ChatSettingsProps) {
         <div className={`border-b p-3 sm:p-4 ${isDark ? 'border-dark-300' : 'border-light-400'}`}>
           <div className="flex items-center justify-between">
             <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>Chat Settings</h3>
+            <div className="flex items-center gap-2">
+              {/* Context utilization — visible on mobile only (desktop shows it in the title bar) */}
+              <div className={`sm:hidden flex items-center gap-1.5 text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                <ContextUtilization currentInputText={inputValue} providerId={providerId} />
+                <TokenCounter text={inputValue} />
+                <span className="whitespace-nowrap">{inputValue.length}c</span>
+              </div>
             <button
               onClick={onClose}
               className={`p-2 rounded-lg transition-colors ${
@@ -162,6 +172,7 @@ export default function ChatSettings({ chat, onClose }: ChatSettingsProps) {
             >
               ✕
             </button>
+            </div>
           </div>
         </div>
 

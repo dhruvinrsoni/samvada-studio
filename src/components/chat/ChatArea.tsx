@@ -12,6 +12,8 @@ import { getModelContextWindow } from '../../types';
 import PromptResponseItem from './PromptResponseItem';
 import PromptInput from './PromptInput';
 import ChatSettings from './ChatSettings';
+import ContextUtilization from './ContextUtilization';
+import TokenCounter from './TokenCounter';
 import type { LLMProviderConfig, Chat } from '../../types';
 import type { PWAStatus } from '../../hooks/usePWA';
 
@@ -722,6 +724,12 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
             </div>
           )}
         </div>
+        {/* Context utilization — hidden on mobile (shown in ChatSettings instead) */}
+        <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0 text-[10px] text-gray-500">
+          <ContextUtilization currentInputText={inputValue} providerId={selectedProvider?.id} />
+          <TokenCounter text={inputValue} />
+          <span className="whitespace-nowrap">{inputValue.length}c</span>
+        </div>
         {/* Settings button - responsive sizing */}
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <button
@@ -745,7 +753,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
 
       {/* Settings Panel */}
       {showSettings && (
-        <ChatSettings chat={activeChat} onClose={() => setShowSettings(false)} />
+        <ChatSettings chat={activeChat} onClose={() => setShowSettings(false)} inputValue={inputValue} providerId={selectedProvider?.id} />
       )}
 
       {/* Messages Area - responsive padding and spacing */}
@@ -804,7 +812,6 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
         value={inputValue}
         onChange={setInputValue}
         hasProvider={!!selectedProvider}
-        providerId={selectedProvider?.id}
       />
     </div>
   );
