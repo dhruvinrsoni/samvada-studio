@@ -301,7 +301,9 @@ export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, o
       {/* Header - Always visible, responsive */}
       <div
         className={`flex items-center justify-between p-2 sm:p-3 compact:p-1 cursor-pointer rounded-t-lg gap-1 sm:gap-2 compact:gap-0.5 ${
-          isDark ? 'hover:bg-dark-100/50' : 'hover:bg-light-300/50'
+          promptResponse.isPinned
+            ? isDark ? 'hover:bg-yellow-500/10' : 'hover:bg-yellow-500/10'
+            : 'bg-theme-primary/10 hover:bg-theme-primary/20'
         }`}
         onClick={handleToggleCollapse}
       >
