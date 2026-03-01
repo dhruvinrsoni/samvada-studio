@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { useMemory } from '../../context/MemoryContext';
 import { useConfirmDialog } from '../../context/ConfirmDialogContext';
+import { useObservability } from '../../context/ObservabilityContext';
+import { HealthService } from '../../utils/healthService';
 import { formatModelSize } from '../../services/memoryService';
 import type { OllamaModel } from '../../types/memory';
 import MemoryIndicator from './MemoryIndicator';
@@ -20,6 +22,12 @@ export default function MemoryPanel() {
   const { settings, entries, isExtracting, isCompacting } = memoryState;
 
   const enabledProviders = state.providers.filter(p => p.isEnabled);
+  const { providerHealth } = useObservability();
+
+  const getProviderModelSize = (providerId: string): number | undefined => {
+    const h = providerHealth.find(p => p.providerId === providerId);
+    return h?.modelSize;
+  };
 
   const [availableModels, setAvailableModels] = useState<OllamaModel[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
@@ -294,11 +302,15 @@ export default function MemoryPanel() {
                       }}
                     >
                       <option value="">— select a provider —</option>
-                      {enabledProviders.map(p => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} ({p.model})
-                        </option>
-                      ))}
+                      {enabledProviders.map(p => {
+                        const size = getProviderModelSize(p.id);
+                        const sizeText = size ? ` · ${HealthService.formatBytes(size)}` : '';
+                        return (
+                          <option key={p.id} value={p.id}>
+                            {p.name} — {p.model}{sizeText}
+                          </option>
+                        );
+                      })}
                     </select>
                     <p className={`text-[10px] mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                       Uses the selected provider's model and API key for memory extraction.

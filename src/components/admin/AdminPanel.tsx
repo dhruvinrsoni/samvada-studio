@@ -171,8 +171,11 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
     };
   }, []);
 
-  // Horizontal scroll on mouse wheel for tab bar
+  // Horizontal scroll on mouse wheel for tab bar.
+  // Depends on isAdminPanelOpen: the ref is null before the panel renders for the first time,
+  // so we need to re-run this effect whenever the panel opens.
   useEffect(() => {
+    if (!state.isAdminPanelOpen) return;
     const el = tabBarRef.current;
     if (!el) return;
     const handleWheel = (e: WheelEvent) => {
@@ -183,7 +186,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
     };
     el.addEventListener('wheel', handleWheel, { passive: false });
     return () => el.removeEventListener('wheel', handleWheel);
-  }, []);
+  }, [state.isAdminPanelOpen]);
 
   if (!state.isAdminPanelOpen) return null;
 
