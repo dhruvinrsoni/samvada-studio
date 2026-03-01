@@ -291,7 +291,7 @@ export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, o
   };
 
   return (
-    <div id={`pnr-${promptResponse.id}`} className={`rounded-lg border transition-colors mb-2 sm:mb-3 max-w-full overflow-hidden ${
+    <div id={`pnr-${promptResponse.id}`} className={`rounded-lg border transition-colors mb-2 sm:mb-3 compact:mb-1 max-w-full overflow-hidden ${
       promptResponse.isPinned 
         ? 'border-yellow-500/50 bg-yellow-500/5' 
         : isDark 
@@ -300,7 +300,7 @@ export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, o
     }`}>
       {/* Header - Always visible, responsive */}
       <div
-        className={`flex items-center justify-between p-2 sm:p-3 cursor-pointer rounded-t-lg gap-1 sm:gap-2 ${
+        className={`flex items-center justify-between p-2 sm:p-3 compact:p-1 cursor-pointer rounded-t-lg gap-1 sm:gap-2 compact:gap-0.5 ${
           isDark ? 'hover:bg-dark-100/50' : 'hover:bg-light-300/50'
         }`}
         onClick={handleToggleCollapse}
@@ -424,11 +424,11 @@ export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, o
 
       {/* Content - Collapsible, responsive */}
       {!promptResponse.isCollapsed && (
-        <div className="px-2 sm:px-3 md:px-4 pb-2 sm:pb-3 md:pb-4 space-y-2 sm:space-y-3 md:space-y-4 max-w-full overflow-hidden">
+        <div className="px-2 sm:px-3 md:px-4 compact:px-1.5 pb-2 sm:pb-3 md:pb-4 compact:pb-1 space-y-2 sm:space-y-3 md:space-y-4 compact:space-y-1 max-w-full overflow-hidden">
           {/* User Prompt */}
           <div className="relative group">
-            <div className="flex items-start gap-2 sm:gap-3">
-              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-theme-primary flex items-center justify-center text-white text-xs sm:text-sm font-medium flex-shrink-0">
+            <div className="flex items-start gap-2 sm:gap-3 compact:gap-1.5">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 compact:w-5 compact:h-5 rounded-full bg-theme-primary flex items-center justify-center text-white text-xs sm:text-sm font-medium flex-shrink-0">
                 U
               </div>
               <div className="flex-1 min-w-0">
@@ -517,8 +517,8 @@ export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, o
           {/* AI Response */}
           {activeResponse && (
             <div className="relative group">
-              <div className="flex items-start gap-2 sm:gap-3">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-[10px] sm:text-sm font-medium flex-shrink-0">
+              <div className="flex items-start gap-2 sm:gap-3 compact:gap-1.5">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 compact:w-5 compact:h-5 rounded-full bg-green-600 flex items-center justify-center text-white text-[10px] sm:text-sm font-medium flex-shrink-0">
                   AI
                 </div>
                 <div className="flex-1 min-w-0">
@@ -565,8 +565,8 @@ export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, o
           )}
 
           {/* Actions - responsive with flex-wrap */}
-          <div className={`flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pt-2 border-t ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
-            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+          <div className={`flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 compact:gap-1 pt-2 compact:pt-1 border-t ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
+            <div className="flex flex-wrap items-center gap-1 sm:gap-2 compact:gap-0.5">
               <button
                 onClick={handleRegenerate}
                 disabled={isRegenerating}

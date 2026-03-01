@@ -80,13 +80,13 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-1 xs:p-2 sm:p-4">
       <div className="w-full max-w-[99vw] sm:max-w-2xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl h-[95vh] sm:h-[90vh] mx-auto bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl shadow-2xl overflow-hidden flex flex-col">
         {/* Header with Theme Gradient */}
-        <div className="relative bg-gradient-to-r from-theme-primary via-theme-accent to-theme-secondary p-3 sm:p-4 md:p-6 flex-shrink-0">
+        <div className="relative bg-gradient-to-r from-theme-primary via-theme-accent to-theme-secondary p-3 sm:p-4 md:p-6 compact:p-2 flex-shrink-0">
           <div className="flex items-center justify-between relative z-10 gap-2">
             <div className="min-w-0">
-              <h2 className="text-base sm:text-xl md:text-2xl font-bold text-white drop-shadow-lg truncate">
+              <h2 className="text-base sm:text-xl md:text-2xl compact:text-sm font-bold text-white drop-shadow-lg truncate">
                 <span className="hidden xs:inline">🎨 </span>Theme<span className="hidden sm:inline"> Customization</span>
               </h2>
-              <p className="text-white/90 text-[10px] sm:text-xs md:text-sm mt-0.5 sm:mt-1 hidden xs:block">Personalize your workspace<span className="hidden md:inline"> with live preview</span></p>
+              <p className="text-white/90 text-[10px] sm:text-xs md:text-sm mt-0.5 sm:mt-1 hidden xs:block compact:hidden">Personalize your workspace<span className="hidden md:inline"> with live preview</span></p>
             </div>
             <button
               onClick={onClose}
@@ -111,7 +111,7 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 min-w-0 px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 font-medium transition-all relative text-xs sm:text-sm md:text-base whitespace-nowrap ${
+              className={`flex-1 min-w-0 px-2 sm:px-4 md:px-6 compact:px-2 py-2 sm:py-3 md:py-4 compact:py-1.5 font-medium transition-all relative text-xs sm:text-sm md:text-base whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'text-theme-primary'
                   : isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-900'
@@ -132,7 +132,7 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
         {/* Content */}
         <div className="flex-1 overflow-hidden flex min-h-0">
           {/* Settings Panel */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden scroll-touch p-3 sm:p-4 md:p-6">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden scroll-touch p-3 sm:p-4 md:p-6 compact:p-2">
 
             {/* APPEARANCE TAB */}
             {activeTab === 'appearance' && (
@@ -223,16 +223,16 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                       toggle: handleCompactModeToggle
                     }
                   ].map(item => (
-                    <div key={item.id} className={`p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl flex items-center justify-between gap-2 sm:gap-3 ${
+                    <div key={item.id} className={`p-2 sm:p-3 md:p-4 compact:p-1.5 rounded-lg sm:rounded-xl flex items-center justify-between gap-2 sm:gap-3 compact:gap-1.5 ${
                       isDark ? 'bg-gray-800' : 'bg-gray-50'
                     }`}>
-                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                        <span className="text-lg sm:text-xl md:text-2xl flex-shrink-0">{item.icon}</span>
+                      <div className="flex items-center gap-2 sm:gap-3 compact:gap-1.5 min-w-0">
+                        <span className="text-lg sm:text-xl md:text-2xl compact:text-base flex-shrink-0">{item.icon}</span>
                         <div className="min-w-0">
                           <h4 className={`font-semibold text-xs sm:text-sm md:text-base truncate ${
                             isDark ? 'text-gray-100' : 'text-gray-900'
                           }`}>{item.title}</h4>
-                          <p className={`text-[10px] sm:text-xs md:text-sm hidden xs:block truncate ${
+                          <p className={`text-[10px] sm:text-xs md:text-sm hidden xs:block compact:hidden truncate ${
                             isDark ? 'text-gray-400' : 'text-gray-600'
                           }`}>{item.desc}</p>
                         </div>
@@ -241,6 +241,7 @@ export default function ThemeSettingsModal({ onClose }: ThemeSettingsModalProps)
                         checked={item.enabled}
                         onChange={item.toggle}
                         label={item.title}
+                        size="sm"
                       />
                     </div>
                   ))}

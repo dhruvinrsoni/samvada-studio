@@ -329,7 +329,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
     >
       {/* Dynamic padding: pb-20/pb-16 when disable warning shown (~80px/64px), minimal padding normally */}
       {/* Header */}
-      <div className={`flex items-center justify-between p-2 sm:p-3 md:p-4 border-b gap-2 flex-shrink-0 ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
+      <div className={`flex items-center justify-between p-2 sm:p-3 md:p-4 compact:p-1.5 border-b gap-2 compact:gap-1 flex-shrink-0 ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
         <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-1 min-w-0">
           {/* Chat Title or Rename Input */}
           {isRenamingChat ? (
@@ -749,7 +749,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
       )}
 
       {/* Messages Area - responsive padding and spacing */}
-      <div ref={messagesRef} className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-3 md:p-4 space-y-2 sm:space-y-3 md:space-y-4 max-w-full scroll-touch">
+      <div ref={messagesRef} className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-3 md:p-4 compact:p-1.5 space-y-2 sm:space-y-3 md:space-y-4 compact:space-y-1 max-w-full scroll-touch">
         {/* Pinned Messages */}
         {pinnedPnRs.length > 0 && (
           <div className="mb-2 sm:mb-4">
@@ -781,7 +781,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
 
         {/* Loading Indicator with Cancel */}
         {isLoading && (
-          <div ref={loadingRef} className={`flex items-center gap-2 p-2 sm:p-3 md:p-4 rounded-lg ${isDark ? 'bg-dark-200' : 'bg-light-300'}`}>
+          <div ref={loadingRef} className={`flex items-center gap-2 compact:gap-1 p-2 sm:p-3 md:p-4 compact:p-1.5 rounded-lg ${isDark ? 'bg-dark-200' : 'bg-light-300'}`}>
             <div className="animate-spin w-4 h-4 sm:w-5 sm:h-5 border-2 border-theme-primary border-t-transparent rounded-full flex-shrink-0" />
             <span className={`text-xs sm:text-sm flex-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Generating response...</span>
             <button

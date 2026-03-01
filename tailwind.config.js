@@ -91,5 +91,10 @@ export default {
   },
   plugins: [
     require('@tailwindcss/typography'),
+    require('tailwindcss/plugin')(function({ addVariant }) {
+      // Enables compact: prefix (e.g. compact:p-1.5) that activates when html.compact is set.
+      // Same pattern as the built-in dark: variant — zero runtime overhead.
+      addVariant('compact', 'html.compact &');
+    }),
   ],
 }

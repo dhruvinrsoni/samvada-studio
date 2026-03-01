@@ -379,11 +379,11 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
   };
 
   return (
-    <div className={`border-t p-2 sm:p-3 md:p-4 flex-shrink-0 ${isDark ? 'border-dark-100 bg-dark-200' : 'border-light-400 bg-light-100'}`}>
+    <div className={`border-t p-2 sm:p-3 md:p-4 compact:p-1.5 flex-shrink-0 ${isDark ? 'border-dark-100 bg-dark-200' : 'border-light-400 bg-light-100'}`}>
       {/* Collapsible Formatting Toolbar - responsive */}
-      <div 
+      <div
         className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          showToolbar ? 'max-h-48 sm:max-h-32 opacity-100 mb-2' : 'max-h-0 opacity-0 mb-0'
+          showToolbar ? 'max-h-48 sm:max-h-32 opacity-100 mb-2 compact:mb-1' : 'max-h-0 opacity-0 mb-0'
         }`}
       >
         <div className={`flex flex-wrap items-center gap-0.5 sm:gap-1 pb-2 border-b rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 ${
@@ -544,7 +544,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
       </div>
 
       {/* Status Indicators - Always visible, outside collapsible toolbar */}
-      <div className="flex items-center gap-1 sm:gap-2 mb-2 flex-wrap">
+      <div className="flex items-center gap-1 sm:gap-2 compact:gap-1 mb-2 compact:mb-1 flex-wrap">
         {listMode.active && (
           <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap ${
             isDark ? 'bg-theme-primary/20 text-theme-primary' : 'bg-theme-primary-light text-theme-primary-dark'
@@ -587,7 +587,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
                 ? "Multi-line: Enter for newline, Shift+Enter to send"
                 : "Type message... (Enter to send)"
           }
-          className={`w-full p-2 sm:p-3 md:p-4 pr-20 sm:pr-24 md:pr-28 border rounded-lg focus:outline-none focus:border-theme-primary resize-none min-h-[48px] sm:min-h-[56px] md:min-h-[60px] max-h-[200px] sm:max-h-[250px] md:max-h-[300px] font-mono text-xs sm:text-sm ${
+          className={`w-full p-2 sm:p-3 md:p-4 compact:p-1.5 pr-20 sm:pr-24 md:pr-28 border rounded-lg focus:outline-none focus:border-theme-primary resize-none min-h-[48px] sm:min-h-[56px] md:min-h-[60px] compact:min-h-[36px] max-h-[200px] sm:max-h-[250px] md:max-h-[300px] font-mono text-xs sm:text-sm ${
             !hasProvider
               ? 'bg-red-50 border-red-300 text-red-700 placeholder-red-500 focus:border-red-500 focus:ring-red-500'
               : isDark 
@@ -651,7 +651,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
         </div>
       </div>
       {/* Footer — token/context info only, no Ctrl+Enter hint (it's in the button tooltip) */}
-      <div className={`hidden xs:flex items-center justify-end gap-1.5 sm:gap-2 mt-0.5 text-[10px] leading-none ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+      <div className={`hidden xs:flex items-center justify-end gap-1.5 sm:gap-2 compact:gap-1 mt-0.5 text-[10px] leading-none ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
         <ContextUtilization currentInputText={value} providerId={providerId} />
         <TokenCounter text={value} />
         <span className="whitespace-nowrap">{value.length}c</span>

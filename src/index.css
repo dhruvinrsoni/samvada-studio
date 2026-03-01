@@ -78,31 +78,10 @@ html.compact {
   --touch-target-min: 36px;
 }
 
-/* Compact mode specific overrides for common layout regions and controls */
-html.compact .sidebar,
-html.compact .chat-area,
-html.compact .context-panel,
-html.compact .modal,
-html.compact .header,
-html.compact .footer {
-  padding: 0.5rem !important;
-  gap: 0.25rem !important;
-}
-
-html.compact button,
-html.compact input,
-html.compact textarea,
-html.compact select,
-html.compact .btn {
-  padding: 0.35rem 0.5rem !important;
-  min-height: 32px !important;
-  font-size: 0.95em !important;
-}
-
-html.compact .message,
-html.compact .prompt-response-item {
-  padding: 0.45rem !important;
-  margin: 0.25rem 0 !important;
+/* Compact mode: shrink non-toggle buttons slightly.
+   All layout spacing is handled via Tailwind compact: variant classes per component. */
+html.compact button:not([role="switch"]) {
+  font-size: 0.95em;
 }
 
 /* Mobile-first responsive font sizing */
