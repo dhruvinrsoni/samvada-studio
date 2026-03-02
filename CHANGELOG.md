@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+- **AI Memory**: Extracts preferences from conversations and injects them into future prompts. Configurable Ollama extraction provider, auto-compact when full, manual entry management in Admin → Memory tab.
+- **Compact mode overhaul**: Tailwind `compact:` variant (`html.compact &`) applied across ChatArea, PromptInput, PromptResponseItem, ThemeSettingsModal — dramatic density difference between normal and compact mode.
+- **Shared Toggle component** (`src/components/ui/Toggle.tsx`): WAI-ARIA switch, compact-aware auto-sizing (sm/md), dark-mode via Tailwind `dark:` variants.
+- **Context utilization in title bar**: Token/context bar moved from input footer to chat title bar (hidden on mobile; shown in Chat Settings modal on mobile).
+- **Theme tint on PnR headers**: Collapsible headers show `bg-theme-primary/10` base tint for visual navigation cues while scrolling.
+
+### Fixed
+- **Compact mode Toggle distortion**: CSS `min-height: 32px !important` was inflating `<button role="switch">` beyond its track size. Fixed by removing the rule; layout now handled entirely by `compact:` Tailwind classes.
+- **Dead compact CSS**: Selectors targeting `.chat-area`, `.sidebar`, `.modal`, `.prompt-response-item` matched no elements (classes don't exist on JSX). Replaced with per-component `compact:` variant classes.
+
+---
+
 ## [1.0.0] - 2026-01-22
 
 ### 🎉 Initial Release

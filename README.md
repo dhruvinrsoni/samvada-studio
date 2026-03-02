@@ -35,7 +35,10 @@ No installation needed! Try Samvada Studio directly in your browser. All data st
 
 ## 📖 What is Samvada?
 
-> **Samvada** (संवाद, *Saṃvāda*) means "dialogue" or "conversation" in Sanskrit
+> **Samvada** (संवाद, *Saṃvāda*) — Sanskrit for "dialogue" or "conversation"
+>
+> Derived from the prefix *saṃ-* (together) + root *vad* (to speak).
+> Scholarly form: **Saṃvādaḥ** · Devanagari: **संवाद स्टूडियो** · Pronunciation: */suhm-VAH-dah/*
 
 **Samvada Studio** is a power-user workspace for conversational AI that brings together the **best UX features** from leading platforms:
 
@@ -57,8 +60,6 @@ Fully Vibe Coded
 - 🎯 **Prompt engineers** testing multiple providers
 - 🔬 **Researchers** organizing complex conversations
 - ✍️ **Content professionals** who value privacy & control
-
-> 💙 **The Origin Story**: This started as a frustrated backend engineer's side project. Read [THE_BEGINNING.md](docs/THE_BEGINNING.md) to see the original scribbled feature list that sparked it all.
 
 ---
 
@@ -126,8 +127,7 @@ npm run dev
 3. Click **+ Add Provider**
 4. Choose your provider (OpenAI, Anthropic, Google, Ollama, Azure, Custom)
 5. Enter your API key
-6. **For OpenAI/Anthropic**: Configure CORS proxy (see [CORS Proxy Guide](docs/CORS_PROXY.md))
-7. Click **Test Connection** to verify
+6. Click **Test Connection** to verify
 
 ### Step 2: Create Your First Chat
 1. Click **New Chat** in the sidebar
@@ -231,6 +231,21 @@ npm run dev
 </details>
 
 <details>
+<summary><b>🧠 AI Memory</b></summary>
+
+Learns about you over time and personalises future responses.
+
+| Feature | Detail |
+|---------|--------|
+| **Auto-extraction** | Extracts preferences from each conversation (requires Ollama) |
+| **Injection** | Appended to system instructions before every LLM call |
+| **Auto-compact** | Merges entries when memory is full |
+| **Local-only** | All memory in localStorage — nothing sent externally |
+| **Manageable** | View, delete, or manually compact entries in Admin → Memory |
+
+</details>
+
+<details>
 <summary><b>🎨 Theming & UI</b></summary>
 
 | Feature | Options |
@@ -267,20 +282,6 @@ Connect to **6 providers** with unified interface:
 - Set defaults per chat
 - Run multiple providers simultaneously
 
-**🔧 CORS Proxy Support (NEW!):**
-- OpenAI & Anthropic require CORS proxy for browser use
-- Built-in local proxy server: `npm run proxy`
-- SSL bypass support for corporate networks: `npm run proxy:insecure`
-- Automatic proxy routing when configured
-- **📖 [Setup Guide](docs/CORS_PROXY.md)**
-
-**🌐 Local Network Access (NEW!):**
-- One-click permission management for local LLM servers
-- Full control over localhost access (no browser settings needed)
-- Auto-detect Ollama and prompt for permission on first use
-- Grant, revoke, or reset permissions anytime
-- Test connections directly from Admin settings
-- **📖 [Complete Guide](docs/LOCAL_NETWORK_ACCESS.md)**
 
 </details>
 
@@ -312,7 +313,6 @@ When issues are detected, CHM shows:
 - **Quick Actions**: Direct links to relevant settings
 - **Status Details**: Response times, last checked timestamps
 
-**📖 [Health Monitoring Guide](docs/HEALTH_MONITORING.md)**
 
 </details>
 
@@ -341,68 +341,17 @@ When issues are detected, CHM shows:
 
 ## 📚 Documentation
 
-<details>
-<summary><b>🚀 Getting Started</b></summary>
-
 | Document | Description |
 |----------|-------------|
-| [🚀 GETTING_STARTED.md](docs/GETTING_STARTED.md) | Step-by-step onboarding guide |
-| [💙 THE_BEGINNING.md](docs/THE_BEGINNING.md) | **The origin story** — How this all started |
-| [📊 FEATURE_COMPLETION.md](docs/FEATURE_COMPLETION.md) | **Vision vs Reality** — 20/20 features shipped! |
-
-</details>
-
-<details>
-<summary><b>📖 Features & Guides</b></summary>
-
-| Document | Description |
-|----------|-------------|
-| [📋 FEATURES.md](docs/FEATURES.md) | Complete feature documentation with examples |
-| [💎 FORMATTING_PROFILES_GUIDE.md](docs/FORMATTING_PROFILES_GUIDE.md) | Complete guide to formatting profiles |
-| [🔌 CORS_PROXY.md](docs/CORS_PROXY.md) | **IMPORTANT:** OpenAI & Anthropic setup with CORS proxy |
-| [🌐 LOCAL_NETWORK_ACCESS.md](docs/LOCAL_NETWORK_ACCESS.md) | Local network permission management for Ollama & local LLMs |
-| [🦙 OLLAMA_CONNECTIVITY.md](docs/OLLAMA_CONNECTIVITY.md) | **Production-grade** Ollama auto-discovery & configuration |
-| [🔄 OLLAMA_AUTO_DISCOVERY_E2E.md](docs/OLLAMA_AUTO_DISCOVERY_E2E.md) | **End-to-End** Ollama auto-discovery (auto-configures everything!) |
-| [🛡️ ERROR_PREVENTION_GUIDE.md](docs/ERROR_PREVENTION_GUIDE.md) | **CRITICAL:** How we prevent component errors from crashing the app || [🔍 DEBUG_MODE_GUIDE.md](docs/DEBUG_MODE_GUIDE.md) | **Complete Guide:** Draggable, collapsible, mobile-friendly debug mode || [�🔄 OLLAMA_DHCP_DETECTION.md](docs/OLLAMA_DHCP_DETECTION.md) | DHCP-aware Ollama detection (mobile/LAN access) |
-| [🏥 CHM_CONNECTION_HEALTH_MONITOR.md](docs/CHM_CONNECTION_HEALTH_MONITOR.md) | **CHM** - Connection Health Monitor deep dive |
-| [📱 PWA_GUIDE.md](docs/PWA_GUIDE.md) | Progressive Web App installation & offline guide |
-| [💾 PERSISTENCE.md](docs/PERSISTENCE.md) | How data is saved and restored |
-| [🔒 CONTENT_SANITIZATION.md](docs/CONTENT_SANITIZATION.md) | Content security and validation |
-| [🐛 TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions |
-
-</details>
-
-<details>
-<summary><b>🏗️ Technical Documentation</b></summary>
-
-| Document | Description |
-|----------|-------------|
-| [🔌 LLM_PROVIDERS.md](docs/LLM_PROVIDERS.md) | How to add new LLM providers |
-| [🔮 FUTURE_PROOF_DESIGN.md](docs/FUTURE_PROOF_DESIGN.md) | Architecture philosophy |
-| [🔐 SECURITY_AND_PRIVACY.md](docs/SECURITY_AND_PRIVACY.md) | Security-first approach |
-
-</details>
-
-<details>
-<summary><b>🤝 Contributing</b></summary>
-
-| Document | Description |
-|----------|-------------|
-| [🤝 CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
-| [🤖 copilot-security-enforcement.md](.github/copilot-security-enforcement.md) | Security enforcement rules |
-| [🎯 copilot-design-philosophy.md](.github/copilot-design-philosophy.md) | Design patterns & best practices |
-
-</details>
-
-<details>
-<summary><b>🎨 Branding & Story</b></summary>
-
-| Document | Description |
-|----------|-------------|
-| [🎨 BRAND.md](docs/BRAND.md) | Naming, etymology, brand guidelines |
-| [📱 LINKEDIN_POST.md](docs/LINKEDIN_POST.md) | Social media content ideas |
-
-</details>
+| [Getting Started](docs/GETTING_STARTED.md) | Setup, first chat, essential features |
+| [LLM Providers](docs/LLM_PROVIDERS.md) | Add & configure providers |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues & CORS/Ollama fixes |
+| [Theme System](docs/THEME_SYSTEM.md) | Colors, dark mode, compact mode |
+| [PWA Guide](docs/PWA_GUIDE.md) | Install as app, offline support |
+| [The Beginning](docs/THE_BEGINNING.md) | How it all started |
+| [Contributing](CONTRIBUTING.md) | Dev setup, standards, PR process |
+| [Security](SECURITY.md) | Data model, API key handling, reporting |
+| [Changelog](CHANGELOG.md) | Version history |
 
 ---
 
