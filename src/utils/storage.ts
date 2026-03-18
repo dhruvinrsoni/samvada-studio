@@ -124,6 +124,7 @@ export const loadState = (): AppState | null => {
       ...safeState,
       providers,
       isSidebarOpen: safeState.isSidebarOpen ?? true, // Default to true if not present
+      activeOllamaHostId: (safeState as any).activeOllamaHostId ?? null,
     };
   } catch (error) {
     console.error('Failed to load state:', error);

@@ -302,6 +302,33 @@ export const OllamaConfigPanel: React.FC = () => {
         </div>
       </div>
 
+      {/* ────── Active Host Override ────── */}
+      {endpointStatuses.length > 0 && (
+        <div className={cardClass}>
+          <h4 className={`font-semibold text-sm mb-2 ${textPrimary}`}>🌐 Active Ollama Host</h4>
+          <p className={`text-xs mb-2 ${textMuted}`}>
+            Switch once — all Ollama providers follow. Useful when changing WiFi networks.
+          </p>
+          <select
+            value={state.activeOllamaHostId ?? ''}
+            onChange={(e) => dispatch({ type: 'SET_ACTIVE_OLLAMA_HOST', payload: e.target.value || null })}
+            className={inputClass}
+          >
+            <option value="">Use each provider's own endpoint (no override)</option>
+            {endpointStatuses.map((ep) => (
+              <option key={ep.baseUrl} value={ep.baseUrl}>
+                {ep.isHealthy ? '🟢' : '🔴'} {ep.label || ep.baseUrl}{ep.version ? ` (v${ep.version})` : ''}
+              </option>
+            ))}
+          </select>
+          {state.activeOllamaHostId && (
+            <p className={`text-xs mt-1.5 px-2 py-1 rounded ${isDark ? 'bg-blue-900/30 text-blue-300' : 'bg-blue-50 text-blue-700'}`}>
+              All Ollama providers are using <strong>{state.activeOllamaHostId}</strong> regardless of their stored endpoint.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* ────── Live Endpoint Dashboard ────── */}
       <div className={cardClass}>
         <div className="flex items-center justify-between mb-3">

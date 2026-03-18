@@ -544,6 +544,8 @@ export interface AppState {
   isSidebarOpen: boolean; // For mobile sidebar toggle
   // NEW: Prompt Navigation
   promptNavigationEnabled: boolean;
+  // Active Ollama Host override (canonical base URL or null)
+  activeOllamaHostId: string | null;
 }
 
 // Secure version for localStorage (excludes sensitive provider data)
@@ -583,6 +585,8 @@ export interface SafeAppState {
   isSidebarOpen: boolean;
   // NEW: Prompt Navigation
   promptNavigationEnabled: boolean;
+  // Active Ollama Host override
+  activeOllamaHostId?: string | null;
 }
 
 export type ChatAction =
@@ -665,7 +669,9 @@ export type ChatAction =
   | { type: 'TOGGLE_SIDEBAR' }
   | { type: 'SET_SIDEBAR_OPEN'; payload: boolean }
   // NEW: Prompt Navigation
-  | { type: 'TOGGLE_PROMPT_NAVIGATION'; payload: boolean };
+  | { type: 'TOGGLE_PROMPT_NAVIGATION'; payload: boolean }
+  // Active Ollama Host
+  | { type: 'SET_ACTIVE_OLLAMA_HOST'; payload: string | null };
 
 // Toast Notification Types
 export type ToastType = 'success' | 'error' | 'warning' | 'info';

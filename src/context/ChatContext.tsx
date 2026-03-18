@@ -3,6 +3,7 @@ import type { AppState, ChatAction, Chat, PromptResponse, SearchResult, LLMProvi
 import { saveState, loadState } from '../utils/storage';
 import { createNewChat } from '../utils/helpers';
 import { getThemeColors, applyThemeColors, generateColorPalette } from '../utils/theme';
+import { ollamaDiscovery } from '../services/ollamaDiscovery';
 
 const defaultVoiceSettings: VoiceSettings = {
   isVoiceInputEnabled: true,
@@ -70,6 +71,8 @@ const initialState: AppState = {
   isSidebarOpen: true, // Desktop default: open, will be false on mobile
   // NEW: Prompt Navigation
   promptNavigationEnabled: true,
+  // Active Ollama Host
+  activeOllamaHostId: null,
 };
 
 function chatReducer(state: AppState, action: ChatAction): AppState {
@@ -725,6 +728,13 @@ function chatReducer(state: AppState, action: ChatAction): AppState {
         promptNavigationEnabled: action.payload,
       };
 
+    // Active Ollama Host
+    case 'SET_ACTIVE_OLLAMA_HOST':
+      return {
+        ...state,
+        activeOllamaHostId: action.payload,
+      };
+
     default:
       return state;
   }
@@ -814,6 +824,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     // Apply compact mode
     root.classList.toggle('compact', state.themeSettings.compactMode);
   }, [state.themeSettings]);
+
+  // Sync active Ollama host to discovery service
+  useEffect(() => {
+    ollamaDiscovery.setActiveHostId(state.activeOllamaHostId);
+  }, [state.activeOllamaHostId]);
 
   const activeChat = state.chats.find(chat => chat.id === state.activeChat) || null;
 

@@ -27,6 +27,7 @@ export interface OllamaConfiguration {
   endpoints: OllamaEndpoint[];
   fallbackBehavior: 'first-healthy' | 'fastest' | 'round-robin';
   cacheSuccessfulEndpoint: boolean;
+  activeOllamaHostId: string | null; // Canonical base URL (e.g. "http://192.168.1.5:11434") or null for no override
   retryPolicy: {
     maxRetries: number;
     retryDelay: number;
@@ -49,6 +50,7 @@ const DEFAULT_CONFIG: OllamaConfiguration = {
   endpoints: [],
   fallbackBehavior: 'first-healthy',
   cacheSuccessfulEndpoint: true,
+  activeOllamaHostId: null,
   retryPolicy: {
     maxRetries: 3,
     retryDelay: 1000,
@@ -1044,6 +1046,37 @@ class OllamaDiscoveryService {
     if (!seen.has('http://localhost:11434')) urls.push('http://localhost:11434');
 
     return urls;
+  }
+
+  /**
+   * Set the active Ollama host override.
+   * When set, all Ollama providers resolve their base URL from this host at call time.
+   */
+  setActiveHostId(hostId: string | null): void {
+    this.saveConfiguration({ activeOllamaHostId: hostId });
+  }
+
+  /**
+   * Get the current active host ID (canonical base URL or null).
+   */
+  getActiveHostId(): string | null {
+    return this.config.activeOllamaHostId ?? null;
+  }
+
+  /**
+   * Get the active host's base URL if it still exists in the endpoints registry.
+   * Returns null when no override is set or the host was removed.
+   */
+  getActiveBaseUrl(): string | null {
+    const hostId = this.config.activeOllamaHostId;
+    if (!hostId) return null;
+
+    // Check if the hostId matches any configured endpoint
+    const allUrls = this.getConfiguredEndpointUrls();
+    if (allUrls.includes(hostId)) {
+      return hostId;
+    }
+    return null;
   }
 
   /**

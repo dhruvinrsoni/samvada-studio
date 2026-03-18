@@ -4,6 +4,7 @@ import type { Message, Draft, LLMProviderConfig, ChatSettings, ChatHistoryMessag
 import { logDebug, logError, logWarning } from './debug';
 import { parseProviderError, type ProviderError } from './providerErrors';
 import { getAutoProxy, normalizeProxyUrl, isHeaderBasedProxy } from '../services/proxyDiscovery';
+import { ollamaDiscovery } from '../services/ollamaDiscovery';
 
 export interface LLMResponse {
   message: Message;
@@ -554,7 +555,8 @@ export const callLLMProvider = async (
         break;
 
       case 'ollama': {
-        const baseUrl = endpoint.replace(/\/api\/(generate|chat)$/, '');
+        const resolvedEndpoint = resolveOllamaEndpoint(provider);
+        const baseUrl = resolvedEndpoint.replace(/\/api\/(generate|chat)$/, '');
         const hasHistory = history && history.length > 0;
 
         logDebug('Ollama Request', {
@@ -613,7 +615,7 @@ export const callLLMProvider = async (
             content = sanitizeLLMResponse(chatData.message?.content ?? chatData.response ?? '');
           } else {
             // ── Single-turn: /api/generate (existing behavior) ──
-            response = await fetch(endpoint, {
+            response = await fetch(resolvedEndpoint, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -734,6 +736,25 @@ export const callLLMProvider = async (
   }
 };
 
+/**
+ * Resolve the effective endpoint for an Ollama provider.
+ * If an active host override is set, rewrite the base URL portion while
+ * keeping the path suffix (/api/generate or /api/chat) from the stored endpoint.
+ * Falls back to provider.apiEndpoint unchanged when no override is active.
+ */
+function resolveOllamaEndpoint(provider: LLMProviderConfig): string {
+  const stored = provider.apiEndpoint ?? 'http://localhost:11434/api/generate';
+  if (provider.type !== 'ollama') return stored;
+
+  const activeBase = ollamaDiscovery.getActiveBaseUrl();
+  if (!activeBase) return stored;
+
+  // Extract the path suffix (everything from /api/ onwards)
+  const pathMatch = stored.match(/(\/api\/.+)$/);
+  const pathSuffix = pathMatch ? pathMatch[1] : '/api/generate';
+  return `${activeBase}${pathSuffix}`;
+}
+
 // Check if provider is properly configured
 const isProviderConfigured = (provider: LLMProviderConfig): boolean => {
   switch (provider.type) {
@@ -843,8 +864,9 @@ export const testProviderConnection = async (
 
   // For Ollama, first check if the service is running
   if (provider.type === 'ollama') {
+    const resolvedUrl = resolveOllamaEndpoint(provider);
     try {
-      const baseUrl = provider.apiEndpoint.replace('/api/generate', '').replace('/api/chat', '');
+      const baseUrl = resolvedUrl.replace('/api/generate', '').replace('/api/chat', '');
       const tagsUrl = `${baseUrl}/api/tags`;
       
       const tagsResponse = await fetch(tagsUrl, {
@@ -881,8 +903,8 @@ export const testProviderConnection = async (
           };
         }
         if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-          // Show the actual configured endpoint (strip any /api/* suffix)
-          const endpointHint = (provider.apiEndpoint || '').replace('/api/generate', '').replace('/api/chat', '') || 'http://localhost:11434';
+          // Show the actual resolved endpoint (strip any /api/* suffix)
+          const endpointHint = resolvedUrl.replace('/api/generate', '').replace('/api/chat', '') || 'http://localhost:11434';
           return {
             success: false,
             message: `Cannot connect to Ollama at ${endpointHint}. Try: ollama serve`
