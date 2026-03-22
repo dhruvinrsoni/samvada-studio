@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { showModelInfo, formatBytes } from '../../services/ollamaModelService';
+import { showModelInfo, formatBytes, paramSizeCategory, paramSizeHint, quantQualityLabel, quantHint } from '../../services/ollamaModelService';
 import type { OllamaModelShowResponse, OllamaModelInfo } from '../../types';
 
 interface ModelInfoDialogProps {
@@ -33,10 +33,15 @@ export default function ModelInfoDialog({ baseUrl, model, isDark, onClose }: Mod
   const sectionBg = isDark ? 'bg-dark-300' : 'bg-light-200';
   const codeBg = isDark ? 'bg-dark-300 text-gray-300' : 'bg-gray-100 text-gray-700';
 
-  const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
-    <div className="flex items-start justify-between gap-4 py-1.5">
-      <span className={`text-xs font-medium flex-shrink-0 ${textMuted}`}>{label}</span>
-      <span className={`text-xs text-right ${textPrimary}`}>{value}</span>
+  const InfoRow = ({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) => (
+    <div className="py-1.5">
+      <div className="flex items-start justify-between gap-4">
+        <span className={`text-xs font-medium flex-shrink-0 ${textMuted}`}>{label}</span>
+        <span className={`text-xs text-right ${textPrimary}`}>{value}</span>
+      </div>
+      {hint && (
+        <p className={`text-[11px] mt-0.5 leading-snug italic ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{hint}</p>
+      )}
     </div>
   );
 
@@ -76,18 +81,60 @@ export default function ModelInfoDialog({ baseUrl, model, isDark, onClose }: Mod
               <div className={`rounded-lg p-3 border ${borderColor} ${sectionBg}`}>
                 <h4 className={`text-xs font-semibold mb-2 uppercase tracking-wider ${textMuted}`}>Details</h4>
                 <div className="divide-y divide-opacity-20" style={{ borderColor: isDark ? '#374151' : '#e5e7eb' }}>
-                  <InfoRow label="Family" value={info.details.family} />
+                  <InfoRow
+                    label="Family"
+                    value={info.details.family}
+                    hint="The model architecture — each family (Llama, Gemma, Phi, Qwen) is built by a different team and has different strengths"
+                  />
                   {info.details.families && info.details.families.length > 1 && (
-                    <InfoRow label="Families" value={info.details.families.join(', ')} />
+                    <InfoRow
+                      label="Families"
+                      value={info.details.families.join(', ')}
+                      hint="Some models combine multiple architecture families for broader capabilities"
+                    />
                   )}
-                  <InfoRow label="Parameters" value={info.details.parameter_size} />
-                  <InfoRow label="Quantization" value={info.details.quantization_level} />
-                  <InfoRow label="Format" value={info.details.format} />
+                  <InfoRow
+                    label="Parameters"
+                    value={
+                      <span>
+                        {info.details.parameter_size}
+                        {paramSizeCategory(info.details.parameter_size) && (
+                          <span className={`ml-1.5 font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                            {paramSizeCategory(info.details.parameter_size)}
+                          </span>
+                        )}
+                      </span>
+                    }
+                    hint={paramSizeHint(info.details.parameter_size)}
+                  />
+                  <InfoRow
+                    label="Quantization"
+                    value={
+                      <span>
+                        {info.details.quantization_level}
+                        {quantQualityLabel(info.details.quantization_level) && (
+                          <span className={`ml-1.5 font-medium ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                            {quantQualityLabel(info.details.quantization_level)}
+                          </span>
+                        )}
+                      </span>
+                    }
+                    hint={quantHint(info.details.quantization_level)}
+                  />
+                  <InfoRow
+                    label="Format"
+                    value={info.details.format}
+                    hint="The file format used to store model weights (GGUF is the standard for Ollama)"
+                  />
                   {info.details.parent_model && (
-                    <InfoRow label="Parent Model" value={info.details.parent_model} />
+                    <InfoRow
+                      label="Parent Model"
+                      value={info.details.parent_model}
+                      hint="The base model this was derived from (e.g., via fine-tuning or custom Modelfile)"
+                    />
                   )}
-                  <InfoRow label="Size on Disk" value={formatBytes(model.size)} />
-                  <InfoRow label="Digest" value={<span className="font-mono">{model.digest.substring(0, 12)}</span>} />
+                  <InfoRow label="Size on Disk" value={formatBytes(model.size)} hint="Total storage space used by the model file" />
+                  <InfoRow label="Digest" value={<span className="font-mono">{model.digest.substring(0, 12)}</span>} hint="Unique fingerprint to verify model integrity" />
                   <InfoRow label="Modified" value={new Date(model.modified_at).toLocaleString()} />
                 </div>
               </div>

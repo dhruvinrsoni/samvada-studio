@@ -439,16 +439,62 @@ export default function ModelManagerPanel() {
                         </span>
                       )}
                     </div>
-                    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs ${textMuted}`}>
-                      <span>{modelService.formatBytes(model.size)}</span>
+                    <div className={`flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-1.5 text-xs`}>
+                      <span
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${isDark ? 'bg-dark-200 text-gray-400' : 'bg-light-300 text-gray-600'}`}
+                        title="Storage space this model uses on disk"
+                      >
+                        <span className="opacity-50 font-medium">Disk</span>
+                        {modelService.formatBytes(model.size)}
+                      </span>
                       {model.details && (
                         <>
-                          <span>{model.details.family}</span>
-                          <span>{model.details.parameter_size}</span>
-                          <span>{model.details.quantization_level}</span>
+                          <span
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${isDark ? 'bg-dark-200 text-gray-400' : 'bg-light-300 text-gray-600'}`}
+                            title={`Architecture family\nDifferent families (Llama, Gemma, Phi, Qwen) come from different research teams and excel at different tasks`}
+                          >
+                            <span className="opacity-50 font-medium">Family</span>
+                            {model.details.family}
+                          </span>
+                          <span
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${isDark ? 'bg-dark-200 text-gray-400' : 'bg-light-300 text-gray-600'}`}
+                            title={`${model.details.parameter_size} parameters\n${modelService.paramSizeHint(model.details.parameter_size)}`}
+                          >
+                            <span className="opacity-50 font-medium">Params</span>
+                            {model.details.parameter_size}
+                            {modelService.paramSizeCategory(model.details.parameter_size) && (
+                              <span className={`font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                                {modelService.paramSizeCategory(model.details.parameter_size)}
+                              </span>
+                            )}
+                          </span>
+                          <span
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${isDark ? 'bg-dark-200 text-gray-400' : 'bg-light-300 text-gray-600'}`}
+                            title={modelService.quantHint(model.details.quantization_level)}
+                          >
+                            <span className="opacity-50 font-medium">Quant</span>
+                            {model.details.quantization_level}
+                            {modelService.quantQualityLabel(model.details.quantization_level) && (
+                              <span className={`font-medium ${
+                                (() => {
+                                  const lvl = modelService.quantQualityLevel(model.details.quantization_level);
+                                  if (lvl >= 4) return isDark ? 'text-green-400' : 'text-green-600';
+                                  if (lvl >= 3) return isDark ? 'text-yellow-400' : 'text-yellow-600';
+                                  return isDark ? 'text-orange-400' : 'text-orange-600';
+                                })()
+                              }`}>
+                                {modelService.quantQualityLabel(model.details.quantization_level)}
+                              </span>
+                            )}
+                          </span>
                         </>
                       )}
-                      <span>{modelService.formatRelativeTime(model.modified_at)}</span>
+                      <span
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${isDark ? 'bg-dark-200 text-gray-400' : 'bg-light-300 text-gray-600'}`}
+                        title="When this model was last downloaded or modified"
+                      >
+                        {modelService.formatRelativeTime(model.modified_at)}
+                      </span>
                     </div>
                   </div>
 

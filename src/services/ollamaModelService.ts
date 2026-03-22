@@ -148,6 +148,84 @@ export function pullModel(
   return controller;
 }
 
+// ---------------------------------------------------------------------------
+// Human-readable model parameter helpers
+// ---------------------------------------------------------------------------
+
+function parseParamNum(s: string | undefined): number {
+  if (!s) return 0;
+  const m = s.match(/([\d.]+)\s*([BMK]?)/i);
+  if (!m) return 0;
+  const n = parseFloat(m[1]!);
+  const u = (m[2] ?? '').toUpperCase();
+  if (u === 'B') return n * 1e9;
+  if (u === 'M') return n * 1e6;
+  if (u === 'K') return n * 1e3;
+  return n;
+}
+
+export function paramSizeCategory(s: string | undefined): string {
+  const n = parseParamNum(s);
+  if (n >= 70e9) return 'XL';
+  if (n >= 13e9) return 'Large';
+  if (n >= 7e9) return 'Medium';
+  if (n >= 3e9) return 'Small';
+  if (n > 0) return 'Tiny';
+  return '';
+}
+
+export function paramSizeHint(s: string | undefined): string {
+  const n = parseParamNum(s);
+  if (n >= 70e9) return 'Very powerful reasoning, needs high-end GPU (48 GB+ VRAM)';
+  if (n >= 13e9) return 'Strong reasoning, needs a good GPU (16 GB+ VRAM)';
+  if (n >= 7e9) return 'Solid all-rounder, runs on most GPUs (8 GB+ VRAM)';
+  if (n >= 3e9) return 'Fast responses, lighter reasoning, runs on modest hardware';
+  if (n > 0) return 'Very fast, good for simple tasks, runs on almost anything';
+  return 'How many learnable weights the model has — more means smarter but slower';
+}
+
+export function quantQualityLabel(q: string | undefined): string {
+  if (!q) return '';
+  const u = q.toUpperCase();
+  if (u.includes('F32') || u.includes('FP32')) return 'Full precision';
+  if (u.includes('F16') || u.includes('FP16')) return 'Full precision';
+  if (u.includes('Q8')) return 'Near-lossless';
+  if (u.includes('Q6')) return 'High quality';
+  if (u.includes('Q5')) return 'Good+';
+  if (u.includes('Q4')) return 'Balanced';
+  if (u.includes('Q3')) return 'Compact';
+  if (u.includes('Q2')) return 'Aggressive';
+  return '';
+}
+
+export function quantHint(q: string | undefined): string {
+  if (!q) return 'How compressed the model weights are — lower bits = smaller & faster but less precise';
+  const u = q.toUpperCase();
+  if (u.includes('F32') || u.includes('FP32')) return 'No compression — maximum accuracy, largest file size';
+  if (u.includes('F16') || u.includes('FP16')) return 'Half-precision floats — excellent accuracy, large file size';
+  if (u.includes('Q8')) return '8-bit quantization — near original quality, about half the size of FP16';
+  if (u.includes('Q6')) return '6-bit quantization — high quality with good size savings';
+  if (u.includes('Q5')) return '5-bit quantization — good quality, noticeably smaller';
+  if (u.includes('Q4')) return '4-bit quantization — popular sweet spot balancing quality and size';
+  if (u.includes('Q3')) return '3-bit quantization — very compact, some quality trade-off';
+  if (u.includes('Q2')) return '2-bit quantization — smallest possible, significant quality loss';
+  return 'Quantization controls model compression — fewer bits means smaller but less precise';
+}
+
+export function quantQualityLevel(q: string | undefined): number {
+  if (!q) return 0;
+  const u = q.toUpperCase();
+  if (u.includes('F32') || u.includes('FP32')) return 5;
+  if (u.includes('F16') || u.includes('FP16')) return 5;
+  if (u.includes('Q8')) return 4;
+  if (u.includes('Q6')) return 4;
+  if (u.includes('Q5')) return 3;
+  if (u.includes('Q4')) return 3;
+  if (u.includes('Q3')) return 2;
+  if (u.includes('Q2')) return 1;
+  return 0;
+}
+
 export function formatBytes(bytes: number): string {
   if (!bytes || bytes === 0) return '0 B';
   const k = 1024;
