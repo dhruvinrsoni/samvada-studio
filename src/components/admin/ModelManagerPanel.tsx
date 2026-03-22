@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ollamaDiscovery } from '../../services/ollamaDiscovery';
 import * as modelService from '../../services/ollamaModelService';
 import { useChat } from '../../context/ChatContext';
@@ -7,6 +7,21 @@ import { generateId } from '../../utils/helpers';
 import type { OllamaModelInfo, OllamaRunningModel, LLMProviderConfig } from '../../types';
 import ModelPullDialog from './ModelPullDialog';
 import ModelInfoDialog from './ModelInfoDialog';
+
+type SortField = 'name' | 'size' | 'family' | 'params' | 'quantization' | 'modified';
+type SortDirection = 'asc' | 'desc';
+
+function parseParamSize(s: string | undefined): number {
+  if (!s) return 0;
+  const match = s.match(/([\d.]+)\s*([BMK]?)/i);
+  if (!match) return 0;
+  const num = parseFloat(match[1]!);
+  const unit = (match[2] ?? '').toUpperCase();
+  if (unit === 'B') return num * 1e9;
+  if (unit === 'M') return num * 1e6;
+  if (unit === 'K') return num * 1e3;
+  return num;
+}
 
 export default function ModelManagerPanel() {
   const { state, dispatch } = useChat();
@@ -22,6 +37,9 @@ export default function ModelManagerPanel() {
   const [runningModels, setRunningModels] = useState<OllamaRunningModel[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
+
+  // Sorting -- single state object so field+direction update atomically
+  const [sortConfig, setSortConfig] = useState<{ field: SortField; dir: SortDirection }>({ field: 'name', dir: 'asc' });
 
   // Dialogs
   const [showPullDialog, setShowPullDialog] = useState(false);
@@ -80,9 +98,53 @@ export default function ModelManagerPanel() {
     refreshModels();
   }, [refreshModels]);
 
-  const filteredModels = models.filter((m) =>
-    m.name.toLowerCase().includes(searchFilter.toLowerCase()),
-  );
+  const filteredAndSortedModels = useMemo(() => {
+    let list = models.filter((m) =>
+      m.name.toLowerCase().includes(searchFilter.toLowerCase()),
+    );
+
+    const { field, dir } = sortConfig;
+    list.sort((a, b) => {
+      let cmp = 0;
+      switch (field) {
+        case 'name':
+          cmp = a.name.localeCompare(b.name);
+          break;
+        case 'size':
+          cmp = a.size - b.size;
+          break;
+        case 'family':
+          cmp = (a.details?.family ?? '').localeCompare(b.details?.family ?? '');
+          break;
+        case 'params':
+          cmp = parseParamSize(a.details?.parameter_size) - parseParamSize(b.details?.parameter_size);
+          break;
+        case 'quantization':
+          cmp = (a.details?.quantization_level ?? '').localeCompare(b.details?.quantization_level ?? '');
+          break;
+        case 'modified':
+          cmp = new Date(a.modified_at).getTime() - new Date(b.modified_at).getTime();
+          break;
+      }
+      if (cmp === 0 && field !== 'name') {
+        cmp = a.name.localeCompare(b.name);
+      }
+      return dir === 'asc' ? cmp : -cmp;
+    });
+
+    return list;
+  }, [models, searchFilter, sortConfig]);
+
+  const totalDiskUsage = useMemo(() => models.reduce((sum, m) => sum + m.size, 0), [models]);
+
+  const handleSortToggle = (field: SortField) => {
+    setSortConfig((prev) => {
+      if (prev.field === field) {
+        return { field, dir: prev.dir === 'asc' ? 'desc' : 'asc' };
+      }
+      return { field, dir: field === 'modified' ? 'desc' : 'asc' };
+    });
+  };
 
   // Actions
   const handleDelete = async (name: string) => {
@@ -152,6 +214,11 @@ export default function ModelManagerPanel() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {totalDiskUsage > 0 && (
+              <span className={`text-xs px-2 py-1 rounded-full ${isDark ? 'bg-dark-100 text-gray-400' : 'bg-light-300 text-gray-600'}`}>
+                {modelService.formatBytes(totalDiskUsage)} total
+              </span>
+            )}
             <span className={`text-xs px-2 py-1 rounded-full ${isDark ? 'bg-dark-100 text-gray-400' : 'bg-light-300 text-gray-600'}`}>
               {models.length} model{models.length !== 1 ? 's' : ''}
             </span>
@@ -197,16 +264,90 @@ export default function ModelManagerPanel() {
         </div>
       </div>
 
-      {/* Search filter */}
+      {/* Search + Sort bar */}
       {models.length > 0 && (
-        <div>
-          <input
-            type="text"
-            value={searchFilter}
-            onChange={(e) => setSearchFilter(e.target.value)}
-            placeholder="Filter models..."
-            className={inputClass}
-          />
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                placeholder="Filter models..."
+                className={inputClass}
+              />
+              {searchFilter && (
+                <button
+                  onClick={() => setSearchFilter('')}
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 text-xs px-1 rounded ${isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            {models.some((m) => !isProviderConfigured(m.name)) && (
+              <button
+                onClick={() => {
+                  let added = 0;
+                  const host = resolveHost();
+                  for (const m of models) {
+                    if (!state.providers.some(p => p.type === 'ollama' && p.apiEndpoint === `${host}/api/generate` && p.model === m.name)) {
+                      const np: LLMProviderConfig = {
+                        id: generateId(),
+                        name: `Ollama · ${m.name}`,
+                        type: 'ollama',
+                        apiEndpoint: `${host}/api/generate`,
+                        model: m.name,
+                        isEnabled: true,
+                        isDefault: state.providers.length === 0 && added === 0,
+                        settings: { temperature: 0.7, maxTokens: 4096 },
+                        testStatus: 'untested',
+                      };
+                      dispatch({ type: 'ADD_PROVIDER', payload: np });
+                      added++;
+                    }
+                  }
+                  if (added > 0) addToast('success', 'Providers Added', `${added} model${added > 1 ? 's' : ''} added`);
+                  else addToast('info', 'No New Models', 'All models are already configured as providers');
+                }}
+                className={`px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                  isDark ? 'bg-dark-100 hover:bg-dark-50 text-gray-300' : 'bg-light-300 hover:bg-light-400 text-gray-700'
+                }`}
+                title="Add all models as LLM providers"
+              >
+                + Add All
+              </button>
+            )}
+          </div>
+
+          {/* Sort pills */}
+          <div className="flex flex-wrap gap-1.5">
+            {([
+              ['name', 'Name'],
+              ['size', 'Size'],
+              ['family', 'Family'],
+              ['params', 'Params'],
+              ['quantization', 'Quant'],
+              ['modified', 'Modified'],
+            ] as [SortField, string][]).map(([field, label]) => (
+              <button
+                key={field}
+                onClick={() => handleSortToggle(field)}
+                className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium transition-colors ${
+                  sortConfig.field === field
+                    ? 'bg-theme-primary/20 text-theme-primary'
+                    : isDark
+                      ? 'bg-dark-100 text-gray-400 hover:text-gray-200'
+                      : 'bg-light-300 text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                {label}
+                <span className={`ml-0.5 ${sortConfig.field !== field ? 'opacity-30' : ''}`}>
+                  {sortConfig.field === field ? (sortConfig.dir === 'asc' ? '↑' : '↓') : '↕'}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -226,7 +367,7 @@ export default function ModelManagerPanel() {
             <div className="mt-3 space-y-2">
               {runningModels.map((rm) => (
                 <div
-                  key={rm.digest}
+                  key={rm.name}
                   className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm ${
                     isDark ? 'bg-dark-200' : 'bg-light-300'
                   }`}
@@ -255,7 +396,7 @@ export default function ModelManagerPanel() {
           <span className="animate-spin inline-block w-5 h-5 border-2 border-theme-primary border-t-transparent rounded-full" />
           <span className={`ml-2 text-sm ${textMuted}`}>Loading models...</span>
         </div>
-      ) : filteredModels.length === 0 ? (
+      ) : filteredAndSortedModels.length === 0 ? (
         <div className={`text-center py-8 rounded-lg border-2 border-dashed ${isDark ? 'border-dark-100 text-gray-500' : 'border-light-400 text-gray-400'}`}>
           {models.length === 0 ? (
             <>
@@ -274,12 +415,12 @@ export default function ModelManagerPanel() {
         </div>
       ) : (
         <div className="space-y-2">
-          {filteredModels.map((model) => {
+          {filteredAndSortedModels.map((model) => {
             const isRunning = runningModels.some((rm) => rm.name === model.name);
             const isConfigured = isProviderConfigured(model.name);
             return (
               <div
-                key={model.digest}
+                key={model.name}
                 className={`rounded-lg border p-3 transition-colors ${
                   isDark ? 'bg-dark-300 border-dark-100 hover:border-gray-600' : 'bg-light-200 border-light-400 hover:border-gray-300'
                 }`}
