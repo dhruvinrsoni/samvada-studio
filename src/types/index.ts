@@ -673,6 +673,51 @@ export type ChatAction =
   // Active Ollama Host
   | { type: 'SET_ACTIVE_OLLAMA_HOST'; payload: string | null };
 
+// Ollama Model Management Types
+export interface OllamaModelDetails {
+  parent_model?: string;
+  format: string;
+  family: string;
+  families?: string[];
+  parameter_size: string;
+  quantization_level: string;
+}
+
+export interface OllamaModelInfo {
+  name: string;
+  model: string;
+  modified_at: string;
+  size: number;
+  digest: string;
+  details: OllamaModelDetails;
+}
+
+export interface OllamaModelShowResponse {
+  modelfile: string;
+  parameters: string;
+  template: string;
+  details: OllamaModelDetails;
+  model_info?: Record<string, unknown>;
+  license?: string;
+}
+
+export interface OllamaPullProgress {
+  status: string;
+  digest?: string;
+  total?: number;
+  completed?: number;
+}
+
+export interface OllamaRunningModel {
+  name: string;
+  model: string;
+  size: number;
+  digest: string;
+  details: OllamaModelDetails;
+  expires_at: string;
+  size_vram: number;
+}
+
 // Toast Notification Types
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 

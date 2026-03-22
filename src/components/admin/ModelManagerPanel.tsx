@@ -1,0 +1,442 @@
+import { useState, useEffect, useCallback } from 'react';
+import { ollamaDiscovery } from '../../services/ollamaDiscovery';
+import * as modelService from '../../services/ollamaModelService';
+import { useChat } from '../../context/ChatContext';
+import { useToast } from '../../context/ToastContext';
+import { generateId } from '../../utils/helpers';
+import type { OllamaModelInfo, OllamaRunningModel, LLMProviderConfig } from '../../types';
+import ModelPullDialog from './ModelPullDialog';
+import ModelInfoDialog from './ModelInfoDialog';
+
+export default function ModelManagerPanel() {
+  const { state, dispatch } = useChat();
+  const { addToast } = useToast();
+  const isDark =
+    state.themeSettings.mode === 'dark' ||
+    (state.themeSettings.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  // Available hosts
+  const [hosts, setHosts] = useState<string[]>([]);
+  const [selectedHost, setSelectedHost] = useState<string>('');
+  const [models, setModels] = useState<OllamaModelInfo[]>([]);
+  const [runningModels, setRunningModels] = useState<OllamaRunningModel[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchFilter, setSearchFilter] = useState('');
+
+  // Dialogs
+  const [showPullDialog, setShowPullDialog] = useState(false);
+  const [infoModel, setInfoModel] = useState<OllamaModelInfo | null>(null);
+  const [copySource, setCopySource] = useState<string | null>(null);
+  const [copyDestination, setCopyDestination] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [showRunning, setShowRunning] = useState(true);
+
+  const textPrimary = isDark ? 'text-gray-200' : 'text-gray-800';
+  const textMuted = isDark ? 'text-gray-400' : 'text-gray-600';
+  const cardClass = `rounded-lg p-4 border ${isDark ? 'bg-dark-300 border-dark-100' : 'bg-light-200 border-light-400'}`;
+  const inputClass = `w-full p-2 rounded-lg border text-sm ${isDark ? 'bg-dark-200 border-dark-100 text-gray-200 placeholder-gray-500' : 'bg-white border-light-400 text-gray-800 placeholder-gray-400'}`;
+
+  // Resolve which host to use
+  const resolveHost = useCallback((): string => {
+    const activeHost = ollamaDiscovery.getActiveBaseUrl();
+    if (activeHost) return activeHost;
+    if (selectedHost) return selectedHost;
+    const urls = ollamaDiscovery.getConfiguredEndpointUrls();
+    return urls[0] ?? 'http://localhost:11434';
+  }, [selectedHost]);
+
+  // Load available hosts
+  useEffect(() => {
+    const urls = ollamaDiscovery.getConfiguredEndpointUrls();
+    setHosts(urls);
+    if (!selectedHost && urls.length > 0) {
+      const active = ollamaDiscovery.getActiveBaseUrl();
+      setSelectedHost(active ?? urls[0] ?? '');
+    }
+  }, [selectedHost]);
+
+  // Load models for the selected host
+  const refreshModels = useCallback(async () => {
+    const host = resolveHost();
+    if (!host) return;
+    setIsLoading(true);
+    try {
+      const [modelList, running] = await Promise.all([
+        modelService.listModels(host),
+        modelService.listRunningModels(host).catch(() => [] as OllamaRunningModel[]),
+      ]);
+      setModels(modelList);
+      setRunningModels(running);
+    } catch (err: any) {
+      addToast('error', 'Failed to load models', err.message);
+      setModels([]);
+      setRunningModels([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [resolveHost, addToast]);
+
+  useEffect(() => {
+    refreshModels();
+  }, [refreshModels]);
+
+  const filteredModels = models.filter((m) =>
+    m.name.toLowerCase().includes(searchFilter.toLowerCase()),
+  );
+
+  // Actions
+  const handleDelete = async (name: string) => {
+    try {
+      await modelService.deleteModel(resolveHost(), name);
+      addToast('success', 'Model Deleted', `${name} has been removed`);
+      setDeleteConfirm(null);
+      refreshModels();
+    } catch (err: any) {
+      addToast('error', 'Delete Failed', err.message);
+    }
+  };
+
+  const handleCopy = async () => {
+    if (!copySource || !copyDestination.trim()) return;
+    try {
+      await modelService.copyModel(resolveHost(), copySource, copyDestination.trim());
+      addToast('success', 'Model Copied', `${copySource} → ${copyDestination.trim()}`);
+      setCopySource(null);
+      setCopyDestination('');
+      refreshModels();
+    } catch (err: any) {
+      addToast('error', 'Copy Failed', err.message);
+    }
+  };
+
+  const handleAddAsProvider = (modelName: string) => {
+    const host = resolveHost();
+    const existing = state.providers.find(
+      (p) => p.type === 'ollama' && p.apiEndpoint === `${host}/api/generate` && p.model === modelName,
+    );
+    if (existing) {
+      addToast('info', 'Already Added', `${modelName} is already a configured provider`);
+      return;
+    }
+    const newProvider: LLMProviderConfig = {
+      id: generateId(),
+      name: `Ollama · ${modelName}`,
+      type: 'ollama',
+      apiEndpoint: `${host}/api/generate`,
+      model: modelName,
+      isEnabled: true,
+      isDefault: state.providers.length === 0,
+      settings: { temperature: 0.7, maxTokens: 4096 },
+      testStatus: 'untested',
+    };
+    dispatch({ type: 'ADD_PROVIDER', payload: newProvider });
+    addToast('success', 'Provider Added', `${modelName} added as LLM provider`);
+  };
+
+  const isProviderConfigured = (modelName: string): boolean => {
+    const host = resolveHost();
+    return state.providers.some(
+      (p) => p.type === 'ollama' && p.apiEndpoint === `${host}/api/generate` && p.model === modelName,
+    );
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className={`pb-3 border-b ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className={`text-lg font-bold ${textPrimary}`}>📦 Model Manager</h3>
+            <p className={`text-xs mt-0.5 ${textMuted}`}>
+              Pull, inspect, copy, and delete Ollama models
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2 py-1 rounded-full ${isDark ? 'bg-dark-100 text-gray-400' : 'bg-light-300 text-gray-600'}`}>
+              {models.length} model{models.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Host selector + actions bar */}
+      <div className={cardClass}>
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Host selector */}
+          <div className="flex-1">
+            <label className={`block text-xs font-medium mb-1 ${textMuted}`}>Ollama Host</label>
+            <select
+              value={selectedHost}
+              onChange={(e) => setSelectedHost(e.target.value)}
+              className={inputClass}
+            >
+              {hosts.map((h) => (
+                <option key={h} value={h}>{h}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-end gap-2">
+            <button
+              onClick={() => setShowPullDialog(true)}
+              className="px-3 py-2 bg-theme-primary text-white rounded-lg hover:bg-theme-primary-hover text-sm font-medium whitespace-nowrap"
+            >
+              ⬇ Pull Model
+            </button>
+            <button
+              onClick={refreshModels}
+              disabled={isLoading}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                isDark ? 'bg-dark-100 hover:bg-dark-50 text-gray-300' : 'bg-light-300 hover:bg-light-400 text-gray-700'
+              } disabled:opacity-50`}
+            >
+              {isLoading ? '⟳ Loading...' : '⟳ Refresh'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Search filter */}
+      {models.length > 0 && (
+        <div>
+          <input
+            type="text"
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            placeholder="Filter models..."
+            className={inputClass}
+          />
+        </div>
+      )}
+
+      {/* Running models */}
+      {runningModels.length > 0 && (
+        <div className={cardClass}>
+          <button
+            onClick={() => setShowRunning(!showRunning)}
+            className="flex items-center justify-between w-full text-left"
+          >
+            <h4 className={`font-semibold text-sm ${textPrimary}`}>
+              🟢 Running Models ({runningModels.length})
+            </h4>
+            <span className={`text-xs ${textMuted}`}>{showRunning ? '▲' : '▼'}</span>
+          </button>
+          {showRunning && (
+            <div className="mt-3 space-y-2">
+              {runningModels.map((rm) => (
+                <div
+                  key={rm.digest}
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm ${
+                    isDark ? 'bg-dark-200' : 'bg-light-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={`font-medium truncate ${textPrimary}`}>{rm.name}</span>
+                    <span className={`text-xs ${textMuted}`}>
+                      VRAM: {modelService.formatBytes(rm.size_vram)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className={`text-xs ${textMuted}`}>
+                      expires {modelService.formatRelativeTime(rm.expires_at)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Model list */}
+      {isLoading && models.length === 0 ? (
+        <div className="flex items-center justify-center py-8">
+          <span className="animate-spin inline-block w-5 h-5 border-2 border-theme-primary border-t-transparent rounded-full" />
+          <span className={`ml-2 text-sm ${textMuted}`}>Loading models...</span>
+        </div>
+      ) : filteredModels.length === 0 ? (
+        <div className={`text-center py-8 rounded-lg border-2 border-dashed ${isDark ? 'border-dark-100 text-gray-500' : 'border-light-400 text-gray-400'}`}>
+          {models.length === 0 ? (
+            <>
+              <p className="text-sm mb-2">No models found on this host</p>
+              <p className="text-xs mb-4">Pull a model to get started</p>
+              <button
+                onClick={() => setShowPullDialog(true)}
+                className="px-4 py-2 bg-theme-primary text-white rounded-lg hover:bg-theme-primary-hover text-sm"
+              >
+                ⬇ Pull Your First Model
+              </button>
+            </>
+          ) : (
+            <p className="text-sm">No models matching "{searchFilter}"</p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filteredModels.map((model) => {
+            const isRunning = runningModels.some((rm) => rm.name === model.name);
+            const isConfigured = isProviderConfigured(model.name);
+            return (
+              <div
+                key={model.digest}
+                className={`rounded-lg border p-3 transition-colors ${
+                  isDark ? 'bg-dark-300 border-dark-100 hover:border-gray-600' : 'bg-light-200 border-light-400 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  {/* Model info */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`font-medium text-sm truncate ${textPrimary}`}>{model.name}</span>
+                      {isRunning && (
+                        <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" title="Currently loaded" />
+                      )}
+                      {isConfigured && (
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${isDark ? 'bg-theme-primary/20 text-theme-primary' : 'bg-theme-primary/10 text-theme-primary'}`}>
+                          provider
+                        </span>
+                      )}
+                    </div>
+                    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs ${textMuted}`}>
+                      <span>{modelService.formatBytes(model.size)}</span>
+                      {model.details && (
+                        <>
+                          <span>{model.details.family}</span>
+                          <span>{model.details.parameter_size}</span>
+                          <span>{model.details.quantization_level}</span>
+                        </>
+                      )}
+                      <span>{modelService.formatRelativeTime(model.modified_at)}</span>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => setInfoModel(model)}
+                      className={`px-2 py-1 rounded text-xs transition-colors ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+                      title="View details"
+                    >
+                      ℹ️
+                    </button>
+                    {!isConfigured && (
+                      <button
+                        onClick={() => handleAddAsProvider(model.name)}
+                        className={`px-2 py-1 rounded text-xs transition-colors ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+                        title="Add as provider"
+                      >
+                        ➕
+                      </button>
+                    )}
+                    <button
+                      onClick={() => { setCopySource(model.name); setCopyDestination(''); }}
+                      className={`px-2 py-1 rounded text-xs transition-colors ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}
+                      title="Copy model"
+                    >
+                      📋
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirm(model.name)}
+                      className={`px-2 py-1 rounded text-xs transition-colors text-red-500 ${isDark ? 'hover:bg-red-900/20' : 'hover:bg-red-50'}`}
+                      title="Delete model"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Pull Dialog */}
+      {showPullDialog && (
+        <ModelPullDialog
+          baseUrl={resolveHost()}
+          isDark={isDark}
+          onClose={() => setShowPullDialog(false)}
+          onPullComplete={(name) => {
+            addToast('success', 'Model Ready', `${name} is now available`);
+            refreshModels();
+          }}
+        />
+      )}
+
+      {/* Info Dialog */}
+      {infoModel && (
+        <ModelInfoDialog
+          baseUrl={resolveHost()}
+          model={infoModel}
+          isDark={isDark}
+          onClose={() => setInfoModel(null)}
+        />
+      )}
+
+      {/* Copy Dialog */}
+      {copySource && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setCopySource(null)} />
+          <div className={`relative w-full max-w-sm rounded-xl shadow-2xl p-5 ${isDark ? 'bg-dark-200' : 'bg-white'}`}>
+            <h3 className={`text-base font-bold mb-3 ${textPrimary}`}>Copy Model</h3>
+            <p className={`text-xs mb-3 ${textMuted}`}>
+              Create a copy of <strong>{copySource}</strong> with a new name.
+            </p>
+            <input
+              type="text"
+              value={copyDestination}
+              onChange={(e) => setCopyDestination(e.target.value)}
+              placeholder="New model name"
+              className={inputClass}
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') handleCopy(); if (e.key === 'Escape') setCopySource(null); }}
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setCopySource(null)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium ${isDark ? 'bg-dark-100 text-gray-400 hover:bg-dark-50' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCopy}
+                disabled={!copyDestination.trim()}
+                className="px-3 py-1.5 bg-theme-primary text-white rounded-lg hover:bg-theme-primary-hover text-sm font-medium disabled:opacity-50"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
+          <div className={`relative w-full max-w-sm rounded-xl shadow-2xl p-5 ${isDark ? 'bg-dark-200' : 'bg-white'}`}>
+            <h3 className={`text-base font-bold mb-2 ${textPrimary}`}>Delete Model</h3>
+            <p className={`text-sm mb-4 ${textMuted}`}>
+              Are you sure you want to delete <strong>{deleteConfirm}</strong>? This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium ${isDark ? 'bg-dark-100 text-gray-400 hover:bg-dark-50' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirm)}
+                className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
