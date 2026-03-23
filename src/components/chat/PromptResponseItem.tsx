@@ -340,6 +340,7 @@ export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, o
                 type="text"
                 value={editedName}
                 onChange={(e) => setEditedName(e.target.value)}
+                onFocus={(e) => e.target.select()}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     handleSaveNameEdit();
@@ -401,6 +402,22 @@ export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, o
           <span className="text-[10px] sm:text-xs text-gray-500 hidden xs:inline">
             {formatTimestamp(promptResponse.createdAt)}
           </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const parts = [
+                `PnR ID: ${promptResponse.id}`,
+                `Prompt:\n${activePrompt.content}`,
+                activeResponse?.content ? `Response:\n${activeResponse.content}` : '',
+              ].filter(Boolean);
+              navigator.clipboard.writeText(parts.join('\n\n'));
+              addToast('success', 'Copied!', 'Full PnR copied to clipboard');
+            }}
+            className={`p-0.5 sm:p-1 rounded min-w-[24px] min-h-[24px] flex items-center justify-center ${isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
+            title="Copy full PnR (prompt + response + ID)"
+          >
+            <span className="text-sm sm:text-base">📑</span>
+          </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleStarPnR(); }}
             className={`p-0.5 sm:p-1 rounded transition-all duration-200 min-w-[24px] min-h-[24px] flex items-center justify-center ${
@@ -638,25 +655,6 @@ export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, o
                 title="Copy response only"
               >
                 📋 <span className="hidden xs:inline">Copy</span>
-              </button>
-              <button
-                onClick={() => {
-                  const parts = [
-                    `PnR ID: ${promptResponse.id}`,
-                    `Prompt:\n${activePrompt.content}`,
-                    activeResponse?.content ? `Response:\n${activeResponse.content}` : '',
-                  ].filter(Boolean);
-                  navigator.clipboard.writeText(parts.join('\n\n'));
-                  addToast('success', 'Copied!', 'Full PnR copied to clipboard');
-                }}
-                className={`flex items-center gap-1 px-2 sm:px-3 py-1 text-xs sm:text-sm rounded min-h-[28px] sm:min-h-[32px] transition-colors ${
-                  isDark 
-                    ? 'bg-theme-primary/10 text-theme-primary hover:bg-theme-primary/20' 
-                    : 'bg-theme-primary/5 text-theme-primary hover:bg-theme-primary/10'
-                }`}
-                title="Copy full PnR (prompt + response + ID)"
-              >
-                📑 <span className="hidden xs:inline">Copy All</span>
               </button>
               <TTSButton text={activeResponse?.content || ''} />
               {onQuote && activeResponse && (

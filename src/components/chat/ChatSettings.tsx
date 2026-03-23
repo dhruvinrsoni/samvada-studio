@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { createExample } from '../../utils/helpers';
 import type { Chat, Example, FormattingProfile, FormattingRule } from '../../types';
@@ -187,6 +187,7 @@ export default function ChatSettings({ chat, onClose, inputValue = '', providerI
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                onFocus={(e) => e.target.select()}
                 className={inputClass}
               />
             </div>
