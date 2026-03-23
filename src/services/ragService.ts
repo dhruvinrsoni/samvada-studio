@@ -241,11 +241,26 @@ export function formatRAGContext(
 ): string {
   if (results.length === 0) return '';
 
-  const contextBlocks = results.map((r, i) => {
+  const grouped = new Map<string, { heading?: string; text: string }[]>();
+  for (const r of results) {
     const src = r.chunk.metadata.source;
-    const heading = r.chunk.metadata.heading ? ` -- section: ${r.chunk.metadata.heading}` : '';
-    return `--- Source ${i + 1}: ${src}${heading} ---\n${r.chunk.text}`;
-  });
+    if (!grouped.has(src)) grouped.set(src, []);
+    grouped.get(src)!.push({
+      heading: r.chunk.metadata.heading?.replace(/^#{1,6}\s+/, ''),
+      text: r.chunk.text,
+    });
+  }
+
+  const contextBlocks: string[] = [];
+  for (const [filename, chunks] of grouped) {
+    const sections = chunks.map((c) => {
+      const hdr = c.heading ? `[Section: ${c.heading}]\n` : '';
+      return `${hdr}${c.text}`;
+    });
+    contextBlocks.push(
+      `=== File: ${filename} ===\n"""\n${sections.join('\n\n')}\n"""`,
+    );
+  }
 
   const context = contextBlocks.join('\n\n');
   return template.replace('{context}', context);

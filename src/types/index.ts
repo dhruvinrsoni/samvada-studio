@@ -784,18 +784,17 @@ export const DEFAULT_RAG_SETTINGS: RAGSettings = {
   similarityThreshold: 0.15,
   embeddingModel: 'nomic-embed-text',
   embeddingProvider: 'ollama',
-  ragTemplate: `You MUST answer the user's question based EXCLUSIVELY on the retrieved context below. Do NOT use your training knowledge. If the context does not contain the answer, say: "The knowledge base does not contain information about this."
+  ragTemplate: `Answer the user's question using ONLY the document excerpts below. Follow these rules strictly:
 
-Rules:
-- ONLY use facts from the context below.
-- When citing sources, refer to them by filename only (e.g. "according to README.md").
-- Do NOT generate URLs or links.
-- Do NOT invent or hallucinate information.
+1. ONLY state facts that appear verbatim or are directly implied by the text below.
+2. If the documents do not contain enough information, say: "The uploaded documents do not contain information about this."
+3. NEVER fabricate, guess, or use your general knowledge to fill gaps.
+4. Cite sources by filename (e.g. "according to README.md").
+5. Do NOT generate URLs or links.
 
-Retrieved context:
+DOCUMENTS:
 {context}
-
----
+END OF DOCUMENTS
 
 `,
 };
