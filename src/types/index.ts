@@ -312,9 +312,11 @@ export interface PromptResponse {
   updatedAt: Date;
   providerId?: string; // Which LLM provider was used
   // Prompt versioning (added in v2; undefined on old data → treated as single version)
-  prompts?: Message[];                          // all prompt versions, index = version number
-  activePromptIndex?: number;                   // currently displayed version (default 0)
-  activeResponseIndexPerVersion?: Record<number, number>; // per-version active draft index
+  prompts?: Message[];
+  activePromptIndex?: number;
+  activeResponseIndexPerVersion?: Record<number, number>;
+  // RAG sources used for this response
+  ragSources?: { source: string; heading?: string; score: number; text: string }[];
 }
 
 // Formatting Rules
@@ -365,8 +367,9 @@ export interface Chat {
   settings: ChatSettings;
   isArchived: boolean;
   isPinned: boolean;
-  folderId?: string; // Which folder this chat belongs to
-  providerId?: string; // Associated LLM provider
+  folderId?: string;
+  providerId?: string;
+  ragCollectionIds?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -717,6 +720,85 @@ export interface OllamaRunningModel {
   expires_at: string;
   size_vram: number;
 }
+
+// RAG (Retrieval-Augmented Generation) Types
+
+export type RAGEmbeddingProvider = 'ollama' | 'transformers';
+
+export interface RAGCollection {
+  id: string;
+  name: string;
+  description: string;
+  embeddingModel: string;
+  embeddingProvider: RAGEmbeddingProvider;
+  vectorDimensions: number;
+  documentCount: number;
+  chunkCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RAGDocument {
+  id: string;
+  collectionId: string;
+  name: string;
+  fileType: string;
+  size: number;
+  chunkCount: number;
+  createdAt: string;
+}
+
+export interface RAGChunk {
+  id: string;
+  documentId: string;
+  collectionId: string;
+  text: string;
+  vector: number[];
+  chunkIndex: number;
+  metadata: {
+    heading?: string;
+    startOffset?: number;
+    source: string;
+  };
+}
+
+export interface RAGSearchResult {
+  chunk: RAGChunk;
+  score: number;
+}
+
+export interface RAGSettings {
+  chunkSize: number;
+  chunkOverlap: number;
+  topK: number;
+  similarityThreshold: number;
+  embeddingModel: string;
+  embeddingProvider: RAGEmbeddingProvider;
+  ragTemplate: string;
+}
+
+export const DEFAULT_RAG_SETTINGS: RAGSettings = {
+  chunkSize: 1024,
+  chunkOverlap: 100,
+  topK: 10,
+  similarityThreshold: 0.15,
+  embeddingModel: 'nomic-embed-text',
+  embeddingProvider: 'ollama',
+  ragTemplate: `You MUST answer the user's question based EXCLUSIVELY on the retrieved context below. Do NOT use your training knowledge. If the context does not contain the answer, say: "The knowledge base does not contain information about this."
+
+Rules:
+- ONLY use facts from the context below.
+- When citing sources, refer to them by filename only (e.g. "according to README.md").
+- Do NOT generate URLs or links.
+- Do NOT invent or hallucinate information.
+
+Retrieved context:
+{context}
+
+---
+
+`,
+};
 
 // Toast Notification Types
 export type ToastType = 'success' | 'error' | 'warning' | 'info';

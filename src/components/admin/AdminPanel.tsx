@@ -13,6 +13,7 @@ import PWAStatusPanel from './PWAStatusPanel';
 import PWAAdvancedControls from './PWAAdvancedControls';
 import MemoryPanel from '../memory/MemoryPanel';
 import ModelManagerPanel from './ModelManagerPanel';
+import KnowledgePanel from '../rag/KnowledgePanel';
 import useProviderHealthMonitor from '../../hooks/useProviderHealthMonitor';
 import { Toggle } from '../ui';
 import type { PWAStatus } from '../../hooks/usePWA';
@@ -23,7 +24,7 @@ interface AdminPanelProps {
 
 export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
   const { state, dispatch } = useChat();
-  const [activeTab, setActiveTab] = useState<'providers' | 'settings' | 'pwa' | 'developer' | 'ollama' | 'models' | 'memory'>('providers');
+  const [activeTab, setActiveTab] = useState<'providers' | 'settings' | 'pwa' | 'developer' | 'ollama' | 'models' | 'knowledge' | 'memory'>('providers');
   const [editingProvider, setEditingProvider] = useState<LLMProviderConfig | null>(null);
   const [isAddingProvider, setIsAddingProvider] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -444,6 +445,19 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
             >
               <span className="text-sm sm:text-base">📦</span>
               <span className="text-[11px] sm:text-xs md:text-sm">Models</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('knowledge')}
+              className={`px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1 sm:gap-1.5 snap-start ${
+                activeTab === 'knowledge'
+                  ? 'bg-theme-primary text-white shadow-lg'
+                  : isDark
+                    ? 'text-gray-400 hover:bg-dark-100 hover:text-gray-200'
+                    : 'text-gray-600 hover:bg-light-300 hover:text-gray-800'
+              }`}
+            >
+              <span className="text-sm sm:text-base">RAG</span>
+              <span className="text-[11px] sm:text-xs md:text-sm">Knowledge</span>
             </button>
             <button
               onClick={() => setActiveTab('memory')}
@@ -1022,6 +1036,13 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
           {activeTab === 'models' && (
             <div className="space-y-6">
               <ModelManagerPanel />
+            </div>
+          )}
+
+          {/* Knowledge / RAG Tab */}
+          {activeTab === 'knowledge' && (
+            <div className="space-y-6">
+              <KnowledgePanel isDark={isDark} />
             </div>
           )}
 

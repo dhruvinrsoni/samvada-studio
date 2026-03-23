@@ -24,6 +24,7 @@ import BRAND from './constants/brand';
 import { HealthService } from './utils/healthService';
 import { ObservabilityProvider } from './context/ObservabilityContext';
 import { MemoryProvider } from './context/MemoryContext';
+import { RAGProvider } from './context/RAGContext';
 
 function AppContent() {
   const { state, dispatch, createChat, isDark } = useChat();
@@ -541,7 +542,9 @@ export default function App() {
       <ChatProvider>
         <ObservabilityProvider>
           <MemoryProvider>
-            <AppContent />
+            <RAGProvider>
+              <AppContent />
+            </RAGProvider>
           </MemoryProvider>
         </ObservabilityProvider>
       </ChatProvider>

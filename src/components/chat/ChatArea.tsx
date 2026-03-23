@@ -14,8 +14,10 @@ import PromptInput from './PromptInput';
 import ChatSettings from './ChatSettings';
 import ContextUtilization from './ContextUtilization';
 import TokenCounter from './TokenCounter';
-import type { LLMProviderConfig, Chat } from '../../types';
+import type { LLMProviderConfig, Chat, RAGSearchResult } from '../../types';
 import type { PWAStatus } from '../../hooks/usePWA';
+import { useRAG } from '../../context/RAGContext';
+import RAGAttachmentSelector from '../rag/RAGAttachmentSelector';
 
 interface ChatAreaProps {
   quotedText?: string;
@@ -30,6 +32,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
   const { state, activeChat, dispatch, isDark } = useChat();
   const { addToast } = useToast();
   const { getInjectionText, triggerExtraction, memoryState } = useMemory();
+  const { queryCollections, formatContext } = useRAG();
   const isMobile = useIsMobile();
   const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -209,8 +212,43 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
       fullPrompt = `${contextText}\n\n---\n\nUser Prompt:\n${content}`;
     }
 
+    // RAG retrieval: query attached knowledge collections
+    let ragResults: RAGSearchResult[] = [];
+    let ragSystemContext = '';
+    const ragIds = activeChat.ragCollectionIds;
+    if (ragIds && ragIds.length > 0) {
+      try {
+        const { results, errors } = await queryCollections(content, ragIds);
+        ragResults = results;
+
+        if (errors.length > 0) {
+          addToast('error', `RAG retrieval errors: ${errors.join('; ')}`);
+        }
+
+        if (ragResults.length > 0) {
+          ragSystemContext = formatContext(ragResults);
+        } else if (errors.length === 0) {
+          addToast(
+            'warning',
+            'No matching knowledge found for this query. The response will be generated without RAG context.',
+          );
+        }
+      } catch (err: any) {
+        addToast('error', `RAG retrieval failed: ${err.message ?? String(err)}`);
+      }
+    }
+
     const prompt = createMessage('user', content);
     const pnr = createPromptResponse(prompt);
+
+    if (ragResults.length > 0) {
+      pnr.ragSources = ragResults.map((r) => ({
+        source: r.chunk.metadata.source,
+        heading: r.chunk.metadata.heading,
+        score: r.score,
+        text: r.chunk.text.slice(0, 200),
+      }));
+    }
 
     // Build chat history BEFORE adding the new PnR (so it only includes prior turns)
     const sendHistory = activeChat.settings.sendChatHistory ?? true;
@@ -255,6 +293,16 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
       }
     }
 
+    // ── RAG injection: prepend retrieved context to system instructions ──
+    if (ragSystemContext) {
+      effectiveChatSettings = {
+        ...effectiveChatSettings,
+        customInstructions: effectiveChatSettings.customInstructions
+          ? `${ragSystemContext}\n\n${effectiveChatSettings.customInstructions}`
+          : ragSystemContext,
+      };
+    }
+
     try {
       const { message, processingTime } = await getLLMResponse(
         fullPrompt,
@@ -293,7 +341,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
       abortControllerRef.current = null;
       setIsLoading(false);
     }
-  }, [activeChat, dispatch, isLoading, state.contextPanels, selectedProvider, state.providers, addToast]);
+  }, [activeChat, dispatch, isLoading, state.contextPanels, selectedProvider, state.providers, addToast, queryCollections, formatContext]);
 
   const handleKeyDown = useCallback((_e: KeyboardEvent<HTMLTextAreaElement>, _content: string) => {
     // Key handling is now done in PromptInput for smart Enter behavior
@@ -804,7 +852,26 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
         )}
       </div>
 
-      {/* Prompt Input */}
+      {/* RAG + Prompt Input */}
+      {activeChat && (
+        <div className={`flex items-center gap-1 px-2 py-1 ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
+          <RAGAttachmentSelector
+            chat={activeChat}
+            isDark={isDark}
+            onUpdate={(ids) => {
+              dispatch({
+                type: 'UPDATE_CHAT',
+                payload: { ...activeChat, ragCollectionIds: ids },
+              });
+            }}
+          />
+          {(activeChat.ragCollectionIds?.length ?? 0) > 0 && (
+            <span className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              Context from knowledge base will be injected into prompts
+            </span>
+          )}
+        </div>
+      )}
       <PromptInput
         onSend={handleSendPrompt}
         onKeyDown={handleKeyDown}

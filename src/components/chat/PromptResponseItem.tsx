@@ -566,6 +566,40 @@ export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, o
             </div>
           )}
 
+          {/* RAG Sources */}
+          {promptResponse.ragSources && promptResponse.ragSources.length > 0 && (
+            <details className={`text-xs rounded-lg px-2 py-1.5 ${isDark ? 'bg-dark-200' : 'bg-light-300'}`}>
+              <summary className={`cursor-pointer select-none font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Sources ({promptResponse.ragSources.length})
+              </summary>
+              <div className="mt-1.5 space-y-1">
+                {promptResponse.ragSources.map((src, i) => (
+                  <div
+                    key={i}
+                    className={`px-2 py-1 rounded ${isDark ? 'bg-dark-300' : 'bg-light-200'}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`font-medium truncate ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {src.source}
+                        {src.heading && (
+                          <span className={`font-normal ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {' > '}{src.heading.replace(/^#{1,6}\s+/, '')}
+                          </span>
+                        )}
+                      </span>
+                      <span className={`text-[10px] shrink-0 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                        {(src.score * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <p className={`mt-0.5 line-clamp-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                      {src.text}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+
           {/* Actions - responsive with flex-wrap */}
           <div className={`flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 compact:gap-1 pt-2 compact:pt-1 border-t ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
             <div className="flex flex-wrap items-center gap-1 sm:gap-2 compact:gap-0.5">
