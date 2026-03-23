@@ -574,27 +574,29 @@ export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, o
               </summary>
               <div className="mt-1.5 space-y-1">
                 {promptResponse.ragSources.map((src, i) => (
-                  <div
+                  <details
                     key={i}
                     className={`px-2 py-1 rounded ${isDark ? 'bg-dark-300' : 'bg-light-200'}`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className={`font-medium truncate ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                        {src.source}
-                        {src.heading && (
-                          <span className={`font-normal ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                            {' > '}{src.heading.replace(/^#{1,6}\s+/, '')}
-                          </span>
-                        )}
-                      </span>
-                      <span className={`text-[10px] shrink-0 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                        {(src.score * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <p className={`mt-0.5 line-clamp-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                    <summary className="cursor-pointer select-none">
+                      <div className="inline-flex items-center gap-2 w-[calc(100%-1.5em)]">
+                        <span className={`font-medium truncate ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                          {src.source}
+                          {src.heading && (
+                            <span className={`font-normal ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                              {' > '}{src.heading.replace(/^#{1,6}\s+/, '')}
+                            </span>
+                          )}
+                        </span>
+                        <span className={`text-[10px] shrink-0 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                          {(src.score * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </summary>
+                    <p className={`mt-1 whitespace-pre-wrap text-[11px] leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                       {src.text}
                     </p>
-                  </div>
+                  </details>
                 ))}
               </div>
             </details>
@@ -633,8 +635,28 @@ export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, o
                     ? 'bg-theme-primary/10 text-theme-primary hover:bg-theme-primary/20' 
                     : 'bg-theme-primary/5 text-theme-primary hover:bg-theme-primary/10'
                 }`}
+                title="Copy response only"
               >
                 📋 <span className="hidden xs:inline">Copy</span>
+              </button>
+              <button
+                onClick={() => {
+                  const parts = [
+                    `PnR ID: ${promptResponse.id}`,
+                    `Prompt:\n${activePrompt.content}`,
+                    activeResponse?.content ? `Response:\n${activeResponse.content}` : '',
+                  ].filter(Boolean);
+                  navigator.clipboard.writeText(parts.join('\n\n'));
+                  addToast('success', 'Copied!', 'Full PnR copied to clipboard');
+                }}
+                className={`flex items-center gap-1 px-2 sm:px-3 py-1 text-xs sm:text-sm rounded min-h-[28px] sm:min-h-[32px] transition-colors ${
+                  isDark 
+                    ? 'bg-theme-primary/10 text-theme-primary hover:bg-theme-primary/20' 
+                    : 'bg-theme-primary/5 text-theme-primary hover:bg-theme-primary/10'
+                }`}
+                title="Copy full PnR (prompt + response + ID)"
+              >
+                📑 <span className="hidden xs:inline">Copy All</span>
               </button>
               <TTSButton text={activeResponse?.content || ''} />
               {onQuote && activeResponse && (

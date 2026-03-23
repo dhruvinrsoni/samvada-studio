@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { getFirstWords, formatDate } from '../../utils/helpers';
 import type { Chat } from '../../types';
@@ -16,6 +16,13 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [newTitle, setNewTitle] = useState(chat.title);
   const [isDeleteHover, setIsDeleteHover] = useState(false);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isRenaming && renameInputRef.current) {
+      renameInputRef.current.select();
+    }
+  }, [isRenaming]);
 
   const lastMessage = chat.promptResponses.length > 0
     ? (chat.promptResponses[chat.promptResponses.length - 1]?.prompt?.content || 'No messages yet')
@@ -76,6 +83,7 @@ export default function ChatListItem({ chat }: ChatListItemProps) {
           {chat.isArchived && <span className="text-xs" title="Archived">📦</span>}
           {isRenaming ? (
             <input
+              ref={renameInputRef}
               type="text"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
