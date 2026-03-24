@@ -188,6 +188,8 @@ export async function removeDocument(docId: string, collectionId: string): Promi
 
 // ── Query / Retrieval ──
 
+const FIRST_PASS_K = 30;
+
 export async function queryCollection(
   query: string,
   collectionId: string,
@@ -196,19 +198,42 @@ export async function queryCollection(
   const collection = await vectorStore.getCollection(collectionId);
   if (!collection) throw new Error('Collection not found');
 
+  const mode = settings.searchMode ?? 'hybrid';
+  const chunks = await vectorStore.getChunksByCollection(collectionId);
+  if (chunks.length === 0) return [];
+
+  if (mode === 'keyword') {
+    return vectorStore.searchByBM25(chunks, query, settings.topK);
+  }
+
   const provider = createEmbeddingProvider(
     collection.embeddingProvider,
     collection.embeddingModel,
   );
-
   const [queryVector] = await provider.embed([query]);
   if (!queryVector) throw new Error('Failed to embed query');
 
-  return vectorStore.searchByVector(
+  if (mode === 'vector') {
+    return vectorStore.searchByVector(
+      collectionId,
+      queryVector,
+      settings.topK,
+      settings.similarityThreshold,
+    );
+  }
+
+  // hybrid: run BM25 + vector in parallel, fuse with RRF
+  const vectorResults = await vectorStore.searchByVector(
     collectionId,
     queryVector,
-    settings.topK,
+    FIRST_PASS_K,
     settings.similarityThreshold,
+  );
+  const bm25Results = vectorStore.searchByBM25(chunks, query, FIRST_PASS_K);
+
+  return vectorStore.reciprocalRankFusion(
+    [vectorResults, bm25Results],
+    settings.topK,
   );
 }
 

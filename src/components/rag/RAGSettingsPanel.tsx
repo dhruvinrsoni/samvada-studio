@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRAG } from '../../context/RAGContext';
 import { detectBestProvider } from '../../services/embeddingService';
-import type { RAGEmbeddingProvider } from '../../types';
+import type { RAGEmbeddingProvider, RAGSearchMode } from '../../types';
 
 interface RAGSettingsPanelProps {
   isDark: boolean;
@@ -66,6 +66,23 @@ export default function RAGSettingsPanel({ isDark }: RAGSettingsPanelProps) {
             placeholder={settings.embeddingProvider === 'ollama' ? 'nomic-embed-text' : 'Xenova/all-MiniLM-L6-v2'}
             className={inputClass}
           />
+        </div>
+
+        {/* Search mode */}
+        <div>
+          <label className={`block text-xs font-medium mb-1 ${textMuted}`}>Search Mode</label>
+          <select
+            value={settings.searchMode ?? 'hybrid'}
+            onChange={(e) => update({ searchMode: e.target.value as RAGSearchMode })}
+            className={inputClass}
+          >
+            <option value="hybrid">Hybrid (BM25 + Vector + RRF) — recommended</option>
+            <option value="vector">Vector only (semantic similarity)</option>
+            <option value="keyword">Keyword only (BM25 lexical match)</option>
+          </select>
+          <p className={`text-[11px] mt-0.5 italic ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+            Hybrid combines keyword matching (exact tokens) with semantic search (meaning), fused via Reciprocal Rank Fusion.
+          </p>
         </div>
 
         {/* Chunk size */}

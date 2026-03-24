@@ -115,6 +115,108 @@ export async function getChunksByDocument(documentId: string): Promise<RAGChunk[
   return db.getAllFromIndex('chunks', 'byDocument', documentId);
 }
 
+// ── BM25 Lexical Search ──
+
+const STOP_WORDS = new Set([
+  'a','an','the','and','or','but','in','on','at','to','for','of','with',
+  'by','from','is','it','as','be','was','were','been','are','have','has',
+  'had','do','does','did','will','would','could','should','may','might',
+  'shall','can','this','that','these','those','i','me','my','we','our',
+  'you','your','he','him','his','she','her','they','them','their','not',
+  'no','so','if','up','out','about','into','over','after','all','also',
+]);
+
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter((t) => t.length > 1 && !STOP_WORDS.has(t));
+}
+
+function computeIDF(
+  docs: string[][],
+  term: string,
+): number {
+  const n = docs.length;
+  const df = docs.filter((d) => d.includes(term)).length;
+  return Math.log(1 + (n - df + 0.5) / (df + 0.5));
+}
+
+/**
+ * BM25 scoring: ranks documents by keyword relevance.
+ * k1 controls term-frequency saturation (1.2–2.0 typical).
+ * b controls document-length normalization (0.75 typical).
+ */
+export function searchByBM25(
+  chunks: RAGChunk[],
+  query: string,
+  topK: number,
+  k1 = 1.5,
+  b = 0.75,
+): RAGSearchResult[] {
+  const queryTokens = tokenize(query);
+  if (queryTokens.length === 0) return [];
+
+  const tokenizedDocs = chunks.map((c) => tokenize(c.text));
+  const avgDl = tokenizedDocs.reduce((s, d) => s + d.length, 0) / (tokenizedDocs.length || 1);
+
+  const uniqueQueryTerms = [...new Set(queryTokens)];
+  const idfCache = new Map<string, number>();
+  for (const term of uniqueQueryTerms) {
+    idfCache.set(term, computeIDF(tokenizedDocs, term));
+  }
+
+  const scored: RAGSearchResult[] = [];
+  for (let i = 0; i < chunks.length; i++) {
+    const doc = tokenizedDocs[i]!;
+    const dl = doc.length;
+    let score = 0;
+
+    for (const term of uniqueQueryTerms) {
+      const tf = doc.filter((t) => t === term).length;
+      if (tf === 0) continue;
+      const idf = idfCache.get(term)!;
+      score += idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - b + b * (dl / avgDl))));
+    }
+
+    if (score > 0) {
+      scored.push({ chunk: chunks[i]!, score });
+    }
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, topK);
+}
+
+// ── Reciprocal Rank Fusion ──
+
+export function reciprocalRankFusion(
+  rankedLists: RAGSearchResult[][],
+  topK: number,
+  k = 60,
+): RAGSearchResult[] {
+  const fusedScores = new Map<string, { chunk: RAGChunk; score: number }>();
+
+  for (const list of rankedLists) {
+    for (let rank = 0; rank < list.length; rank++) {
+      const item = list[rank]!;
+      const id = item.chunk.id;
+      const rrfScore = 1 / (k + rank + 1);
+
+      if (fusedScores.has(id)) {
+        fusedScores.get(id)!.score += rrfScore;
+      } else {
+        fusedScores.set(id, { chunk: item.chunk, score: rrfScore });
+      }
+    }
+  }
+
+  const results = [...fusedScores.values()].map(({ chunk, score }) => ({ chunk, score }));
+  results.sort((a, b) => b.score - a.score);
+  return results.slice(0, topK);
+}
+
 // ── Vector Search ──
 
 function cosineSimilarity(a: number[], b: number[]): number {
