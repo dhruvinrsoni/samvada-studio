@@ -92,15 +92,11 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
 
   const isDesktopCollapsed = !isMobile && !state.isSidebarOpen;
 
-  // Hover-expand: temporarily show full sidebar when hovering the collapsed bar
+  // Hover-expand flyout triggered by the hamburger button in the top bar
   const [hoverExpanded, setHoverExpanded] = useState(false);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flyoutRef = useRef<HTMLDivElement>(null);
 
-  const startHoverExpand = () => {
-    if (!isDesktopCollapsed) return;
-    hoverTimerRef.current = setTimeout(() => setHoverExpanded(true), 250);
-  };
   const cancelHoverExpand = () => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     hoverTimerRef.current = null;
@@ -110,9 +106,40 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
     setHoverExpanded(false);
   };
 
+  // Attach hover listener to the hamburger button in App.tsx top bar
+  useEffect(() => {
+    if (isMobile) return;
+    const hamburger = document.querySelector('[data-sidebar-hamburger]');
+    if (!hamburger) return;
+
+    const onEnter = () => {
+      if (!state.isSidebarOpen) {
+        hoverTimerRef.current = setTimeout(() => setHoverExpanded(true), 250);
+      }
+    };
+    const onLeave = (e: Event) => {
+      cancelHoverExpand();
+      const related = (e as MouseEvent).relatedTarget as Node | null;
+      if (flyoutRef.current && related && flyoutRef.current.contains(related)) return;
+      setHoverExpanded(false);
+    };
+
+    hamburger.addEventListener('mouseenter', onEnter);
+    hamburger.addEventListener('mouseleave', onLeave);
+    return () => {
+      hamburger.removeEventListener('mouseenter', onEnter);
+      hamburger.removeEventListener('mouseleave', onLeave);
+      cancelHoverExpand();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile, state.isSidebarOpen]);
+
+  // Close flyout on outside click
   useEffect(() => {
     if (!hoverExpanded) return;
     const handleClickOutside = (e: MouseEvent) => {
+      const hamburger = document.querySelector('[data-sidebar-hamburger]');
+      if (hamburger && hamburger.contains(e.target as Node)) return;
       if (flyoutRef.current && !flyoutRef.current.contains(e.target as Node)) {
         closeFlyout();
       }
@@ -122,11 +149,17 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoverExpanded]);
 
-  // Close flyout when user selects a chat (activeChat changes while flyout is open)
+  // Close flyout when user selects a chat
   useEffect(() => {
     if (hoverExpanded) closeFlyout();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.activeChat]);
+
+  // Close flyout when sidebar gets pinned open
+  useEffect(() => {
+    if (state.isSidebarOpen && hoverExpanded) closeFlyout();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.isSidebarOpen]);
 
   return (
     <>
@@ -141,11 +174,9 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
       {/* Collapsed Desktop Sidebar: slim icon strip */}
       {isDesktopCollapsed && (
         <aside
-          className={`relative flex flex-col items-center py-3 gap-3 border-r flex-shrink-0 w-12 h-full ${
+          className={`flex flex-col items-center py-3 gap-3 border-r flex-shrink-0 w-12 h-full ${
             isDark ? 'bg-dark-200 border-dark-100' : 'bg-light-100 border-light-400'
           }`}
-          onMouseEnter={startHoverExpand}
-          onMouseLeave={() => { cancelHoverExpand(); if (!hoverExpanded) return; closeFlyout(); }}
         >
           <button
             onClick={() => createChat()}
@@ -174,10 +205,9 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
             </svg>
           </button>
 
-          {/* Spacer to push collapse toggle to bottom */}
           <div className="flex-1" />
 
-          {/* Bottom expand button (like Jira/Confluence) */}
+          {/* Bottom expand button */}
           <button
             onClick={() => dispatch({ type: 'TOGGLE_SIDEBAR' })}
             className={`p-2 rounded-lg transition-colors ${
@@ -189,28 +219,27 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7" />
             </svg>
           </button>
-
-          {/* Hover-expand flyout overlay */}
-          {hoverExpanded && (
-            <div
-              ref={flyoutRef}
-              className={`absolute top-0 left-12 bottom-0 w-64 lg:w-72 z-50 border-r shadow-xl flex flex-col overflow-hidden ${
-                isDark ? 'bg-dark-200 border-dark-100' : 'bg-light-100 border-light-400'
-              }`}
-              onMouseEnter={cancelHoverExpand}
-              onMouseLeave={closeFlyout}
-            >
-              <FlyoutContent
-                state={state} dispatch={dispatch} createChat={createChat}
-                isDark={isDark} hasEnabledProviders={hasEnabledProviders}
-                pinnedChats={pinnedChats} unpinnedChats={unpinnedChats}
-                filteredChats={filteredChats} collapsedSections={collapsedSections}
-                toggleSection={toggleSection} localShowArchived={localShowArchived}
-                setLocalShowArchived={setLocalShowArchived} folders={state.folders}
-              />
-            </div>
-          )}
         </aside>
+      )}
+
+      {/* Hover-expand flyout (triggered by hamburger hover, rendered as fixed overlay) */}
+      {isDesktopCollapsed && hoverExpanded && (
+        <div
+          ref={flyoutRef}
+          className={`fixed top-0 left-0 bottom-0 w-72 z-50 border-r shadow-xl flex flex-col overflow-hidden ${
+            isDark ? 'bg-dark-200 border-dark-100' : 'bg-light-100 border-light-400'
+          }`}
+          onMouseLeave={closeFlyout}
+        >
+          <FlyoutContent
+            state={state} dispatch={dispatch} createChat={createChat}
+            isDark={isDark} hasEnabledProviders={hasEnabledProviders}
+            pinnedChats={pinnedChats} unpinnedChats={unpinnedChats}
+            filteredChats={filteredChats} collapsedSections={collapsedSections}
+            toggleSection={toggleSection} localShowArchived={localShowArchived}
+            setLocalShowArchived={setLocalShowArchived} folders={state.folders}
+          />
+        </div>
       )}
 
       {/* Sidebar (full expanded) */}
