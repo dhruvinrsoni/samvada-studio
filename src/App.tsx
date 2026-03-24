@@ -141,26 +141,22 @@ function AppContent() {
         {/* Theme color accent strip */}
         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-theme-primary via-theme-accent to-theme-primary opacity-80"></div>
           <div className="flex items-center gap-1 sm:gap-2 md:gap-4 flex-shrink-0">
-            {/* Mobile Burger Menu / Desktop Sidebar Toggle */}
-            <button
-              onClick={() => dispatch({ type: 'TOGGLE_SIDEBAR' })}
-              className={`p-2 rounded-lg transition-colors ${isMobile ? 'touch-target' : ''} ${
-                  isDark 
-                  ? 'text-gray-400 hover:bg-dark-100' 
-                  : 'text-gray-600 hover:bg-light-300'
-              }`}
-              title={isMobile ? 'Toggle Sidebar' : `${state.isSidebarOpen ? 'Collapse' : 'Expand'} Sidebar (Ctrl+B)`}
-            >
-              {isMobile ? (
+            {/* Mobile Burger Menu (desktop toggle is at sidebar bottom) */}
+            {isMobile && (
+              <button
+                onClick={() => dispatch({ type: 'TOGGLE_SIDEBAR' })}
+                className={`p-2 rounded-lg transition-colors touch-target ${
+                    isDark 
+                    ? 'text-gray-400 hover:bg-dark-100' 
+                    : 'text-gray-600 hover:bg-light-300'
+                }`}
+                title="Toggle Sidebar"
+              >
                 <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
-            </button>
+              </button>
+            )}
           <div className="flex items-center gap-2">
             <h1 className="text-sm sm:text-base md:text-lg font-bold text-theme-primary truncate max-w-[100px] sm:max-w-none">
               {isMobile ? BRAND.shortName || BRAND.displayName.split(' ')[0] : BRAND.displayName}
