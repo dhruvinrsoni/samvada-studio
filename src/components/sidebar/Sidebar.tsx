@@ -222,11 +222,12 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
         </aside>
       )}
 
-      {/* Hover-expand flyout (triggered by hamburger hover, rendered as fixed overlay) */}
+      {/* Hover-expand flyout (triggered by hamburger hover, sits below the top bar) */}
       {isDesktopCollapsed && hoverExpanded && (
         <div
           ref={flyoutRef}
-          className={`fixed top-0 left-0 bottom-0 w-72 z-50 border-r shadow-xl flex flex-col overflow-hidden ${
+          style={{ top: document.querySelector('[data-sidebar-hamburger]')?.closest('.border-b')?.getBoundingClientRect().bottom ?? 0 }}
+          className={`fixed left-0 bottom-0 w-72 z-50 border-r shadow-xl flex flex-col overflow-hidden ${
             isDark ? 'bg-dark-200 border-dark-100' : 'bg-light-100 border-light-400'
           }`}
           onMouseLeave={closeFlyout}
