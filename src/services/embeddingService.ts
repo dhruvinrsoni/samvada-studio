@@ -156,6 +156,69 @@ export class TransformersEmbeddingProvider implements EmbeddingProvider {
   }
 }
 
+// ── Reranker (via Web Worker) ──
+
+let rerankerLoaded = false;
+let rerankerLoadPromise: Promise<void> | null = null;
+
+async function ensureRerankerLoaded(model: string): Promise<Worker> {
+  const worker = await ensureWorkerReady(activeWorkerModel ?? 'Xenova/all-MiniLM-L6-v2');
+
+  if (rerankerLoaded) return worker;
+
+  if (!rerankerLoadPromise) {
+    rerankerLoadPromise = new Promise<void>((resolve, reject) => {
+      const loadId = crypto.randomUUID();
+      const onMsg = (e: MessageEvent) => {
+        if (e.data.id !== loadId) return;
+        worker.removeEventListener('message', onMsg);
+        if (e.data.type === 'reranker-ready') {
+          rerankerLoaded = true;
+          resolve();
+        } else {
+          reject(new Error(e.data.message ?? 'Failed to load reranker'));
+        }
+      };
+      worker.addEventListener('message', onMsg);
+      worker.postMessage({ type: 'load-reranker', id: loadId, model });
+    });
+  }
+
+  await rerankerLoadPromise;
+  return worker;
+}
+
+export interface RerankResult {
+  index: number;
+  score: number;
+}
+
+export async function rerank(
+  query: string,
+  passages: string[],
+  model: string,
+): Promise<RerankResult[]> {
+  const worker = await ensureRerankerLoaded(model);
+
+  return new Promise<RerankResult[]>((resolve, reject) => {
+    const id = crypto.randomUUID();
+    const onMsg = (e: MessageEvent) => {
+      if (e.data.id !== id) return;
+      worker.removeEventListener('message', onMsg);
+      if (e.data.type === 'rerank-result') {
+        const scores: number[] = e.data.scores;
+        const indexed = scores.map((score, i) => ({ index: i, score }));
+        indexed.sort((a, b) => b.score - a.score);
+        resolve(indexed);
+      } else {
+        reject(new Error(e.data.message ?? 'Reranking failed'));
+      }
+    };
+    worker.addEventListener('message', onMsg);
+    worker.postMessage({ type: 'rerank', id, query, passages });
+  });
+}
+
 // ── Factory ──
 
 export function createEmbeddingProvider(

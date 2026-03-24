@@ -1,6 +1,8 @@
 import { pipeline } from '@huggingface/transformers';
 
 let extractor: any = null;
+let reranker: any = null;
+let activeRerankerModel: string | null = null;
 
 self.addEventListener('message', async (e: MessageEvent) => {
   const { type } = e.data;
@@ -39,5 +41,43 @@ self.addEventListener('message', async (e: MessageEvent) => {
     } catch (err: any) {
       self.postMessage({ type: 'error', id, message: err.message ?? String(err) });
     }
+    return;
+  }
+
+  if (type === 'load-reranker') {
+    const { id, model } = e.data as { id: string; model: string };
+    try {
+      if (!reranker || activeRerankerModel !== model) {
+        reranker = await (pipeline as any)('text-classification', model, {
+          dtype: 'fp32',
+        });
+        activeRerankerModel = model;
+      }
+      self.postMessage({ type: 'reranker-ready', id });
+    } catch (err: any) {
+      self.postMessage({ type: 'error', id, message: err.message ?? String(err) });
+    }
+    return;
+  }
+
+  if (type === 'rerank') {
+    const { id, query, passages } = e.data as { id: string; query: string; passages: string[] };
+    if (!reranker) {
+      self.postMessage({ type: 'error', id, message: 'Reranker model not loaded' });
+      return;
+    }
+
+    try {
+      const scores: number[] = [];
+      for (const passage of passages) {
+        const output = await reranker({ text: query, text_pair: passage });
+        const score = Array.isArray(output) ? output[0]?.score ?? 0 : output?.score ?? 0;
+        scores.push(score);
+      }
+      self.postMessage({ type: 'rerank-result', id, scores });
+    } catch (err: any) {
+      self.postMessage({ type: 'error', id, message: err.message ?? String(err) });
+    }
+    return;
   }
 });

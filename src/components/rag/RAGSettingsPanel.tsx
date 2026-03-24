@@ -85,6 +85,33 @@ export default function RAGSettingsPanel({ isDark }: RAGSettingsPanelProps) {
           </p>
         </div>
 
+        {/* Reranking */}
+        <div>
+          <label className={`flex items-center gap-2 text-xs font-medium mb-1 ${textMuted}`}>
+            <input
+              type="checkbox"
+              checked={settings.rerankEnabled ?? false}
+              onChange={(e) => update({ rerankEnabled: e.target.checked })}
+              className="rounded"
+            />
+            Cross-Encoder Reranking
+          </label>
+          {settings.rerankEnabled && (
+            <div className="mt-2">
+              <input
+                type="text"
+                value={settings.rerankModel ?? 'Xenova/ms-marco-MiniLM-L-6-v2'}
+                onChange={(e) => update({ rerankModel: e.target.value })}
+                className={inputClass}
+                placeholder="Xenova/ms-marco-MiniLM-L-6-v2"
+              />
+            </div>
+          )}
+          <p className={`text-[11px] mt-0.5 italic ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+            Re-scores first-pass results with a cross-encoder for higher precision. Downloads a ~23MB model on first use.
+          </p>
+        </div>
+
         {/* Chunk size */}
         <div>
           <label className={`block text-xs font-medium mb-1 ${textMuted}`}>

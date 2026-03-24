@@ -777,6 +777,8 @@ export interface RAGSettings {
   embeddingModel: string;
   embeddingProvider: RAGEmbeddingProvider;
   searchMode: RAGSearchMode;
+  rerankEnabled: boolean;
+  rerankModel: string;
   ragTemplate: string;
 }
 
@@ -788,6 +790,8 @@ export const DEFAULT_RAG_SETTINGS: RAGSettings = {
   embeddingModel: 'nomic-embed-text',
   embeddingProvider: 'ollama',
   searchMode: 'hybrid',
+  rerankEnabled: false,
+  rerankModel: 'Xenova/ms-marco-MiniLM-L-6-v2',
   ragTemplate: `Answer the user's question using ONLY the document excerpts below. Follow these rules strictly:
 
 1. ONLY state facts that appear verbatim or are directly implied by the text below.

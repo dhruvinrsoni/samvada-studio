@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { parseDocument, cleanMarkdownForEmbedding } from './documentParser';
 import { chunkText } from './textChunker';
-import { createEmbeddingProvider } from './embeddingService';
+import { createEmbeddingProvider, rerank } from './embeddingService';
 import * as vectorStore from './vectorStore';
 import type {
   RAGCollection,
@@ -231,10 +231,32 @@ export async function queryCollection(
   );
   const bm25Results = vectorStore.searchByBM25(chunks, query, FIRST_PASS_K);
 
-  return vectorStore.reciprocalRankFusion(
+  const fused = vectorStore.reciprocalRankFusion(
     [vectorResults, bm25Results],
-    settings.topK,
+    settings.rerankEnabled ? FIRST_PASS_K : settings.topK,
   );
+
+  if (settings.rerankEnabled && fused.length > 0) {
+    return rerankResults(query, fused, settings);
+  }
+
+  return fused;
+}
+
+async function rerankResults(
+  query: string,
+  candidates: RAGSearchResult[],
+  settings: RAGSettings,
+): Promise<RAGSearchResult[]> {
+  const passages = candidates.map((r) => r.chunk.text);
+  const ranked = await rerank(query, passages, settings.rerankModel);
+
+  return ranked
+    .slice(0, settings.topK)
+    .map(({ index, score }) => ({
+      chunk: candidates[index]!.chunk,
+      score,
+    }));
 }
 
 export async function queryMultipleCollections(
