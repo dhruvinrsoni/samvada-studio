@@ -92,74 +92,96 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
 
   const isDesktopCollapsed = !isMobile && !state.isSidebarOpen;
 
-  // Hover-expand flyout triggered by the hamburger button in the top bar
+  // Hover-expand flyout triggered by hamburger or collapsed icon strip.
+  // All three zones (hamburger, strip, flyout) form one logical hover group.
+  // Entering any zone cancels pending close; leaving all zones closes after a grace period.
   const [hoverExpanded, setHoverExpanded] = useState(false);
-  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flyoutRef = useRef<HTMLDivElement>(null);
+  const collapsedStripRef = useRef<HTMLElement>(null);
+  const isSidebarOpenRef = useRef(state.isSidebarOpen);
+  isSidebarOpenRef.current = state.isSidebarOpen;
 
-  const cancelHoverExpand = () => {
-    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-    hoverTimerRef.current = null;
-  };
-  const closeFlyout = () => {
-    cancelHoverExpand();
+  const OPEN_DELAY = 250;
+  const CLOSE_DELAY = 300;
+
+  const cancelOpen = useCallback(() => { if (openTimerRef.current) { clearTimeout(openTimerRef.current); openTimerRef.current = null; } }, []);
+  const cancelClose = useCallback(() => { if (closeTimerRef.current) { clearTimeout(closeTimerRef.current); closeTimerRef.current = null; } }, []);
+
+  const scheduleOpen = useCallback(() => {
+    if (isSidebarOpenRef.current) return;
+    cancelClose();
+    if (!openTimerRef.current) {
+      openTimerRef.current = setTimeout(() => { openTimerRef.current = null; setHoverExpanded(true); }, OPEN_DELAY);
+    }
+  }, [cancelClose]);
+
+  const scheduleClose = useCallback(() => {
+    cancelOpen();
+    if (!closeTimerRef.current) {
+      closeTimerRef.current = setTimeout(() => { closeTimerRef.current = null; setHoverExpanded(false); }, CLOSE_DELAY);
+    }
+  }, [cancelOpen]);
+
+  const closeFlyout = useCallback(() => {
+    cancelOpen();
+    cancelClose();
     setHoverExpanded(false);
-  };
+  }, [cancelOpen, cancelClose]);
 
-  // Attach hover listener to the hamburger button in App.tsx top bar
+  // Attach hover listeners to hamburger + collapsed strip
   useEffect(() => {
-    if (isMobile) return;
+    if (isMobile || !isDesktopCollapsed) return;
     const hamburger = document.querySelector('[data-sidebar-hamburger]');
-    if (!hamburger) return;
+    const targets = [hamburger, collapsedStripRef.current].filter(Boolean) as Element[];
+    if (targets.length === 0) return;
 
-    const onEnter = () => {
-      if (!state.isSidebarOpen) {
-        hoverTimerRef.current = setTimeout(() => setHoverExpanded(true), 250);
-      }
-    };
-    const onLeave = (e: Event) => {
-      cancelHoverExpand();
-      const related = (e as MouseEvent).relatedTarget as Node | null;
-      if (flyoutRef.current && related && flyoutRef.current.contains(related)) return;
-      setHoverExpanded(false);
-    };
+    const onEnter = () => scheduleOpen();
+    const onLeave = () => scheduleClose();
 
-    hamburger.addEventListener('mouseenter', onEnter);
-    hamburger.addEventListener('mouseleave', onLeave);
+    targets.forEach(el => {
+      el.addEventListener('mouseenter', onEnter);
+      el.addEventListener('mouseleave', onLeave);
+    });
     return () => {
-      hamburger.removeEventListener('mouseenter', onEnter);
-      hamburger.removeEventListener('mouseleave', onLeave);
-      cancelHoverExpand();
+      targets.forEach(el => {
+        el.removeEventListener('mouseenter', onEnter);
+        el.removeEventListener('mouseleave', onLeave);
+      });
+      cancelOpen();
+      cancelClose();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile, state.isSidebarOpen]);
+  }, [isMobile, isDesktopCollapsed, hoverExpanded, scheduleOpen, scheduleClose, cancelOpen, cancelClose]);
 
-  // Close flyout on outside click
+  // Close flyout on outside click (ignore hamburger + strip + flyout)
   useEffect(() => {
     if (!hoverExpanded) return;
     const handleClickOutside = (e: MouseEvent) => {
+      const t = e.target as Node;
       const hamburger = document.querySelector('[data-sidebar-hamburger]');
-      if (hamburger && hamburger.contains(e.target as Node)) return;
-      if (flyoutRef.current && !flyoutRef.current.contains(e.target as Node)) {
-        closeFlyout();
-      }
+      if (hamburger?.contains(t)) return;
+      if (collapsedStripRef.current?.contains(t)) return;
+      if (flyoutRef.current?.contains(t)) return;
+      closeFlyout();
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hoverExpanded]);
+  }, [hoverExpanded, closeFlyout]);
 
   // Close flyout when user selects a chat
+  const prevActiveChatRef = useRef(state.activeChat);
   useEffect(() => {
-    if (hoverExpanded) closeFlyout();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.activeChat]);
+    if (prevActiveChatRef.current !== state.activeChat) {
+      prevActiveChatRef.current = state.activeChat;
+      if (hoverExpanded) closeFlyout();
+    }
+  }, [state.activeChat, hoverExpanded, closeFlyout]);
 
   // Close flyout when sidebar gets pinned open
   useEffect(() => {
     if (state.isSidebarOpen && hoverExpanded) closeFlyout();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.isSidebarOpen]);
+  }, [state.isSidebarOpen, hoverExpanded, closeFlyout]);
 
   return (
     <>
@@ -171,9 +193,10 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
         />
       )}
 
-      {/* Collapsed Desktop Sidebar: slim icon strip */}
-      {isDesktopCollapsed && (
+      {/* Collapsed Desktop Sidebar: slim icon strip (hidden when flyout is open) */}
+      {isDesktopCollapsed && !hoverExpanded && (
         <aside
+          ref={collapsedStripRef}
           className={`flex flex-col items-center py-3 gap-3 border-r flex-shrink-0 w-12 h-full ${
             isDark ? 'bg-dark-200 border-dark-100' : 'bg-light-100 border-light-400'
           }`}
@@ -230,7 +253,8 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
           className={`fixed left-0 bottom-0 w-72 z-50 border-r shadow-xl flex flex-col overflow-hidden ${
             isDark ? 'bg-dark-200 border-dark-100' : 'bg-light-100 border-light-400'
           }`}
-          onMouseLeave={closeFlyout}
+          onMouseEnter={cancelClose}
+          onMouseLeave={scheduleClose}
         >
           <FlyoutContent
             state={state} dispatch={dispatch} createChat={createChat}
