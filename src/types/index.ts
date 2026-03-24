@@ -759,6 +759,7 @@ export interface RAGChunk {
     heading?: string;
     startOffset?: number;
     source: string;
+    parentText?: string;
   };
 }
 
@@ -781,6 +782,8 @@ export interface RAGSettings {
   rerankModel: string;
   queryExpansionEnabled: boolean;
   queryExpansionMode: 'multi-query' | 'hyde';
+  chunkingStrategy: 'fixed' | 'parent-child';
+  childChunkSize: number;
   ragTemplate: string;
 }
 
@@ -796,6 +799,8 @@ export const DEFAULT_RAG_SETTINGS: RAGSettings = {
   rerankModel: 'Xenova/ms-marco-MiniLM-L-6-v2',
   queryExpansionEnabled: false,
   queryExpansionMode: 'multi-query',
+  chunkingStrategy: 'fixed',
+  childChunkSize: 256,
   ragTemplate: `Answer the user's question using ONLY the document excerpts below. Follow these rules strictly:
 
 1. ONLY state facts that appear verbatim or are directly implied by the text below.

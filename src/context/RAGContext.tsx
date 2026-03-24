@@ -12,7 +12,7 @@ interface RAGState {
 }
 
 const RAG_SETTINGS_KEY = 'samvada-studio-rag-settings';
-const RAG_SETTINGS_VERSION = 6;
+const RAG_SETTINGS_VERSION = 7;
 const RAG_SETTINGS_VERSION_KEY = 'samvada-studio-rag-settings-version';
 
 function loadSettings(): RAGSettings {

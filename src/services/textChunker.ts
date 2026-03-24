@@ -9,10 +9,15 @@ export interface TextChunk {
   metadata: {
     heading?: string;
     startOffset: number;
+    parentText?: string;
   };
 }
 
 const HEADING_RE = /^(#{1,6})\s+(.+)$/;
+
+export interface ParentChildOptions extends ChunkOptions {
+  childChunkSize: number;
+}
 
 export function chunkText(
   text: string,
@@ -25,6 +30,62 @@ export function chunkText(
     return chunkMarkdown(text, options);
   }
   return chunkPlain(text, options);
+}
+
+/**
+ * Parent-child chunking: creates small child chunks for precise vector matching,
+ * each carrying a reference to the larger parent chunk text for richer LLM context.
+ */
+export function chunkTextParentChild(
+  text: string,
+  options: ParentChildOptions,
+  isMarkdown = false,
+): TextChunk[] {
+  if (!text.trim()) return [];
+
+  const parentOpts: ChunkOptions = { chunkSize: options.chunkSize, chunkOverlap: options.chunkOverlap };
+  const parentChunks = isMarkdown ? chunkMarkdown(text, parentOpts) : chunkPlain(text, parentOpts);
+
+  const childOpts: ChunkOptions = { chunkSize: options.childChunkSize, chunkOverlap: Math.min(50, Math.floor(options.childChunkSize / 4)) };
+  const allChildren: TextChunk[] = [];
+  let childIdx = 0;
+
+  for (const parent of parentChunks) {
+    const rawText = parent.metadata.heading
+      ? parent.text.slice(parent.metadata.heading.length).trim()
+      : parent.text;
+
+    if (rawText.length <= options.childChunkSize) {
+      allChildren.push({
+        text: parent.text,
+        index: childIdx++,
+        metadata: {
+          ...parent.metadata,
+          parentText: parent.text,
+        },
+      });
+      continue;
+    }
+
+    const subs = splitBySizeWithOverlap(rawText, childOpts);
+    for (const sub of subs) {
+      const childText = parent.metadata.heading
+        ? `${parent.metadata.heading}\n\n${sub.text}`
+        : sub.text;
+
+      allChildren.push({
+        text: childText,
+        index: childIdx++,
+        metadata: {
+          heading: parent.metadata.heading,
+          startOffset: parent.metadata.startOffset + sub.offset,
+          parentText: parent.text,
+        },
+      });
+    }
+  }
+
+  return allChildren;
 }
 
 function chunkMarkdown(text: string, opts: ChunkOptions): TextChunk[] {

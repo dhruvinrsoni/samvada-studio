@@ -140,10 +140,28 @@ export default function RAGSettingsPanel({ isDark }: RAGSettingsPanelProps) {
           </p>
         </div>
 
+        {/* Chunking strategy */}
+        <div>
+          <label className={`block text-xs font-medium mb-1 ${textMuted}`}>Chunking Strategy</label>
+          <select
+            value={settings.chunkingStrategy ?? 'fixed'}
+            onChange={(e) => update({ chunkingStrategy: e.target.value as 'fixed' | 'parent-child' })}
+            className={inputClass}
+          >
+            <option value="fixed">Fixed-size chunks</option>
+            <option value="parent-child">Parent-child (small chunks for matching, large for context)</option>
+          </select>
+          <p className={`text-[11px] mt-0.5 italic ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+            {(settings.chunkingStrategy ?? 'fixed') === 'parent-child'
+              ? 'Embeds small child chunks for precise retrieval, but sends the larger parent chunk to the LLM for richer context.'
+              : 'Each chunk is a fixed character window. Simple and predictable.'}
+          </p>
+        </div>
+
         {/* Chunk size */}
         <div>
           <label className={`block text-xs font-medium mb-1 ${textMuted}`}>
-            Chunk Size <span className="font-normal opacity-60">{settings.chunkSize} chars</span>
+            {(settings.chunkingStrategy ?? 'fixed') === 'parent-child' ? 'Parent ' : ''}Chunk Size <span className="font-normal opacity-60">{settings.chunkSize} chars</span>
           </label>
           <input
             type="range"
@@ -158,6 +176,27 @@ export default function RAGSettingsPanel({ isDark }: RAGSettingsPanelProps) {
             How large each text chunk is. Smaller chunks are more precise but produce more results.
           </p>
         </div>
+
+        {/* Child chunk size (only for parent-child) */}
+        {(settings.chunkingStrategy ?? 'fixed') === 'parent-child' && (
+          <div>
+            <label className={`block text-xs font-medium mb-1 ${textMuted}`}>
+              Child Chunk Size <span className="font-normal opacity-60">{settings.childChunkSize ?? 256} chars</span>
+            </label>
+            <input
+              type="range"
+              min={64}
+              max={512}
+              step={32}
+              value={settings.childChunkSize ?? 256}
+              onChange={(e) => update({ childChunkSize: Number(e.target.value) })}
+              className="w-full"
+            />
+            <p className={`text-[11px] mt-0.5 italic ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              Size of child chunks used for embedding and retrieval. Smaller = more precise matching.
+            </p>
+          </div>
+        )}
 
         {/* Chunk overlap */}
         <div>

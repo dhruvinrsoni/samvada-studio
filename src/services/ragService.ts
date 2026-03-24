@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { parseDocument, cleanMarkdownForEmbedding } from './documentParser';
-import { chunkText } from './textChunker';
+import { chunkText, chunkTextParentChild } from './textChunker';
 import { createEmbeddingProvider, rerank } from './embeddingService';
 import * as vectorStore from './vectorStore';
 import type {
@@ -104,11 +104,22 @@ export async function ingestDocument(
 
   // 2. Chunk
   onProgress?.({ stage: 'chunking', detail: 'Splitting into chunks...', percent: 20 });
-  const textChunks = chunkText(
-    cleanedText,
-    { chunkSize: settings.chunkSize, chunkOverlap: settings.chunkOverlap },
-    isMarkdown,
-  );
+  const useParentChild = (settings.chunkingStrategy ?? 'fixed') === 'parent-child';
+  const textChunks = useParentChild
+    ? chunkTextParentChild(
+        cleanedText,
+        {
+          chunkSize: settings.chunkSize,
+          chunkOverlap: settings.chunkOverlap,
+          childChunkSize: settings.childChunkSize ?? 256,
+        },
+        isMarkdown,
+      )
+    : chunkText(
+        cleanedText,
+        { chunkSize: settings.chunkSize, chunkOverlap: settings.chunkOverlap },
+        isMarkdown,
+      );
 
   if (textChunks.length === 0) {
     throw new Error('Document produced no chunks');
@@ -145,6 +156,7 @@ export async function ingestDocument(
       heading: tc.metadata.heading,
       startOffset: tc.metadata.startOffset,
       source: file.name,
+      parentText: tc.metadata.parentText,
     },
   }));
 
@@ -334,13 +346,19 @@ export function formatRAGContext(
 ): string {
   if (results.length === 0) return '';
 
+  const seen = new Set<string>();
   const grouped = new Map<string, { heading?: string; text: string }[]>();
   for (const r of results) {
     const src = r.chunk.metadata.source;
+    const contextText = r.chunk.metadata.parentText ?? r.chunk.text;
+    const dedupKey = `${src}::${contextText}`;
+    if (seen.has(dedupKey)) continue;
+    seen.add(dedupKey);
+
     if (!grouped.has(src)) grouped.set(src, []);
     grouped.get(src)!.push({
       heading: r.chunk.metadata.heading?.replace(/^#{1,6}\s+/, ''),
-      text: r.chunk.text,
+      text: contextText,
     });
   }
 
