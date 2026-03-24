@@ -76,6 +76,8 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
     }
   };
 
+  const isDesktopCollapsed = !isMobile && !state.isSidebarOpen;
+
   return (
     <>
       {/* Mobile Backdrop Overlay */}
@@ -86,12 +88,61 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Collapsed Desktop Sidebar: slim icon strip */}
+      {isDesktopCollapsed && (
+        <aside
+          className={`flex flex-col items-center py-3 gap-3 border-r flex-shrink-0 w-12 h-full ${
+            isDark ? 'bg-dark-200 border-dark-100' : 'bg-light-100 border-light-400'
+          }`}
+        >
+          <button
+            onClick={() => dispatch({ type: 'TOGGLE_SIDEBAR' })}
+            className={`p-2 rounded-lg transition-colors ${
+              isDark ? 'text-gray-400 hover:bg-dark-100 hover:text-gray-200' : 'text-gray-500 hover:bg-light-300 hover:text-gray-700'
+            }`}
+            title="Expand sidebar (Ctrl+B)"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => createChat()}
+            disabled={!hasEnabledProviders}
+            className={`p-2 rounded-lg transition-colors ${
+              hasEnabledProviders
+                ? 'bg-theme-primary text-white hover:bg-theme-primary-hover'
+                : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+            }`}
+            title="New Chat (Ctrl+N)"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => dispatch({ type: 'TOGGLE_STARRED_MODAL' })}
+            className={`p-2 rounded-lg transition-colors ${
+              isDark ? 'text-gray-400 hover:bg-dark-100 hover:text-gray-200' : 'text-gray-500 hover:bg-light-300 hover:text-gray-700'
+            }`}
+            title="Starred Messages"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+          </button>
+        </aside>
+      )}
+
+      {/* Sidebar (full expanded) */}
       <aside 
         className={`
           sidebar border-r flex flex-col h-full overflow-hidden
           ${isMobile ? 'fixed top-0 left-0 bottom-0 z-40 w-[85vw] max-w-[320px]' : 'w-64 lg:w-72'}
           ${isMobile && !state.isSidebarOpen ? '-translate-x-full' : 'translate-x-0'}
+          ${isDesktopCollapsed ? 'hidden' : ''}
           transition-transform duration-300 ease-in-out
           ${isDark ? 'bg-dark-200 border-dark-100' : 'bg-light-100 border-light-400'}
         `}
@@ -100,6 +151,20 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
       <div className={`p-2 sm:p-3 border-b flex-shrink-0 ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
         <div className="relative">
           <div className="flex items-stretch">
+            {/* Desktop collapse button */}
+            {!isMobile && (
+              <button
+                onClick={() => dispatch({ type: 'TOGGLE_SIDEBAR' })}
+                className={`p-2 mr-1 rounded-lg transition-colors flex-shrink-0 ${
+                  isDark ? 'text-gray-400 hover:bg-dark-100 hover:text-gray-200' : 'text-gray-500 hover:bg-light-300 hover:text-gray-700'
+                }`}
+                title="Collapse sidebar (Ctrl+B)"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
             <button
               onClick={() => createChat()}
               disabled={!hasEnabledProviders}
