@@ -19,6 +19,7 @@
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
     "highlight.js": "^11.11.1",
+    "html2canvas": "^1.4.1",
     "idb": "^8.0.3",
     "localtunnel": "^2.0.2",
     "mammoth": "^1.12.0",

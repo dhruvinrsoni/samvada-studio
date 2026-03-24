@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import { useIsMobile } from '../../hooks/useMediaQuery';
 import { createMessage, createPromptResponse } from '../../utils/helpers';
 import { getLLMResponse, buildSystemMessageParts, callLLMProvider } from '../../utils/llmService';
+import { captureViewport, captureFull, downloadBlob, copyBlobToClipboard, generateFilename } from '../../utils/screenshotService';
 import { useMemory } from '../../context/MemoryContext';
 import { buildChatHistory, truncateHistory } from '../../utils/chatHistoryBuilder';
 import { getModelContextWindow } from '../../types';
@@ -38,6 +39,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
   const [showSettings, setShowSettings] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isProviderDropdownOpen, setIsProviderDropdownOpen] = useState(false);
+  const [isScreenshotMenuOpen, setIsScreenshotMenuOpen] = useState(false);
   const [isChatMenuOpen, setIsChatMenuOpen] = useState(false);
   const [isRenamingChat, setIsRenamingChat] = useState(false);
   const [chatTitleInput, setChatTitleInput] = useState('');
@@ -789,8 +791,70 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
           <TokenCounter text={inputValue} />
           <span className="whitespace-nowrap">{inputValue.length}c</span>
         </div>
-        {/* Settings button - responsive sizing */}
+        {/* Settings + Screenshot buttons */}
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          {/* Screenshot dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsScreenshotMenuOpen(!isScreenshotMenuOpen)}
+              className={`p-1.5 sm:p-2 rounded-lg transition-colors min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center ${
+                isDark
+                  ? 'bg-dark-100 text-gray-400 hover:bg-dark-200'
+                  : 'bg-light-300 text-gray-600 hover:bg-light-400'
+              }`}
+              title="Screenshot"
+            >
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+            {isScreenshotMenuOpen && (
+              <div
+                className={`absolute right-0 top-full mt-1 w-52 rounded-lg border shadow-lg z-50 ${
+                  isDark ? 'bg-dark-200 border-dark-100' : 'bg-white border-light-400'
+                }`}
+                onMouseLeave={() => setIsScreenshotMenuOpen(false)}
+              >
+                <button
+                  onClick={async () => {
+                    setIsScreenshotMenuOpen(false);
+                    const el = document.querySelector('[data-chat-scroll]') as HTMLElement | null;
+                    if (!el) return;
+                    try {
+                      const blob = await captureViewport(el);
+                      const copied = await copyBlobToClipboard(blob);
+                      if (!copied) downloadBlob(blob, generateFilename(activeChat?.title));
+                    } catch (err) { console.error('Screenshot failed:', err); }
+                  }}
+                  className={`w-full px-3 py-2 text-left text-sm rounded-t-lg transition-colors flex items-center gap-2 ${
+                    isDark ? 'text-gray-300 hover:bg-dark-100' : 'text-gray-700 hover:bg-light-200'
+                  }`}
+                >
+                  <span>📸</span> Visible Area
+                  <span className={`ml-auto text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>clipboard</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    setIsScreenshotMenuOpen(false);
+                    const el = document.querySelector('[data-chat-scroll]') as HTMLElement | null;
+                    if (!el) return;
+                    try {
+                      const blob = await captureFull(el);
+                      downloadBlob(blob, generateFilename(activeChat?.title));
+                    } catch (err) { console.error('Full screenshot failed:', err); }
+                  }}
+                  className={`w-full px-3 py-2 text-left text-sm rounded-b-lg transition-colors flex items-center gap-2 ${
+                    isDark ? 'text-gray-300 hover:bg-dark-100' : 'text-gray-700 hover:bg-light-200'
+                  }`}
+                >
+                  <span>📷</span> Full Chat
+                  <span className={`ml-auto text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>download</span>
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={() => setShowSettings(!showSettings)}
             className={`p-1.5 sm:p-2 rounded-lg transition-colors min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center ${
@@ -816,7 +880,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
       )}
 
       {/* Messages Area - responsive padding and spacing */}
-      <div ref={messagesRef} className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-3 md:p-4 compact:p-1.5 space-y-2 sm:space-y-3 md:space-y-4 compact:space-y-1 max-w-full scroll-touch">
+      <div ref={messagesRef} data-chat-scroll className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-3 md:p-4 compact:p-1.5 space-y-2 sm:space-y-3 md:space-y-4 compact:space-y-1 max-w-full scroll-touch">
         {/* Pinned Messages */}
         {pinnedPnRs.length > 0 && (
           <div className="mb-2 sm:mb-4">

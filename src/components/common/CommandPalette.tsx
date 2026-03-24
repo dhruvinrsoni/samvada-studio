@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useChat } from '../../context/ChatContext';
+import { captureViewport, captureFull, downloadBlob, copyBlobToClipboard, generateFilename } from '../../utils/screenshotService';
 
 type CommandCategory = 'chat' | 'navigation' | 'settings' | 'export';
 
@@ -183,6 +184,39 @@ export default function CommandPalette() {
       id: 'export-all-html', name: 'Export All Chats as HTML', description: 'Download every chat as .html files',
       icon: '🌐', category: 'export',
       action: () => { state.chats.forEach(c => downloadFile(exportChat(c.id, 'html'), `${c.title}.html`, 'text/html')); close(); },
+    },
+    {
+      id: 'screenshot-visible', name: 'Screenshot (Visible)', description: 'Capture what is currently visible in the chat area',
+      icon: '📸', category: 'export',
+      action: async () => {
+        close();
+        const el = document.querySelector('[data-chat-scroll]') as HTMLElement | null;
+        if (!el) return;
+        try {
+          const blob = await captureViewport(el);
+          const copied = await copyBlobToClipboard(blob);
+          if (!copied) {
+            downloadBlob(blob, generateFilename(activeChat?.title));
+          }
+        } catch (err) {
+          console.error('Screenshot failed:', err);
+        }
+      },
+    },
+    {
+      id: 'screenshot-full', name: 'Screenshot (Full Chat)', description: 'Capture the entire chat conversation as a long image',
+      icon: '📷', category: 'export',
+      action: async () => {
+        close();
+        const el = document.querySelector('[data-chat-scroll]') as HTMLElement | null;
+        if (!el) return;
+        try {
+          const blob = await captureFull(el);
+          downloadBlob(blob, generateFilename(activeChat?.title));
+        } catch (err) {
+          console.error('Full screenshot failed:', err);
+        }
+      },
     },
   // eslint-disable-next-line react-hooks/exhaustive-deps
   ], [state.themeSettings, state.chats, activeChat, createChat, dispatch, exportChat]);
