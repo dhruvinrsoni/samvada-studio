@@ -1,7 +1,7 @@
 import { createContext, useContext, useReducer, useEffect, useCallback, type ReactNode } from 'react';
 import type { RAGCollection, RAGDocument, RAGSettings, RAGSearchResult } from '../types';
 import * as ragService from '../services/ragService';
-import type { IngestProgress } from '../services/ragService';
+import type { IngestProgress, LLMCallerFn } from '../services/ragService';
 
 // ── State ──
 
@@ -12,7 +12,7 @@ interface RAGState {
 }
 
 const RAG_SETTINGS_KEY = 'samvada-studio-rag-settings';
-const RAG_SETTINGS_VERSION = 5;
+const RAG_SETTINGS_VERSION = 6;
 const RAG_SETTINGS_VERSION_KEY = 'samvada-studio-rag-settings-version';
 
 function loadSettings(): RAGSettings {
@@ -97,7 +97,7 @@ interface RAGContextType {
     onProgress?: (p: IngestProgress) => void,
   ) => Promise<RAGDocument>;
   removeDocument: (docId: string, collectionId: string) => Promise<void>;
-  queryCollections: (query: string, collectionIds: string[]) => Promise<{ results: RAGSearchResult[]; errors: string[] }>;
+  queryCollections: (query: string, collectionIds: string[], llmCaller?: LLMCallerFn) => Promise<{ results: RAGSearchResult[]; errors: string[] }>;
   formatContext: (results: RAGSearchResult[]) => string;
 }
 
@@ -161,8 +161,8 @@ export function RAGProvider({ children }: { children: ReactNode }) {
   );
 
   const queryCollectionsFn = useCallback(
-    (query: string, collectionIds: string[]) =>
-      ragService.queryMultipleCollections(query, collectionIds, state.settings),
+    (query: string, collectionIds: string[], llmCaller?: LLMCallerFn) =>
+      ragService.queryMultipleCollections(query, collectionIds, state.settings, llmCaller),
     [state.settings],
   );
 

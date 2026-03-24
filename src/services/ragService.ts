@@ -259,25 +259,71 @@ async function rerankResults(
     }));
 }
 
+export type LLMCallerFn = (prompt: string, systemInstruction: string) => Promise<string>;
+
 export async function queryMultipleCollections(
   query: string,
   collectionIds: string[],
   settings: RAGSettings,
+  llmCaller?: LLMCallerFn,
 ): Promise<{ results: RAGSearchResult[]; errors: string[] }> {
-  const allResults: RAGSearchResult[] = [];
   const errors: string[] = [];
 
-  for (const cid of collectionIds) {
+  let queries = [query];
+  if (settings.queryExpansionEnabled && llmCaller) {
     try {
-      const results = await queryCollection(query, cid, settings);
-      allResults.push(...results);
+      const expanded = await expandQueries(query, settings.queryExpansionMode, llmCaller);
+      queries = [query, ...expanded];
     } catch (err: any) {
-      errors.push(err.message ?? String(err));
+      errors.push(`Query expansion failed: ${err.message ?? String(err)}`);
     }
   }
 
-  allResults.sort((a, b) => b.score - a.score);
-  return { results: allResults.slice(0, settings.topK), errors };
+  const perQueryResults: RAGSearchResult[][] = [];
+  for (const q of queries) {
+    const queryResults: RAGSearchResult[] = [];
+    for (const cid of collectionIds) {
+      try {
+        const results = await queryCollection(q, cid, settings);
+        queryResults.push(...results);
+      } catch (err: any) {
+        errors.push(err.message ?? String(err));
+      }
+    }
+    perQueryResults.push(queryResults);
+  }
+
+  let finalResults: RAGSearchResult[];
+  if (perQueryResults.length > 1) {
+    finalResults = vectorStore.reciprocalRankFusion(perQueryResults, settings.topK);
+  } else {
+    const all = perQueryResults[0] ?? [];
+    all.sort((a, b) => b.score - a.score);
+    finalResults = all.slice(0, settings.topK);
+  }
+
+  return { results: finalResults, errors };
+}
+
+const MULTI_QUERY_SYSTEM = `You are a search query generator. Given a user question, generate 2-3 alternative phrasings that capture different semantic angles of the same intent. Output ONLY the alternative queries, one per line. Do not number them or add any explanation.`;
+
+const HYDE_SYSTEM = `You are a helpful assistant. Given a user question, write a short paragraph (3-5 sentences) that would be a plausible answer to the question. Do not say "I don't know." Write as if you know the answer, even if you are guessing. Output ONLY the hypothetical answer paragraph.`;
+
+async function expandQueries(
+  query: string,
+  mode: 'multi-query' | 'hyde',
+  llmCaller: LLMCallerFn,
+): Promise<string[]> {
+  if (mode === 'hyde') {
+    const hypothetical = await llmCaller(query, HYDE_SYSTEM);
+    return hypothetical.trim() ? [hypothetical.trim()] : [];
+  }
+
+  const response = await llmCaller(query, MULTI_QUERY_SYSTEM);
+  return response
+    .split('\n')
+    .map((l) => l.replace(/^\d+[.)]\s*/, '').trim())
+    .filter((l) => l.length > 3 && l !== query);
 }
 
 // ── Formatting ──

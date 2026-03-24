@@ -112,6 +112,34 @@ export default function RAGSettingsPanel({ isDark }: RAGSettingsPanelProps) {
           </p>
         </div>
 
+        {/* Query expansion */}
+        <div>
+          <label className={`flex items-center gap-2 text-xs font-medium mb-1 ${textMuted}`}>
+            <input
+              type="checkbox"
+              checked={settings.queryExpansionEnabled ?? false}
+              onChange={(e) => update({ queryExpansionEnabled: e.target.checked })}
+              className="rounded"
+            />
+            Query Expansion
+          </label>
+          {settings.queryExpansionEnabled && (
+            <div className="mt-2">
+              <select
+                value={settings.queryExpansionMode ?? 'multi-query'}
+                onChange={(e) => update({ queryExpansionMode: e.target.value as 'multi-query' | 'hyde' })}
+                className={inputClass}
+              >
+                <option value="multi-query">Multi-Query (generate 2-3 query variants)</option>
+                <option value="hyde">HyDE (hypothetical document embedding)</option>
+              </select>
+            </div>
+          )}
+          <p className={`text-[11px] mt-0.5 italic ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+            Rewrites or expands your query using the LLM before retrieval. Adds one LLM call per query but improves recall for vague questions.
+          </p>
+        </div>
+
         {/* Chunk size */}
         <div>
           <label className={`block text-xs font-medium mb-1 ${textMuted}`}>

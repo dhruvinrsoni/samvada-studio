@@ -5,7 +5,7 @@ import { useChat } from '../../context/ChatContext';
 import { useToast } from '../../context/ToastContext';
 import { useIsMobile } from '../../hooks/useMediaQuery';
 import { createMessage, createPromptResponse } from '../../utils/helpers';
-import { getLLMResponse, buildSystemMessageParts } from '../../utils/llmService';
+import { getLLMResponse, buildSystemMessageParts, callLLMProvider } from '../../utils/llmService';
 import { useMemory } from '../../context/MemoryContext';
 import { buildChatHistory, truncateHistory } from '../../utils/chatHistoryBuilder';
 import { getModelContextWindow } from '../../types';
@@ -218,7 +218,18 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
     const ragIds = activeChat.ragCollectionIds;
     if (ragIds && ragIds.length > 0) {
       try {
-        const { results, errors } = await queryCollections(content, ragIds);
+        const llmCaller = selectedProvider
+          ? async (prompt: string, systemInstruction: string) => {
+              const { message } = await callLLMProvider(
+                selectedProvider,
+                prompt,
+                [{ content: systemInstruction }],
+              );
+              return message.content;
+            }
+          : undefined;
+
+        const { results, errors } = await queryCollections(content, ragIds, llmCaller);
         ragResults = results;
 
         if (errors.length > 0) {
