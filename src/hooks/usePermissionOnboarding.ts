@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { useConfirmDialog } from '../context/ConfirmDialogContext';
 
 const ONBOARDED_KEY = 'samvada-permissions-onboarded';
@@ -14,47 +14,48 @@ const MIC_PROMPTED_KEY = 'samvada-mic-prompted';
  *
  * If user resets permissions in Settings, clearing ONBOARDED_KEY causes
  * this prompt to re-appear on next reload.
+ *
+ * StrictMode note: React 18 StrictMode mounts, unmounts, then re-mounts
+ * components in dev. A simple setTimeout + clearTimeout would cancel itself.
+ * We use a module-level flag so the onboarding runs exactly once per page load.
  */
+let onboardingScheduled = false;
+
 export function usePermissionOnboarding() {
   const { confirm } = useConfirmDialog();
-  const hasRun = useRef(false);
-
-  // Stable reference so the effect doesn't re-fire when confirm identity changes
   const confirmRef = useRef(confirm);
   confirmRef.current = confirm;
 
-  const runOnboarding = useCallback(async () => {
-    const accepted = await confirmRef.current({
-      title: '🔐 One-time Setup — Permissions',
-      message:
-        'Samvada Studio needs a few browser permissions to give you the best experience. ' +
-        'We ask upfront so everything works seamlessly later.\n\n' +
-        '1. Local Network — connect to AI models running on your machine (Ollama)\n' +
-        '2. Device Services — communicate with local inference servers\n' +
-        '3. Microphone — enable voice input for hands-free interaction\n\n' +
-        'You can review or revoke these anytime in Admin Settings → General.',
-      confirmText: 'Grant Permissions',
-      cancelText: 'Skip for Now',
-      type: 'info',
-    });
-
-    if (accepted) {
-      await grantAll();
-    }
-
-    localStorage.setItem(ONBOARDED_KEY, 'true');
-  }, []);
-
   useEffect(() => {
-    if (hasRun.current) return;
+    if (onboardingScheduled) return;
     if (localStorage.getItem(ONBOARDED_KEY)) return;
 
-    hasRun.current = true;
+    onboardingScheduled = true;
 
-    const timer = setTimeout(runOnboarding, 1500);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    setTimeout(async () => {
+      const accepted = await confirmRef.current({
+        title: '🔐 One-time Setup — Permissions',
+        message:
+          'Samvada Studio needs a few browser permissions to give you the best experience. ' +
+          'We ask upfront so everything works seamlessly later.\n\n' +
+          '1. Local Network — connect to AI models running on your machine (Ollama)\n' +
+          '2. Device Services — communicate with local inference servers\n' +
+          '3. Microphone — enable voice input for hands-free interaction\n\n' +
+          'You can review or revoke these anytime in Admin Settings → General.',
+        confirmText: 'Grant Permissions',
+        cancelText: 'Skip for Now',
+        type: 'info',
+      });
+
+      if (accepted) {
+        await grantAll();
+      }
+
+      localStorage.setItem(ONBOARDED_KEY, 'true');
+    }, 1500);
+
+    // Intentionally no cleanup -- the timer must survive StrictMode unmount/remount
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 async function grantAll() {

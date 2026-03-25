@@ -170,7 +170,10 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
     localStorage.removeItem('samvada-network-prompt-shown');
     localStorage.removeItem('samvada-permissions-onboarded');
     localStorage.removeItem('samvada-mic-prompted');
+    // Also clear Ollama caches so the Ollama tab starts truly fresh
+    localStorage.removeItem('ollama-cached-endpoint');
     setPermissionState('prompt');
+    setMicPermission('prompt');
     window.dispatchEvent(new CustomEvent('local-storage-reset'));
     window.dispatchEvent(new Event('local-storage-change'));
     setTestResult({

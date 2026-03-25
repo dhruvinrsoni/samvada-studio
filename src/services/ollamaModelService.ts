@@ -101,6 +101,7 @@ export function pullModel(
 
       const decoder = new TextDecoder();
       let buffer = '';
+      let sawSuccess = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -114,14 +115,23 @@ export function pullModel(
           const trimmed = line.trim();
           if (!trimmed) continue;
           try {
-            const progress = JSON.parse(trimmed) as OllamaPullProgress;
+            const parsed = JSON.parse(trimmed);
+
+            // Ollama streams {"error": "..."} for invalid model names
+            if (parsed.error) {
+              throw new Error(parsed.error);
+            }
+
+            const progress = parsed as OllamaPullProgress;
             onProgress(progress);
             if (progress.status === 'success') {
+              sawSuccess = true;
               onComplete();
               return;
             }
-          } catch {
-            // skip malformed JSON lines
+          } catch (e) {
+            // Re-throw errors we created above
+            if (e instanceof Error && !e.message.includes('JSON')) throw e;
           }
         }
       }
@@ -129,18 +139,27 @@ export function pullModel(
       // Process remaining buffer
       if (buffer.trim()) {
         try {
-          const progress = JSON.parse(buffer.trim()) as OllamaPullProgress;
+          const parsed = JSON.parse(buffer.trim());
+          if (parsed.error) {
+            throw new Error(parsed.error);
+          }
+          const progress = parsed as OllamaPullProgress;
           onProgress(progress);
           if (progress.status === 'success') {
+            sawSuccess = true;
             onComplete();
             return;
           }
-        } catch {
-          // ignore
+        } catch (e) {
+          if (e instanceof Error && !e.message.includes('JSON')) throw e;
         }
       }
 
-      onComplete();
+      if (sawSuccess) {
+        onComplete();
+      } else {
+        throw new Error('Pull ended without success confirmation. The model may not exist or the server closed the connection.');
+      }
     } catch (err: any) {
       if (err.name === 'AbortError') {
         onError(new Error('Pull cancelled'));
