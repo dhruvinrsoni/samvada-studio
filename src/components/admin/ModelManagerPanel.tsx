@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ollamaDiscovery } from '../../services/ollamaDiscovery';
+import { ollamaAvailability, type OllamaStatus } from '../../services/ollamaAvailability';
 import * as modelService from '../../services/ollamaModelService';
 import { useChat } from '../../context/ChatContext';
 import { useToast } from '../../context/ToastContext';
@@ -48,6 +49,7 @@ export default function ModelManagerPanel() {
   const [copyDestination, setCopyDestination] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showRunning, setShowRunning] = useState(true);
+  const [ollamaStatus, setOllamaStatus] = useState<OllamaStatus>('unknown');
 
   const textPrimary = isDark ? 'text-gray-200' : 'text-gray-800';
   const textMuted = isDark ? 'text-gray-400' : 'text-gray-600';
@@ -73,8 +75,18 @@ export default function ModelManagerPanel() {
     }
   }, [selectedHost]);
 
-  // Load models for the selected host
+  // Check Ollama availability before loading models
   const refreshModels = useCallback(async () => {
+    const availability = await ollamaAvailability.getStatus();
+    setOllamaStatus(availability.status);
+
+    if (availability.status === 'unreachable') {
+      setModels([]);
+      setRunningModels([]);
+      setIsLoading(false);
+      return;
+    }
+
     const host = resolveHost();
     if (!host) return;
     setIsLoading(true);
@@ -96,6 +108,10 @@ export default function ModelManagerPanel() {
 
   useEffect(() => {
     refreshModels();
+    const unsub = ollamaAvailability.subscribe((result) => {
+      setOllamaStatus(result.status);
+    });
+    return unsub;
   }, [refreshModels]);
 
   const filteredAndSortedModels = useMemo(() => {
@@ -225,6 +241,36 @@ export default function ModelManagerPanel() {
           </div>
         </div>
       </div>
+
+      {/* Ollama unreachable info card */}
+      {ollamaStatus === 'unreachable' && (
+        <div className={`rounded-lg p-5 border ${isDark ? 'bg-yellow-500/10 border-yellow-600/30' : 'bg-yellow-50 border-yellow-300'}`}>
+          <div className="flex items-start gap-3">
+            <span className="text-xl flex-shrink-0">⚠️</span>
+            <div className="space-y-2">
+              <h4 className={`font-semibold ${isDark ? 'text-yellow-300' : 'text-yellow-900'}`}>
+                Ollama is not reachable
+              </h4>
+              <p className={`text-sm ${isDark ? 'text-yellow-400/90' : 'text-yellow-800'}`}>
+                We cannot detect whether Ollama is installed from the browser — only whether it is responding on the network. This could mean:
+              </p>
+              <ol className={`text-sm list-decimal list-inside space-y-1 ${isDark ? 'text-yellow-400/80' : 'text-yellow-700'}`}>
+                <li>Ollama is <strong>not installed</strong> — <a href="https://ollama.ai" target="_blank" rel="noreferrer" className="underline hover:no-underline">Download from ollama.ai</a></li>
+                <li>Ollama is installed but <strong>not running</strong> — run <code className={`px-1 py-0.5 rounded text-xs ${isDark ? 'bg-yellow-500/20' : 'bg-yellow-100'}`}>ollama serve</code></li>
+                <li>CORS is not configured — run <code className={`px-1 py-0.5 rounded text-xs ${isDark ? 'bg-yellow-500/20' : 'bg-yellow-100'}`}>OLLAMA_ORIGINS=* ollama serve</code></li>
+              </ol>
+              <button
+                onClick={() => { ollamaAvailability.invalidate(); refreshModels(); }}
+                className={`mt-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  isDark ? 'bg-yellow-600/30 text-yellow-300 hover:bg-yellow-600/50' : 'bg-yellow-200 text-yellow-900 hover:bg-yellow-300'
+                }`}
+              >
+                Re-check Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Host selector + actions bar */}
       <div className={cardClass}>

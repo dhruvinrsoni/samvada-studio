@@ -341,15 +341,16 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
                   ) : (
                     // Show standard Ollama installation/startup message
                     <>
-                      <p className="font-semibold mb-2">Ollama is not reachable:</p>
+                      <p className="font-semibold mb-2">Ollama is not reachable</p>
+                      <p className="mb-2 opacity-80">We can only check if Ollama is responding on the network — not whether it is installed. Possible causes:</p>
                       <ol className="list-decimal list-inside space-y-1 ml-1">
-                        <li>Install Ollama: <code className={`px-1 py-0.5 rounded ${
-                          isDark ? 'bg-yellow-500/20' : 'bg-yellow-100'
-                        }`}>https://ollama.ai</code></li>
-                        <li>Start the server: <code className={`px-1 py-0.5 rounded ${
+                        <li>Not installed — <a href="https://ollama.ai" target="_blank" rel="noreferrer" className="underline">download from ollama.ai</a></li>
+                        <li>Not running — start with <code className={`px-1 py-0.5 rounded ${
                           isDark ? 'bg-yellow-500/20' : 'bg-yellow-100'
                         }`}>ollama serve</code></li>
-                        <li>For LAN access, add the host IP in <strong>Admin → Ollama → Custom Endpoints</strong></li>
+                        <li>CORS not configured — run <code className={`px-1 py-0.5 rounded ${
+                          isDark ? 'bg-yellow-500/20' : 'bg-yellow-100'
+                        }`}>OLLAMA_ORIGINS=* ollama serve</code></li>
                       </ol>
                       {!ollamaIsDefault && (
                         <p className="mt-2 text-xs opacity-80">
