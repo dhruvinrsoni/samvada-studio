@@ -3,21 +3,21 @@ import { useConfirmDialog } from '../context/ConfirmDialogContext';
 
 const ONBOARDED_KEY = 'samvada-permissions-onboarded';
 const NETWORK_PERMISSION_KEY = 'samvada-local-network-permission';
-const MIC_PROMPTED_KEY = 'samvada-mic-prompted';
 
 /**
- * Proactive permission onboarding hook.
+ * Sequenced permission onboarding.
  *
- * On first load (no ONBOARDED_KEY in localStorage), presents a polished
- * confirmation asking the user to grant all required browser permissions
- * upfront: local network access (x2 Chrome prompts) and microphone.
+ * Step 1 -- Network: ask for local network + device services (single fetch
+ * triggers both Chrome prompts). Most users will accept this.
  *
- * If user resets permissions in Settings, clearing ONBOARDED_KEY causes
- * this prompt to re-appear on next reload.
+ * Step 2 -- Microphone: ask separately. Many users prefer to defer this
+ * until they actually use voice input.
  *
- * StrictMode note: React 18 StrictMode mounts, unmounts, then re-mounts
- * components in dev. A simple setTimeout + clearTimeout would cancel itself.
- * We use a module-level flag so the onboarding runs exactly once per page load.
+ * Each step is a separate confirm dialog giving the user finer control.
+ * If user skips, we still mark onboarding as done so they aren't nagged.
+ *
+ * StrictMode note: module-level flag prevents double-fire during
+ * React 18 StrictMode dev mount → unmount → remount cycle.
  */
 let onboardingScheduled = false;
 
@@ -33,57 +33,64 @@ export function usePermissionOnboarding() {
     onboardingScheduled = true;
 
     setTimeout(async () => {
-      const accepted = await confirmRef.current({
-        title: '🔐 One-time Setup — Permissions',
+      // ── Step 1: Network permissions ──
+      const grantNetwork = await confirmRef.current({
+        title: '🌐 Step 1 of 2 — Local Network Access',
         message:
-          'Samvada Studio needs a few browser permissions to give you the best experience. ' +
-          'We ask upfront so everything works seamlessly later.\n\n' +
-          '1. Local Network — connect to AI models running on your machine (Ollama)\n' +
-          '2. Device Services — communicate with local inference servers\n' +
-          '3. Microphone — enable voice input for hands-free interaction\n\n' +
-          'You can review or revoke these anytime in Admin Settings → General.',
-        confirmText: 'Grant Permissions',
-        cancelText: 'Skip for Now',
+          'Samvada Studio connects to AI models running on your machine (like Ollama).\n\n' +
+          'To do this, the browser needs two permissions:\n' +
+          '• Access other devices on your local network\n' +
+          '• Access apps and services on this device\n\n' +
+          'Chrome will show its own prompts after you click Grant. ' +
+          'You can change this anytime in Admin Settings → General.',
+        confirmText: 'Grant Network Access',
+        cancelText: 'Skip',
         type: 'info',
       });
 
-      if (accepted) {
-        await grantAll();
+      if (grantNetwork) {
+        try {
+          const ctrl = new AbortController();
+          const tid = setTimeout(() => ctrl.abort(), 4000);
+          await fetch('http://localhost:11434/api/version', { signal: ctrl.signal });
+          clearTimeout(tid);
+        } catch {
+          // Even if Ollama isn't running, Chrome prompts will have fired
+        }
+        localStorage.setItem(NETWORK_PERMISSION_KEY, 'granted');
+        window.dispatchEvent(new Event('local-storage-change'));
+      }
+
+      // Brief pause between dialogs
+      await new Promise(r => setTimeout(r, 600));
+
+      // ── Step 2: Microphone ──
+      const grantMic = await confirmRef.current({
+        title: '🎤 Step 2 of 2 — Microphone Access',
+        message:
+          'Samvada Studio supports voice input for hands-free interaction.\n\n' +
+          'If you\'d like to use this feature, grant microphone access now. ' +
+          'Chrome will show its own prompt.\n\n' +
+          'You can always enable this later when you first click the mic button.',
+        confirmText: 'Grant Microphone',
+        cancelText: 'Skip — I\'ll do it later',
+        type: 'info',
+      });
+
+      if (grantMic) {
+        try {
+          const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+          if (SR) {
+            const rec = new SR();
+            rec.start();
+            setTimeout(() => { try { rec.stop(); } catch { /* no-op */ } }, 500);
+          }
+        } catch {
+          // Speech API not available or user denied at Chrome level
+        }
       }
 
       localStorage.setItem(ONBOARDED_KEY, 'true');
     }, 1500);
-
-    // Intentionally no cleanup -- the timer must survive StrictMode unmount/remount
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-}
-
-async function grantAll() {
-  // 1 & 2: Trigger local network access (fires both Chrome prompts)
-  try {
-    const ctrl = new AbortController();
-    const tid = setTimeout(() => ctrl.abort(), 4000);
-    await fetch('http://localhost:11434/api/version', { signal: ctrl.signal });
-    clearTimeout(tid);
-  } catch {
-    // Even if Ollama isn't running, the browser prompts will have fired
-  }
-  localStorage.setItem(NETWORK_PERMISSION_KEY, 'granted');
-  window.dispatchEvent(new Event('local-storage-change'));
-
-  // Small delay so the first Chrome prompt completes before the mic prompt fires
-  await new Promise(r => setTimeout(r, 800));
-
-  // 3: Trigger microphone permission via SpeechRecognition
-  try {
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SR) {
-      const rec = new SR();
-      rec.start();
-      setTimeout(() => { try { rec.stop(); } catch { /* no-op */ } }, 500);
-    }
-  } catch {
-    // Speech API not available or user denied
-  }
-  localStorage.setItem(MIC_PROMPTED_KEY, 'true');
 }

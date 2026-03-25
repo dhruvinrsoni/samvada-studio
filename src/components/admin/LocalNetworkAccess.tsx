@@ -399,7 +399,7 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
         )}
       </div>
 
-      {/* ─── Device Access (tracked alongside local network) ─── */}
+      {/* ─── Device Access ─── */}
       <div className={`mt-4 p-3 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-200' : 'border-light-400 bg-light-100'}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -409,16 +409,27 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
               <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Access apps and services running on this device</p>
             </div>
           </div>
-          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-            permissionState === 'granted' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-            : permissionState === 'denied' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-          }`}>
-            {permissionState === 'granted' ? '✓ Granted' : permissionState === 'denied' ? '✕ Denied' : '⚠ Not Set'}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+              permissionState === 'granted' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+              : permissionState === 'denied' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+            }`}>
+              {permissionState === 'granted' ? '✓ Granted' : permissionState === 'denied' ? '✕ Denied' : '⚠ Not Set'}
+            </span>
+            {permissionState === 'prompt' && (
+              <button
+                onClick={requestPermission}
+                disabled={isLoading}
+                className="px-2 py-1 text-xs rounded-lg bg-theme-primary hover:bg-theme-primary-hover text-white font-medium"
+              >
+                Grant
+              </button>
+            )}
+          </div>
         </div>
         <p className={`text-xs mt-1.5 ml-7 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-          Granted together with Local Network Access. Chrome shows this as a separate prompt.
+          Granted together with Local Network Access via the same localhost request.
         </p>
       </div>
 
@@ -451,6 +462,11 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
             )}
           </div>
         </div>
+        {micPermission === 'granted' && (
+          <p className={`text-xs mt-1.5 ml-7 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+            Managed by Chrome. To revoke, use your browser's site settings (click the lock icon in the URL bar).
+          </p>
+        )}
       </div>
 
       {/* ─── Reset All ─── */}
