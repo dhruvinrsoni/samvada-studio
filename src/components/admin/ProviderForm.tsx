@@ -774,8 +774,12 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4">
+        {/* Actions -- sticky so they're always visible in long forms */}
+        <div className={`sticky bottom-0 z-10 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-3 pb-1 -mx-6 px-6 border-t backdrop-blur-sm ${
+          isDark
+            ? 'bg-dark-300/90 border-dark-100'
+            : 'bg-light-200/90 border-light-400'
+        }`}>
           <button
             type="button"
             onClick={onCancel}

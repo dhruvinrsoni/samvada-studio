@@ -4,6 +4,7 @@ import type { LLMProviderConfig } from '../../types';
 import { formatDate } from '../../utils/helpers';
 import { HealthService } from '../../utils/healthService';
 import type { ProviderHealth } from '../../hooks/useProviderHealthMonitor';
+import { Toggle } from '../ui';
 
 interface ProviderCardProps {
   provider: LLMProviderConfig;
@@ -225,17 +226,21 @@ export default function ProviderCard({
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 sm:flex-shrink-0">
-          <button
-            onClick={() => dispatch({ type: 'TOGGLE_PROVIDER_ENABLED', payload: provider.id })}
-            className={`px-2.5 sm:px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+          <div className="flex items-center gap-1.5" title={provider.isEnabled ? 'Disable provider' : 'Enable provider'}>
+            <Toggle
+              checked={provider.isEnabled}
+              onChange={() => dispatch({ type: 'TOGGLE_PROVIDER_ENABLED', payload: provider.id })}
+              size="sm"
+              label={provider.isEnabled ? 'Disable provider' : 'Enable provider'}
+            />
+            <span className={`text-xs font-medium whitespace-nowrap ${
               provider.isEnabled
-                ? 'bg-green-600 hover:bg-green-700 text-white'
-                : 'bg-gray-600 hover:bg-gray-700 text-white'
-            }`}
-            title={provider.isEnabled ? 'Disable provider' : 'Enable provider'}
-          >
-            {provider.isEnabled ? '✓' : '○'}
-          </button>
+                ? isDark ? 'text-green-400' : 'text-green-700'
+                : isDark ? 'text-gray-500' : 'text-gray-400'
+            }`}>
+              {provider.isEnabled ? 'On' : 'Off'}
+            </span>
+          </div>
           <button
             onClick={onTest}
             disabled={provider.testStatus === 'pending' || !provider.isEnabled}
