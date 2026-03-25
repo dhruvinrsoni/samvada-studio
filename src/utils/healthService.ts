@@ -293,17 +293,7 @@ export class HealthService {
     endpoint: string,
     forceRefresh: boolean = false
   ): Promise<OllamaConnectivityResult> {
-    // Skip localhost checks when app is hosted remotely (GitHub Pages, etc.)
-    // Browsers block access to localhost from remote origins for security
-    if (!isLocalhost() && endpoint.includes('localhost')) {
-      return {
-        available: false,
-        models: [],
-        error: 'Ollama requires local installation. Not available on hosted version.',
-      };
-    }
-
-    // Check local network permission first
+    // Check local network permission before attempting localhost/private fetches
     if (!this.checkLocalNetworkPermission(endpoint)) {
       return {
         available: false,

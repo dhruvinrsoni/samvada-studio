@@ -149,10 +149,20 @@ export default function ConnectionStatus({ minimized = false, onMinimize }: Conn
 
   // Regular checks after initial load
   useEffect(() => {
-    if (isInitialLoad) return; // Skip regular checks during initial load
+    if (isInitialLoad) return;
     
     const interval = setInterval(checkStatus, 30000);
-    return () => clearInterval(interval);
+
+    // Immediately re-check when Ollama state changes externally
+    const handleOllamaChange = () => { checkStatus(); };
+    window.addEventListener('ollama-models-changed', handleOllamaChange);
+    window.addEventListener('ollama-discovered', handleOllamaChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('ollama-models-changed', handleOllamaChange);
+      window.removeEventListener('ollama-discovered', handleOllamaChange);
+    };
   }, [isInitialLoad]);
 
   if (!connectivity) return null;

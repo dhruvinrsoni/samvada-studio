@@ -118,6 +118,17 @@ export function ObservabilityProvider({ children }: { children: React.ReactNode 
     return () => window.clearInterval(interval);
   }, [refreshConnectivity]);
 
+  // Immediately refresh when Ollama state changes externally
+  useEffect(() => {
+    const handleOllamaChange = () => { refreshConnectivity(); };
+    window.addEventListener('ollama-models-changed', handleOllamaChange);
+    window.addEventListener('ollama-discovered', handleOllamaChange);
+    return () => {
+      window.removeEventListener('ollama-models-changed', handleOllamaChange);
+      window.removeEventListener('ollama-discovered', handleOllamaChange);
+    };
+  }, [refreshConnectivity]);
+
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     refreshDiagnostics();

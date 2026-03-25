@@ -21,7 +21,6 @@ import { PWAInstallPrompt, PWAUpdateNotification, PWAOfflineIndicator } from './
 import { usePWA } from './hooks/usePWA';
 import { useState, useEffect } from 'react';
 import BRAND from './constants/brand';
-import { HealthService } from './utils/healthService';
 import { ObservabilityProvider } from './context/ObservabilityContext';
 import { MemoryProvider } from './context/MemoryContext';
 import { RAGProvider } from './context/RAGContext';
@@ -100,23 +99,13 @@ function AppContent() {
     }
   }, [dispatch, createChat]);
 
-  // Refresh Ollama cache on app startup
+  // Refresh Ollama availability on app startup (uses central service)
   useEffect(() => {
-    const refreshOllamaCache = async () => {
-      try {
-        // For testing: populate cache with test data if no real Ollama
-        if (!navigator.onLine || window.location.hostname === 'localhost') {
-          HealthService.populateTestCache();
-        } else {
-          await HealthService.refreshOllamaCache();
-        }
-      } catch (error) {
-        console.warn('Failed to refresh Ollama cache on startup:', error);
-        // Fallback to test data
-        HealthService.populateTestCache();
-      }
-    };
-    refreshOllamaCache();
+    import('./services/ollamaAvailability').then(({ ollamaAvailability }) => {
+      ollamaAvailability.refresh().catch(err =>
+        console.warn('Failed to refresh Ollama availability on startup:', err)
+      );
+    });
   }, []);
 
   // Initialize sidebar state based on screen size

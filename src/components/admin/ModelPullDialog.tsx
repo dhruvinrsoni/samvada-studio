@@ -49,6 +49,7 @@ export default function ModelPullDialog({ baseUrl, isDark, onClose, onPullComple
         setPullState('success');
         setStatusText('success');
         onPullComplete(name);
+        window.dispatchEvent(new Event('ollama-models-changed'));
       },
       (err) => {
         if (err.message === 'Pull cancelled') {
