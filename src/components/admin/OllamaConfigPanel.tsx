@@ -131,7 +131,7 @@ export const OllamaConfigPanel: React.FC = () => {
 
         addToast('success', 'Ollama Found!', `Discovered at ${result.endpoint.host}:${result.endpoint.port}${existing ? ' (already configured)' : ''}`);
       } else {
-        addToast('error', 'Discovery Failed', 'No healthy Ollama endpoints found. Add a custom endpoint below.');
+        addToast('error', 'Discovery Failed', 'No healthy Ollama endpoints found. Did you set OLLAMA_ORIGINS=* ? See Prerequisites above.');
       }
     } catch (error: any) {
       addToast('error', 'Discovery Error', error.message);
@@ -301,6 +301,30 @@ export const OllamaConfigPanel: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ────── Prerequisites ────── */}
+      <details className={`rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300' : 'border-light-400 bg-light-200'}`}>
+        <summary className={`cursor-pointer px-4 py-3 text-sm font-semibold select-none ${textPrimary}`}>
+          📋 Prerequisites for Ollama
+        </summary>
+        <div className={`px-4 pb-4 space-y-3 text-sm ${textMuted}`}>
+          <div>
+            <p className="font-medium mb-1">1. Install & run Ollama</p>
+            <p>Download from <a href="https://ollama.ai" target="_blank" rel="noreferrer" className="text-theme-primary hover:underline">ollama.ai</a>, then start the server:</p>
+            <code className={`block mt-1 px-3 py-2 rounded text-xs font-mono ${isDark ? 'bg-dark-200 text-gray-300' : 'bg-light-300 text-gray-800'}`}>ollama serve</code>
+          </div>
+          <div>
+            <p className="font-medium mb-1">2. Configure CORS (required for browser access)</p>
+            <p>Browsers enforce CORS policy. Without setting <code className={`px-1 py-0.5 rounded text-xs ${isDark ? 'bg-dark-200' : 'bg-light-300'}`}>OLLAMA_ORIGINS</code>, the app cannot communicate with Ollama even if it is running.</p>
+            <code className={`block mt-1 px-3 py-2 rounded text-xs font-mono ${isDark ? 'bg-dark-200 text-gray-300' : 'bg-light-300 text-gray-800'}`}>OLLAMA_ORIGINS=* ollama serve</code>
+            <p className="mt-1 text-xs opacity-75">Or set <code className="font-mono">OLLAMA_ORIGINS</code> as a system environment variable for a permanent fix.</p>
+          </div>
+          <div>
+            <p className="font-medium mb-1">3. Grant local network access</p>
+            <p>When prompted by Chrome, allow "Access other devices on your local network" and "Access other apps and services on this device".</p>
+          </div>
+        </div>
+      </details>
 
       {/* ────── Active Host Override ────── */}
       {endpointStatuses.length > 0 && (
