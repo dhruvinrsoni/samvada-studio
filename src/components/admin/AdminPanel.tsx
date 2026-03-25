@@ -592,17 +592,26 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
 
               {/* Provider List - responsive empty state */}
               {state.providers.length === 0 && !isAddingProvider ? (
-                <div className={`text-center py-8 sm:py-12 rounded-lg border-2 border-dashed ${
+                <div className={`py-8 sm:py-10 px-6 rounded-lg border-2 border-dashed ${
                   isDark ? 'border-dark-100 text-gray-500' : 'border-light-400 text-gray-400'
                 }`}>
-                  <p className="text-sm sm:text-lg mb-1 sm:mb-2">No LLM providers configured</p>
-                  <p className="text-xs sm:text-sm mb-3 sm:mb-4">Add OpenAI, Claude, Gemini, or Ollama</p>
-                  <button
-                    onClick={handleAddNewProvider}
-                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-theme-primary text-white rounded-lg hover:bg-theme-primary-hover text-xs sm:text-sm"
-                  >
-                    Add Your First Provider
-                  </button>
+                  <p className={`text-base sm:text-lg font-semibold mb-2 text-center ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Get Started with Samvada Studio
+                  </p>
+                  <p className="text-xs sm:text-sm mb-4 text-center">Set up your first AI provider in under a minute:</p>
+                  <ol className={`text-xs sm:text-sm space-y-2 mb-5 max-w-sm mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <li className="flex items-start gap-2"><span className="font-bold text-theme-primary">1.</span> Choose a provider (Ollama for local, or OpenAI/Claude/Gemini for cloud)</li>
+                    <li className="flex items-start gap-2"><span className="font-bold text-theme-primary">2.</span> Enter your API key (or just select a model for Ollama)</li>
+                    <li className="flex items-start gap-2"><span className="font-bold text-theme-primary">3.</span> Test the connection and start chatting</li>
+                  </ol>
+                  <div className="text-center">
+                    <button
+                      onClick={handleAddNewProvider}
+                      className="px-4 sm:px-5 py-2 sm:py-2.5 bg-theme-primary text-white rounded-lg hover:bg-theme-primary-hover text-sm font-medium"
+                    >
+                      Add Your First Provider
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3 sm:space-y-4">
