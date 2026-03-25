@@ -8,6 +8,7 @@ type PermissionState = 'granted' | 'denied' | 'prompt' | 'unsupported';
 
 export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) {
   const [permissionState, setPermissionState] = useState<PermissionState>('prompt');
+  const [micPermission, setMicPermission] = useState<PermissionState>('prompt');
   const [isLoading, setIsLoading] = useState(false);
   const [testResult, setTestResult] = useState<{
     status: 'success' | 'error' | null;
@@ -16,8 +17,8 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
 
   useEffect(() => {
     checkPermissionState();
+    checkMicPermission();
     
-    // Listen for localStorage changes (e.g., from reset in another component)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'samvada-local-network-permission' || e.key === null) {
         checkPermissionState();
@@ -26,9 +27,9 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
     
     window.addEventListener('storage', handleStorageChange);
     
-    // Also listen for custom events from same window
     const handleLocalChange = () => {
       checkPermissionState();
+      checkMicPermission();
     };
     
     window.addEventListener('local-storage-change', handleLocalChange);
@@ -45,6 +46,32 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
       setPermissionState(stored as PermissionState);
     } else {
       setPermissionState('prompt');
+    }
+  };
+
+  const checkMicPermission = async () => {
+    try {
+      const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+      setMicPermission(result.state === 'granted' ? 'granted' : result.state === 'denied' ? 'denied' : 'prompt');
+      result.onchange = () => {
+        setMicPermission(result.state === 'granted' ? 'granted' : result.state === 'denied' ? 'denied' : 'prompt');
+      };
+    } catch {
+      setMicPermission('unsupported');
+    }
+  };
+
+  const requestMicPermission = async () => {
+    try {
+      const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SR) {
+        const rec = new SR();
+        rec.start();
+        setTimeout(() => { try { rec.stop(); } catch { /* no-op */ } }, 500);
+      }
+      setTimeout(checkMicPermission, 1000);
+    } catch {
+      setMicPermission('unsupported');
     }
   };
 
@@ -128,19 +155,27 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
   };
 
   const resetPermission = () => {
-    // Clear BOTH keys to fully reset
     localStorage.removeItem('samvada-local-network-permission');
     localStorage.removeItem('samvada-network-prompt-shown');
-    
-    // Update local state
     setPermissionState('prompt');
-    
-    // Dispatch custom event for same-window sync (but NOT to trigger immediate re-prompt)
     window.dispatchEvent(new CustomEvent('local-storage-reset'));
-    
     setTestResult({
       status: 'success',
       message: '🔄 Permission reset. The app will prompt you again on next reload.',
+    });
+  };
+
+  const resetAllPermissions = () => {
+    localStorage.removeItem('samvada-local-network-permission');
+    localStorage.removeItem('samvada-network-prompt-shown');
+    localStorage.removeItem('samvada-permissions-onboarded');
+    localStorage.removeItem('samvada-mic-prompted');
+    setPermissionState('prompt');
+    window.dispatchEvent(new CustomEvent('local-storage-reset'));
+    window.dispatchEvent(new Event('local-storage-change'));
+    setTestResult({
+      status: 'success',
+      message: '🔄 All permissions reset. The onboarding prompt will appear on next reload.',
     });
   };
 
@@ -360,6 +395,52 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
           </div>
         )}
       </div>
+
+      {/* ─── Microphone Permission ─── */}
+      <div className={`mt-4 p-3 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-200' : 'border-light-400 bg-light-100'}`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span>🎤</span>
+            <div>
+              <p className={`text-sm font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>Microphone</p>
+              <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Voice input for hands-free interaction</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+              micPermission === 'granted' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+              : micPermission === 'denied' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+              : micPermission === 'unsupported' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+            }`}>
+              {micPermission === 'granted' ? '✓ Granted' : micPermission === 'denied' ? '✕ Denied' : micPermission === 'unsupported' ? '⊘ N/A' : '⚠ Not Set'}
+            </span>
+            {micPermission === 'prompt' && (
+              <button
+                onClick={requestMicPermission}
+                className="px-2 py-1 text-xs rounded-lg bg-theme-primary hover:bg-theme-primary-hover text-white font-medium"
+              >
+                Grant
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Reset All ─── */}
+      <button
+        onClick={resetAllPermissions}
+        className={`mt-4 w-full px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+          isDark
+            ? 'bg-red-900/20 hover:bg-red-900/40 text-red-300 border border-red-800/30'
+            : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200'
+        }`}
+      >
+        🔄 Reset All Permissions
+      </button>
+      <p className={`mt-1 text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+        Clears all permission choices. The onboarding prompt will re-appear on next reload.
+      </p>
 
       {/* Technical Details (Collapsible) */}
       <details className={`mt-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
