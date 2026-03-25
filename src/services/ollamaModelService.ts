@@ -88,7 +88,12 @@ export function pullModel(
       });
 
       if (!resp.ok) {
-        throw new Error(`Pull failed: ${resp.status} ${resp.statusText}`);
+        let detail = `${resp.status} ${resp.statusText}`;
+        try {
+          const body = await resp.json();
+          if (body?.error) detail = body.error;
+        } catch { /* response wasn't JSON */ }
+        throw new Error(`Pull failed: ${detail}`);
       }
 
       const reader = resp.body?.getReader();

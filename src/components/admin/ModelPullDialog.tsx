@@ -41,6 +41,13 @@ export default function ModelPullDialog({ baseUrl, isDark, onClose, onMinimize, 
     const name = modelName.trim();
     if (!name) return;
 
+    // Basic client-side validation
+    if (/[^a-zA-Z0-9._:/-]/.test(name)) {
+      setPullState('error');
+      setErrorMessage(`Invalid model name "${name}". Use only letters, numbers, dots, colons, slashes, and hyphens (e.g. llama3.2, mistral:7b).`);
+      return;
+    }
+
     setPullState('pulling');
     setStatusText('Starting pull...');
     setCurrentDigest('');

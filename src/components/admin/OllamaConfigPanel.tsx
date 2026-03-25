@@ -60,6 +60,11 @@ export const OllamaConfigPanel: React.FC = () => {
 
   // ---------- Refresh endpoint statuses ----------
   const refreshStatuses = useCallback(async () => {
+    const permission = localStorage.getItem('samvada-local-network-permission');
+    if (permission !== 'granted') {
+      setEndpointStatuses([]);
+      return;
+    }
     setIsRefreshing(true);
     try {
       const results = await ollamaDiscovery.getEndpointsWithModels();
@@ -100,6 +105,11 @@ export const OllamaConfigPanel: React.FC = () => {
 
   // ---------- Run full discovery (LAN/WiFi/Port scans) ----------
   const handleDiscovery = async () => {
+    const permission = localStorage.getItem('samvada-local-network-permission');
+    if (permission !== 'granted') {
+      addToast('info', 'Permission Needed', 'Grant local network access in the General tab first.');
+      return;
+    }
     setIsDiscovering(true);
     try {
       const result = await ollamaDiscovery.discoverEndpoint();

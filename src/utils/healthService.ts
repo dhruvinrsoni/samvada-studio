@@ -194,14 +194,12 @@ export class HealthService {
       return true; // Not a local endpoint, no permission needed
     }
 
-    // Check stored permission
+    // Require explicit grant -- if null (not set) or 'denied', block
     const permission = localStorage.getItem('samvada-local-network-permission');
-    
-    if (permission === 'denied') {
-      return false; // Permission explicitly denied
-    }
 
-    // If not set or granted, allow (will prompt on first use via hook)
+    if (permission !== 'granted') {
+      return false;
+    }
     return true;
   }
 
