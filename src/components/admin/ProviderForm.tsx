@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
-import { fetchOllamaModels, fetchOpenAIModels, fetchAnthropicModels, fetchGoogleModels } from '../../utils/llmService';
+import { fetchOllamaModels, fetchOpenAIModels, fetchAnthropicModels, fetchGoogleModels, testProviderConnection } from '../../utils/llmService';
 import { ollamaDiscovery } from '../../services/ollamaDiscovery';
 import { getAutoProxySync, checkProxyHealth, type ProxyHealthResult } from '../../services/proxyDiscovery';
 import type { LLMProviderConfig, LLMProviderType } from '../../types';
@@ -205,6 +205,38 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
   // State for discovered Ollama endpoints (for dropdown)
   const [discoveredEndpoints, setDiscoveredEndpoints] = useState<string[]>([]);
   const [useCustomEndpoint, setUseCustomEndpoint] = useState(false);
+
+  // Inline test connection using current (unsaved) form values
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'failed'>('idle');
+  const [testMessage, setTestMessage] = useState('');
+
+  const handleTestConnection = async () => {
+    setTestStatus('testing');
+    setTestMessage('');
+    try {
+      const tempProvider: Partial<LLMProviderConfig> & { type: string; model: string } = {
+        type: formData.type,
+        name: formData.name || 'Test',
+        apiKey: formData.apiKey,
+        apiEndpoint: formData.apiEndpoint,
+        model: formData.model,
+        isEnabled: true,
+        corsProxy: formData.corsProxy || undefined,
+        settings: { temperature: formData.temperature, maxTokens: formData.maxTokens },
+      };
+      const result = await testProviderConnection(tempProvider as LLMProviderConfig);
+      if (result.success) {
+        setTestStatus('success');
+        setTestMessage(result.message || 'Connected successfully');
+      } else {
+        setTestStatus('failed');
+        setTestMessage(result.message || 'Connection failed');
+      }
+    } catch (err: any) {
+      setTestStatus('failed');
+      setTestMessage(err?.message || 'Test failed');
+    }
+  };
 
   // Detect form changes and notify parent
   useEffect(() => {
@@ -537,6 +569,28 @@ export default function ProviderForm({ provider, onSave, onCancel, onFormChange 
           {(formData.type === 'openai' || formData.type === 'anthropic') && (
             <ProxyStatusBanner isDark={isDark} corsProxy={formData.corsProxy} />
           )}
+
+          {/* Inline test button */}
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleTestConnection}
+              disabled={testStatus === 'testing' || (!formData.apiKey && formData.type !== 'ollama')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                testStatus === 'testing'
+                  ? 'bg-gray-400 cursor-not-allowed text-white'
+                  : 'bg-theme-primary hover:bg-theme-primary-hover text-white'
+              } disabled:opacity-50`}
+            >
+              {testStatus === 'testing' ? '⟳ Testing...' : '🔌 Test Connection'}
+            </button>
+            {testStatus === 'success' && (
+              <span className={`text-xs font-medium ${isDark ? 'text-green-400' : 'text-green-600'}`}>✓ {testMessage}</span>
+            )}
+            {testStatus === 'failed' && (
+              <span className={`text-xs font-medium ${isDark ? 'text-red-400' : 'text-red-600'}`}>✗ {testMessage}</span>
+            )}
+          </div>
         </div>
 
         <div>
