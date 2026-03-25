@@ -1,7 +1,7 @@
 import { ChatProvider, useChat } from './context/ChatContext';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { useIsMobile, useIsTablet } from './hooks/useMediaQuery';
-import { useLocalNetworkPermission } from './hooks/useLocalNetworkPermission';
+import { usePermissionOnboarding } from './hooks/usePermissionOnboarding';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Sidebar from './components/sidebar/Sidebar';
 import ChatArea from './components/chat/ChatArea';
@@ -32,8 +32,8 @@ function AppContent() {
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
   
-  // Local network permission hook - prompts on first use with Ollama
-  useLocalNetworkPermission();
+  // Proactive permission onboarding - asks all permissions upfront on first load
+  usePermissionOnboarding();
   
   const [quotedText, setQuotedText] = useState<string>('');
   const [templateContent, setTemplateContent] = useState<string>('');
