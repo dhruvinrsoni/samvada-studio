@@ -194,13 +194,11 @@ export class HealthService {
       return true; // Not a local endpoint, no permission needed
     }
 
-    // Require explicit grant -- if null (not set) or 'denied', block
+    // Only block when user explicitly denied. When null (not yet set)
+    // or 'granted', allow — Chrome's own Private Network Access prompts
+    // are the real security gate; our flag is a UX/transparency layer.
     const permission = localStorage.getItem('samvada-local-network-permission');
-
-    if (permission !== 'granted') {
-      return false;
-    }
-    return true;
+    return permission !== 'denied';
   }
 
   /**

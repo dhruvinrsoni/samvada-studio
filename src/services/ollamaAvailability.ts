@@ -82,17 +82,16 @@ class OllamaAvailabilityService {
   }
 
   private async performCheck(): Promise<OllamaAvailabilityResult> {
+    // Only block when user has explicitly denied access.
+    // When permission is null (not yet set) or 'granted', let Chrome
+    // handle the real permission — our flag is a UX/transparency layer,
+    // not a security gate.
     const permission = localStorage.getItem('samvada-local-network-permission');
-
-    // Only attempt network checks when permission is explicitly granted.
-    // If null (never set) or 'denied', do not fetch.
-    if (permission !== 'granted') {
+    if (permission === 'denied') {
       const result: OllamaAvailabilityResult = {
         status: 'unreachable',
         models: [],
-        error: permission === 'denied'
-          ? 'Local network access denied. Enable in Admin Settings → General.'
-          : 'Local network permission not yet granted. Complete onboarding or grant in Admin Settings → General.',
+        error: 'Local network access denied. Enable in Admin Settings → General.',
         lastChecked: Date.now(),
       };
       this.cached = result;

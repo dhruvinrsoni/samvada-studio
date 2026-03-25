@@ -61,7 +61,7 @@ export const OllamaConfigPanel: React.FC = () => {
   // ---------- Refresh endpoint statuses ----------
   const refreshStatuses = useCallback(async () => {
     const permission = localStorage.getItem('samvada-local-network-permission');
-    if (permission !== 'granted') {
+    if (permission === 'denied') {
       setEndpointStatuses([]);
       return;
     }
@@ -106,8 +106,8 @@ export const OllamaConfigPanel: React.FC = () => {
   // ---------- Run full discovery (LAN/WiFi/Port scans) ----------
   const handleDiscovery = async () => {
     const permission = localStorage.getItem('samvada-local-network-permission');
-    if (permission !== 'granted') {
-      addToast('info', 'Permission Needed', 'Grant local network access in the General tab first.');
+    if (permission === 'denied') {
+      addToast('info', 'Permission Needed', 'Local network access is denied. Enable it in the General tab first.');
       return;
     }
     setIsDiscovering(true);

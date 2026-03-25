@@ -150,15 +150,11 @@ const checkLocalNetworkPermission = (endpoint: string): boolean => {
     return true; // Not a local endpoint, no permission needed
   }
 
-  // Check stored permission
+  // Only block when user explicitly denied via our UI.
+  // When null (not set) or 'granted', allow — Chrome's Private Network
+  // Access prompts are the real security gate.
   const permission = localStorage.getItem('samvada-local-network-permission');
-  
-  if (permission === 'denied') {
-    return false; // Permission explicitly denied
-  }
-
-  // If not set or granted, allow (will prompt on first use via hook)
-  return true;
+  return permission !== 'denied';
 };
 
 /**

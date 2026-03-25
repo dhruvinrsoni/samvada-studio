@@ -42,9 +42,11 @@ export function usePermissionOnboarding() {
           '• Access other devices on your local network\n' +
           '• Access apps and services on this device\n\n' +
           'Chrome will show its own prompts after you click Grant. ' +
-          'You can change this anytime in Admin Settings → General.',
+          'You can change this anytime in Admin Settings → General.\n\n' +
+          'Skipping won\'t block anything — your browser handles the real security. ' +
+          'This just triggers Chrome\'s prompts upfront so they don\'t surprise you later.',
         confirmText: 'Grant Network Access',
-        cancelText: 'Skip',
+        cancelText: 'Skip for now',
         type: 'info',
       });
 
@@ -71,7 +73,7 @@ export function usePermissionOnboarding() {
           'Samvada Studio supports voice input for hands-free interaction.\n\n' +
           'If you\'d like to use this feature, grant microphone access now. ' +
           'Chrome will show its own prompt.\n\n' +
-          'You can always enable this later when you first click the mic button.',
+          'Skipping is fine — Chrome will ask when you first use the mic button.',
         confirmText: 'Grant Microphone',
         cancelText: 'Skip — I\'ll do it later',
         type: 'info',

@@ -481,7 +481,8 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
         🔄 Reset All Permissions
       </button>
       <p className={`mt-1 text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-        Clears all permission choices. The onboarding prompt will re-appear on next reload.
+        Clears all permission choices and re-shows the onboarding prompt on next reload. 
+        This does not block access — only Revoke does that.
       </p>
 
       {/* Technical Details (Collapsible) */}
@@ -503,6 +504,16 @@ export default function LocalNetworkAccess({ isDark }: LocalNetworkAccessProps) 
           <p>
             <strong>Security:</strong> This only grants access to YOUR local network. Remote servers cannot access your local resources through this app.
           </p>
+          <p>
+            <strong>How permissions work:</strong> This panel is a transparency layer — it helps you trigger and track Chrome's 
+            real permission prompts. Only the <em>Revoke</em> button actively blocks local network requests from this app. 
+            Skipping onboarding or resetting permissions won't block anything — Chrome's own policies remain the real security gate.
+          </p>
+          <ul className="list-disc list-inside ml-2 space-y-1">
+            <li><strong>Grant</strong> — triggers Chrome prompts upfront and records your consent</li>
+            <li><strong>Skip / Not Set</strong> — Chrome handles prompts naturally when needed</li>
+            <li><strong>Revoke</strong> — actively blocks all local network requests from this app</li>
+          </ul>
           <p className={isDark ? 'text-yellow-300' : 'text-yellow-700'}>
             <strong>Note:</strong> Some browsers may not show a prompt but will silently block/allow based on their policies. 
             Use the Test Connection button to verify access.
