@@ -50,6 +50,7 @@ export default function ModelManagerPanel() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showRunning, setShowRunning] = useState(true);
   const [ollamaStatus, setOllamaStatus] = useState<OllamaStatus>('unknown');
+  const [bgPull, setBgPull] = useState<{ modelName: string; percent: number; pulling: boolean } | null>(null);
 
   const textPrimary = isDark ? 'text-gray-200' : 'text-gray-800';
   const textMuted = isDark ? 'text-gray-400' : 'text-gray-600';
@@ -241,6 +242,32 @@ export default function ModelManagerPanel() {
           </div>
         </div>
       </div>
+
+      {/* Background pull progress (shown when dialog is minimized) */}
+      {bgPull && bgPull.pulling && !showPullDialog && (
+        <div className={`rounded-lg p-3 border ${isDark ? 'bg-dark-300 border-dark-100' : 'bg-light-200 border-light-400'}`}>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className={`text-xs font-medium ${textPrimary}`}>
+              Pulling {bgPull.modelName}...
+            </span>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-medium ${textPrimary}`}>{bgPull.percent}%</span>
+              <button
+                onClick={() => setShowPullDialog(true)}
+                className="text-xs text-theme-primary hover:text-theme-primary-hover font-medium"
+              >
+                Show Details
+              </button>
+            </div>
+          </div>
+          <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-dark-100' : 'bg-light-400'}`}>
+            <div
+              className="h-full bg-theme-primary rounded-full transition-all duration-300"
+              style={{ width: `${bgPull.percent}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Ollama unreachable info card */}
       {ollamaStatus === 'unreachable' && (
@@ -590,10 +617,12 @@ export default function ModelManagerPanel() {
           baseUrl={resolveHost()}
           isDark={isDark}
           onClose={() => setShowPullDialog(false)}
+          onMinimize={() => setShowPullDialog(false)}
           onPullComplete={(name) => {
             addToast('success', 'Model Ready', `${name} is now available`);
             refreshModels();
           }}
+          onProgressUpdate={setBgPull}
         />
       )}
 

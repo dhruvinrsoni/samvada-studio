@@ -6,12 +6,14 @@ interface ModelPullDialogProps {
   baseUrl: string;
   isDark: boolean;
   onClose: () => void;
+  onMinimize?: () => void;
   onPullComplete: (modelName: string) => void;
+  onProgressUpdate?: (info: { modelName: string; percent: number; pulling: boolean }) => void;
 }
 
 type PullState = 'idle' | 'pulling' | 'success' | 'error' | 'cancelled';
 
-export default function ModelPullDialog({ baseUrl, isDark, onClose, onPullComplete }: ModelPullDialogProps) {
+export default function ModelPullDialog({ baseUrl, isDark, onClose, onMinimize, onPullComplete, onProgressUpdate }: ModelPullDialogProps) {
   const [modelName, setModelName] = useState('');
   const [pullState, setPullState] = useState<PullState>('idle');
   const [statusText, setStatusText] = useState('');
@@ -28,7 +30,12 @@ export default function ModelPullDialog({ baseUrl, isDark, onClose, onPullComple
     if (progress.digest) setCurrentDigest(progress.digest.substring(0, 12));
     if (progress.total != null) setTotal(progress.total);
     if (progress.completed != null) setCompleted(progress.completed);
-  }, []);
+    if (onProgressUpdate) {
+      const pct = progress.total && progress.total > 0
+        ? Math.round(((progress.completed ?? 0) / progress.total) * 100) : 0;
+      onProgressUpdate({ modelName: modelName.trim(), percent: pct, pulling: true });
+    }
+  }, [onProgressUpdate, modelName]);
 
   const handlePull = () => {
     const name = modelName.trim();
@@ -49,6 +56,7 @@ export default function ModelPullDialog({ baseUrl, isDark, onClose, onPullComple
         setPullState('success');
         setStatusText('success');
         onPullComplete(name);
+        onProgressUpdate?.({ modelName: name, percent: 100, pulling: false });
         window.dispatchEvent(new Event('ollama-models-changed'));
       },
       (err) => {
@@ -59,6 +67,7 @@ export default function ModelPullDialog({ baseUrl, isDark, onClose, onPullComple
           setPullState('error');
           setErrorMessage(err.message);
         }
+        onProgressUpdate?.({ modelName: name, percent: 0, pulling: false });
       },
     );
   };
@@ -80,16 +89,14 @@ export default function ModelPullDialog({ baseUrl, isDark, onClose, onPullComple
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={pullState === 'pulling' ? undefined : onClose} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={pullState === 'pulling' ? (onMinimize ?? onClose) : onClose} />
       <div className={`relative w-full max-w-md rounded-xl shadow-2xl overflow-hidden ${cardBg}`} onKeyDown={handleKeyDown}>
         {/* Header */}
         <div className={`flex items-center justify-between p-4 border-b ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
           <h3 className={`text-base font-bold ${textPrimary}`}>Pull Model</h3>
-          {pullState !== 'pulling' && (
-            <button onClick={onClose} className={`p-1 rounded-lg transition-colors ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}>
-              ✕
-            </button>
-          )}
+          <button onClick={pullState === 'pulling' ? (onMinimize ?? onClose) : onClose} className={`p-1 rounded-lg transition-colors ${isDark ? 'hover:bg-dark-100 text-gray-400' : 'hover:bg-light-300 text-gray-600'}`}>
+            {pullState === 'pulling' ? '─' : '✕'}
+          </button>
         </div>
 
         <div className="p-4 space-y-4">
@@ -177,9 +184,16 @@ export default function ModelPullDialog({ baseUrl, isDark, onClose, onPullComple
         {/* Footer buttons */}
         <div className={`flex items-center justify-end gap-2 p-4 border-t ${isDark ? 'border-dark-100' : 'border-light-400'}`}>
           {pullState === 'pulling' ? (
-            <button onClick={handleCancel} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
-              Cancel Pull
-            </button>
+            <>
+              {onMinimize && (
+                <button onClick={onMinimize} className={`px-4 py-2 rounded-lg text-sm font-medium ${isDark ? 'bg-dark-100 text-gray-400 hover:bg-dark-50' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                  Minimize
+                </button>
+              )}
+              <button onClick={handleCancel} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
+                Cancel Pull
+              </button>
+            </>
           ) : (
             <>
               <button onClick={onClose} className={`px-4 py-2 rounded-lg text-sm font-medium ${isDark ? 'bg-dark-100 text-gray-400 hover:bg-dark-50' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
