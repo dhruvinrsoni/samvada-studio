@@ -230,18 +230,20 @@ export default function Sidebar({ showArchived = false }: SidebarProps) {
 
           <div className="flex-1" />
 
-          {/* Bottom expand button */}
-          <button
-            onClick={() => dispatch({ type: 'TOGGLE_SIDEBAR' })}
-            className={`p-2 rounded-lg transition-colors ${
-              isDark ? 'text-gray-400 hover:bg-dark-100 hover:text-gray-200' : 'text-gray-500 hover:bg-light-300 hover:text-gray-700'
-            }`}
-            title="Expand sidebar (Ctrl+B)"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7" />
-            </svg>
-          </button>
+          {/* Expand button -- excluded from auto-expand detection */}
+          <div onMouseEnter={cancelOpen}>
+            <button
+              onClick={() => dispatch({ type: 'TOGGLE_SIDEBAR' })}
+              className={`p-2 rounded-lg transition-colors ${
+                isDark ? 'text-gray-400 hover:bg-dark-100 hover:text-gray-200' : 'text-gray-500 hover:bg-light-300 hover:text-gray-700'
+              }`}
+              title="Expand sidebar (Ctrl+B)"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </aside>
       )}
 
