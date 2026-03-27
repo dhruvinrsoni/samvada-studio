@@ -1,6 +1,47 @@
 // Ollama Discovery Service - Production-Grade Auto-Detection
 // Spring Boot-style auto-configuration with intelligent fallbacks
 
+/**
+ * Determines whether `window.location.hostname` looks like a private/LAN
+ * address where an Ollama server could plausibly be running.
+ *
+ * Returns false for public hosting platforms (*.github.io, *.vercel.app, etc.)
+ * and for any HTTPS origin (mixed-content blocks http://host:11434 anyway).
+ */
+function isLikelyLANHost(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  // HTTPS pages cannot make plain http:// requests (mixed-content)
+  if (window.location.protocol === 'https:') return false;
+
+  const host = window.location.hostname;
+
+  // Private IPv4 ranges
+  if (/^(10|192\.168|172\.(1[6-9]|2\d|3[01]))\./.test(host)) return true;
+  // Loopback (already excluded by callers, but be safe)
+  if (host === '127.0.0.1' || host === 'localhost') return false;
+  // .local mDNS names
+  if (host.endsWith('.local')) return true;
+  // Single-label hostname (e.g., "workstation") -- likely LAN
+  if (!host.includes('.')) return true;
+  // IPv6 local
+  if (host === '[::1]') return false;
+
+  // Known public hosting suffixes where Ollama cannot be running
+  const publicSuffixes = [
+    '.github.io', '.netlify.app', '.vercel.app', '.pages.dev',
+    '.herokuapp.com', '.fly.dev', '.railway.app', '.render.com',
+    '.surge.sh', '.cloudflare.dev', '.web.app', '.firebaseapp.com',
+  ];
+  for (const suffix of publicSuffixes) {
+    if (host.endsWith(suffix)) return false;
+  }
+
+  // Any other multi-dot hostname -- could be LAN (corp DNS) or public.
+  // Default to true to avoid breaking legitimate LAN setups.
+  return true;
+}
+
 export interface OllamaEndpoint {
   host: string;
   port: number;
@@ -562,18 +603,16 @@ class OllamaDiscoveryService {
       priority = nextPriority;
     }
 
-    // 4. Current hostname (smart detection for LAN access)
-    if (typeof window !== 'undefined') {
+    // 4. Current hostname (only for private/LAN addresses)
+    if (isLikelyLANHost()) {
       const currentHost = window.location.hostname;
-      if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-        candidates.push({
-          host: currentHost,
-          port: 11434,
-          protocol: 'http',
-          priority: priority++,
-          label: 'Current Host',
-        });
-      }
+      candidates.push({
+        host: currentHost,
+        port: 11434,
+        protocol: 'http',
+        priority: priority++,
+        label: 'Current Host',
+      });
     }
 
     // 5. Standard localhost
@@ -887,12 +926,9 @@ class OllamaDiscoveryService {
       candidates.push({ ...ep, priority: priority++ });
     }
 
-    // 3. Current hostname (LAN access)
-    if (typeof window !== 'undefined') {
-      const currentHost = window.location.hostname;
-      if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-        candidates.push({ host: currentHost, port: 11434, protocol: 'http', priority: priority++, label: 'Current Host' });
-      }
+    // 3. Current hostname (only for private/LAN addresses)
+    if (isLikelyLANHost()) {
+      candidates.push({ host: window.location.hostname, port: 11434, protocol: 'http', priority: priority++, label: 'Current Host' });
     }
 
     // 4. Localhost fallbacks
@@ -965,12 +1001,9 @@ class OllamaDiscoveryService {
       candidates.push({ ...ep, priority: priority++ });
     }
 
-    // 3. Current hostname (auto-discovered, not explicitly configured)
-    if (typeof window !== 'undefined') {
-      const currentHost = window.location.hostname;
-      if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-        candidates.push({ host: currentHost, port: 11434, protocol: 'http', priority: priority++, label: 'Current Host' });
-      }
+    // 3. Current hostname (only for private/LAN addresses, not public hosting)
+    if (isLikelyLANHost()) {
+      candidates.push({ host: window.location.hostname, port: 11434, protocol: 'http', priority: priority++, label: 'Current Host' });
     }
 
     // 4. Localhost fallbacks (auto-discovered, not explicitly configured)
