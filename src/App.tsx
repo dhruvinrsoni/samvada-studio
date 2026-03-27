@@ -313,44 +313,25 @@ function AppContent() {
             <div className={`h-5 sm:h-6 w-px ${isDark ? 'bg-dark-100' : 'bg-light-400'}`} />
           )}
 
-          {/* Templates Library - Hide on small screens */}
-          {!(isMobile || isTablet) && (
-            <button
-              onClick={() => dispatch({ type: 'TOGGLE_TEMPLATES_MODAL' })}
-              className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-                isDark 
-                  ? 'text-gray-400 hover:bg-dark-100' 
-                  : 'text-gray-600 hover:bg-light-300'
-              }`}
-              title="Prompt Templates (Ctrl+Shift+T)"
-            >
-              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </button>
-          )}
+          {/* Templates Library */}
+          <button
+            onClick={() => dispatch({ type: 'TOGGLE_TEMPLATES_MODAL' })}
+            className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
+              isDark 
+                ? 'text-gray-400 hover:bg-dark-100' 
+                : 'text-gray-600 hover:bg-light-300'
+            }`}
+            title="Prompt Templates (Ctrl+Shift+T)"
+          >
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </button>
 
-          {/* Export Modal - Hide on small screens */}
-          {!(isMobile || isTablet) && (
-            <button
-              onClick={() => dispatch({ type: 'TOGGLE_EXPORT_MODAL' })}
-              className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-                isDark 
-                  ? 'text-gray-400 hover:bg-dark-100' 
-                  : 'text-gray-600 hover:bg-light-300'
-              }`}
-              title="Export Chat (Ctrl+Shift+E)"
-            >
-              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </button>
-          )}
-
-          {/* Context Panel - Prominent with Creative Ripple Effect */}
+          {/* Context Panel */}
           <button
             onClick={() => dispatch({ type: 'TOGGLE_CONTEXT_PANEL_MODE' })}
-            className={`relative px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-all ${
+            className={`relative p-1.5 sm:p-2 rounded-lg transition-all ${
               state.isContextPanelMode
                 ? 'bg-gradient-to-r from-theme-primary to-theme-primary-hover text-white shadow-lg ring-2 ring-theme-primary/50 context-panel-active'
                 : state.theme === 'dark' 
@@ -360,31 +341,14 @@ function AppContent() {
             title={`Context Panel - ${state.isContextPanelMode ? 'Click to close' : 'Add custom context snippets'}`}
           >
             <div className="flex items-center gap-1.5">
-              <span className={`text-base sm:text-lg transition-transform ${state.isContextPanelMode ? 'context-panel-icon' : ''}`}>
-                {state.isContextPanelMode ? '✨' : '📝'}
-              </span>
+              <svg className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform ${state.isContextPanelMode ? 'context-panel-icon' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
               {!isMobile && state.isContextPanelMode && (
                 <span className="text-xs font-semibold">Active</span>
               )}
             </div>
           </button>
-
-          {/* Templates Library - Mobile quick access */}
-          {isMobile && (
-            <button
-              onClick={() => dispatch({ type: 'TOGGLE_TEMPLATES_MODAL' })}
-              className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-                isDark 
-                  ? 'text-gray-300 hover:bg-dark-100' 
-                  : 'text-gray-600 hover:bg-light-300'
-              }`}
-              title="Prompt Templates"
-            >
-              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </button>
-          )}
 
           {/* Divider - Hide on mobile */}
           {!isMobile && (
@@ -465,7 +429,9 @@ function AppContent() {
               className={`w-full text-left p-3 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300 text-gray-200' : 'border-light-400 bg-white text-gray-800'}`}
             >
               <div className="flex items-center gap-2">
-                <span className="text-lg">📄</span>
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
                 <span className="font-medium">Prompt Templates</span>
               </div>
               <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Browse and reuse prompts</p>
@@ -479,7 +445,9 @@ function AppContent() {
               className={`w-full text-left p-3 rounded-lg border ${isDark ? 'border-dark-100 bg-dark-300 text-gray-200' : 'border-light-400 bg-white text-gray-800'}`}
             >
               <div className="flex items-center gap-2">
-                <span className="text-lg">📋</span>
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
                 <span className="font-medium">Context Panel</span>
               </div>
               <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Toggle context snippets</p>
