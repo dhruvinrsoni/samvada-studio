@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ollamaDiscovery } from '../../services/ollamaDiscovery';
 import { ollamaAvailability, type OllamaStatus } from '../../services/ollamaAvailability';
 import * as modelService from '../../services/ollamaModelService';
+import { getRegistryModels, refreshFromRemote, isLiveData, formatBytes, type RegistryModel } from '../../services/ollamaRegistryService';
 import { useChat } from '../../context/ChatContext';
 import { useToast } from '../../context/ToastContext';
 import { generateId } from '../../utils/helpers';
@@ -51,6 +52,15 @@ export default function ModelManagerPanel() {
   const [showRunning, setShowRunning] = useState(true);
   const [ollamaStatus, setOllamaStatus] = useState<OllamaStatus>('unknown');
   const [bgPull, setBgPull] = useState<{ modelName: string; percent: number; pulling: boolean } | null>(null);
+
+  // Browse & Pull (registry)
+  const [showBrowse, setShowBrowse] = useState(false);
+  const [registryModels, setRegistryModels] = useState<RegistryModel[]>([]);
+  const [registryLoading, setRegistryLoading] = useState(false);
+  const [registryError, setRegistryError] = useState<string | null>(null);
+  const [browseFilter, setBrowseFilter] = useState('');
+  const [pullingFromBrowse, setPullingFromBrowse] = useState<Record<string, { percent: number; status: string }>>({});
+  const pullControllersRef = useRef<Record<string, AbortController>>({});
 
   const textPrimary = isDark ? 'text-gray-200' : 'text-gray-800';
   const textMuted = isDark ? 'text-gray-400' : 'text-gray-600';
@@ -114,6 +124,93 @@ export default function ModelManagerPanel() {
     });
     return unsub;
   }, [refreshModels]);
+
+  // Load registry (bundled data is synchronous, live refresh is async)
+  useEffect(() => {
+    if (showBrowse && registryModels.length === 0) {
+      setRegistryModels(getRegistryModels());
+    }
+  }, [showBrowse, registryModels.length]);
+
+  const handleLiveRefresh = useCallback(async () => {
+    setRegistryLoading(true);
+    setRegistryError(null);
+    const ok = await refreshFromRemote();
+    if (ok) {
+      setRegistryModels(getRegistryModels());
+    } else {
+      setRegistryError('Could not fetch live data (CORS). Showing bundled catalog.');
+    }
+    setRegistryLoading(false);
+  }, []);
+
+  const installedNames = useMemo(
+    () => new Set(models.map(m => m.name.split(':')[0])),
+    [models],
+  );
+
+  // navigator.deviceMemory returns an approximate RAM value in GiB (capped at 8 by most browsers).
+  // Returns undefined on Firefox/Safari or insecure contexts.
+  const deviceRamBytes = useMemo(() => {
+    const gb = (navigator as any).deviceMemory as number | undefined;
+    return gb ? gb * 1024 * 1024 * 1024 : undefined;
+  }, []);
+
+  const ramThreshold = deviceRamBytes ? deviceRamBytes * 0.75 : undefined;
+
+  const filteredRegistry = useMemo(() => {
+    let list = registryModels;
+    if (browseFilter) {
+      const q = browseFilter.toLowerCase();
+      list = list.filter(m => m.name.toLowerCase().includes(q));
+    }
+    if (ramThreshold) {
+      list = [...list].sort((a, b) => {
+        const aExceeds = a.size > ramThreshold ? 1 : 0;
+        const bExceeds = b.size > ramThreshold ? 1 : 0;
+        if (aExceeds !== bExceeds) return aExceeds - bExceeds;
+        return 0;
+      });
+    }
+    return list;
+  }, [registryModels, browseFilter, ramThreshold]);
+
+  const pullFromBrowse = useCallback((modelName: string) => {
+    const host = resolveHost();
+    setPullingFromBrowse(prev => ({ ...prev, [modelName]: { percent: 0, status: 'starting...' } }));
+
+    const controller = modelService.pullModel(
+      host,
+      modelName,
+      (progress) => {
+        const pct = (progress.total ?? 0) > 0
+          ? Math.round(((progress.completed ?? 0) / progress.total!) * 100)
+          : 0;
+        setPullingFromBrowse(prev => ({ ...prev, [modelName]: { percent: pct, status: progress.status } }));
+      },
+      () => {
+        setPullingFromBrowse(prev => {
+          const next = { ...prev };
+          delete next[modelName];
+          return next;
+        });
+        delete pullControllersRef.current[modelName];
+        addToast('success', 'Model Ready', `${modelName} is now available`);
+        refreshModels();
+        window.dispatchEvent(new Event('ollama-models-changed'));
+      },
+      (error) => {
+        setPullingFromBrowse(prev => {
+          const next = { ...prev };
+          delete next[modelName];
+          return next;
+        });
+        delete pullControllersRef.current[modelName];
+        addToast('error', 'Pull Failed', `${modelName}: ${error.message}`);
+      },
+    );
+    if (controller) pullControllersRef.current[modelName] = controller;
+  }, [resolveHost, addToast, refreshModels]);
 
   const filteredAndSortedModels = useMemo(() => {
     let list = models.filter((m) =>
@@ -335,6 +432,144 @@ export default function ModelManagerPanel() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* ─── Browse & Pull from Registry ─── */}
+      <div>
+        <button
+          onClick={() => setShowBrowse(prev => !prev)}
+          className={`flex items-center gap-2 text-sm font-semibold ${textPrimary} hover:text-theme-primary transition-colors`}
+        >
+          <svg className={`w-4 h-4 transition-transform ${showBrowse ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          Browse & Pull from Ollama Registry
+        </button>
+
+        {showBrowse && (
+          <div className="mt-3 space-y-3">
+            {/* Filter + Refresh */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={browseFilter}
+                onChange={e => setBrowseFilter(e.target.value)}
+                placeholder="Search models..."
+                className={`flex-1 ${inputClass}`}
+              />
+              <button
+                onClick={handleLiveRefresh}
+                disabled={registryLoading}
+                className={`px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                  isDark ? 'bg-dark-100 text-gray-300 hover:bg-dark-50' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                } disabled:opacity-50`}
+                title="Fetch latest from ollama.com"
+              >
+                {registryLoading ? '...' : '🔄 Refresh'}
+              </button>
+            </div>
+
+            {registryError && (
+              <div className={`p-2 rounded-lg text-xs ${isDark ? 'bg-yellow-900/20 text-yellow-300' : 'bg-yellow-50 text-yellow-700'}`}>
+                {registryError}{' '}
+                <a href="https://ollama.com/library" target="_blank" rel="noreferrer" className="text-theme-primary hover:underline">
+                  Open ollama.com/library
+                </a>
+              </div>
+            )}
+
+            {filteredRegistry.length === 0 && (
+              <p className={`text-sm text-center py-4 ${textMuted}`}>
+                {browseFilter
+                  ? <>No models match "{browseFilter}".{' '}
+                      <a href={`https://ollama.com/search?q=${encodeURIComponent(browseFilter)}`} target="_blank" rel="noreferrer" className="text-theme-primary hover:underline">
+                        Search on ollama.com
+                      </a>
+                    </>
+                  : 'No models available'}
+              </p>
+            )}
+
+            {filteredRegistry.length > 0 && (
+              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                {filteredRegistry.map(m => {
+                  const baseName = m.name.split(':')[0];
+                  const isInstalled = installedNames.has(baseName);
+                  const exceedsRam = ramThreshold ? m.size > ramThreshold : false;
+                  const pulling = pullingFromBrowse[m.name];
+                  const updated = m.modified_at
+                    ? new Date(m.modified_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short' })
+                    : '';
+
+                  return (
+                    <div
+                      key={m.name}
+                      className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                        exceedsRam
+                          ? isDark ? 'bg-dark-300 border-orange-700/40 opacity-70' : 'bg-white border-orange-300 opacity-70'
+                          : isDark ? 'bg-dark-300 border-dark-100 hover:border-dark-50' : 'bg-white border-light-400 hover:border-light-300'
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-sm font-semibold truncate ${textPrimary}`}>{m.name}</span>
+                          {isInstalled && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 flex-shrink-0">
+                              Installed
+                            </span>
+                          )}
+                          {exceedsRam && (
+                            <span
+                              className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300 flex-shrink-0"
+                              title={`This model (${formatBytes(m.size)}) may exceed 75% of your detected RAM (~${deviceRamBytes ? formatBytes(deviceRamBytes) : '?'}). Performance may be poor.`}
+                            >
+                              May exceed RAM
+                            </span>
+                          )}
+                        </div>
+                        <div className={`flex items-center gap-3 mt-0.5 text-xs ${textMuted}`}>
+                          <span>{formatBytes(m.size)}</span>
+                          {updated && <span>{updated}</span>}
+                        </div>
+                      </div>
+
+                      {pulling ? (
+                        <div className="flex items-center gap-2 flex-shrink-0 w-32">
+                          <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-dark-100' : 'bg-gray-200'}`}>
+                            <div
+                              className="h-full bg-theme-primary rounded-full transition-all"
+                              style={{ width: `${pulling.percent}%` }}
+                            />
+                          </div>
+                          <span className={`text-xs font-medium w-8 text-right ${textMuted}`}>{pulling.percent}%</span>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => pullFromBrowse(m.name)}
+                          disabled={ollamaStatus === 'unreachable'}
+                          className="px-3 py-1.5 text-xs font-medium rounded-lg bg-theme-primary text-white hover:bg-theme-primary-hover disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                        >
+                          Pull
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <p className={`text-xs ${textMuted}`}>
+              {isLiveData() ? 'Live data from' : 'Bundled catalog from'}{' '}
+              <a href="https://ollama.com/library" target="_blank" rel="noreferrer" className="text-theme-primary hover:underline">
+                ollama.com/library
+              </a>
+              {!isLiveData() && ' — click Refresh for latest'}. Use "Pull Model" above for any model by name.
+              {deviceRamBytes && (
+                <> · Detected ~{formatBytes(deviceRamBytes)} RAM — models exceeding 75% are pushed to bottom.</>
+              )}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Search + Sort bar */}
