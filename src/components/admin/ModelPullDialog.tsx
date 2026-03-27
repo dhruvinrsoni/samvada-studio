@@ -5,6 +5,7 @@ import type { OllamaPullProgress } from '../../types';
 interface ModelPullDialogProps {
   baseUrl: string;
   isDark: boolean;
+  visible: boolean;
   onClose: () => void;
   onMinimize?: () => void;
   onPullComplete: (modelName: string) => void;
@@ -13,7 +14,7 @@ interface ModelPullDialogProps {
 
 type PullState = 'idle' | 'pulling' | 'success' | 'error' | 'cancelled';
 
-export default function ModelPullDialog({ baseUrl, isDark, onClose, onMinimize, onPullComplete, onProgressUpdate }: ModelPullDialogProps) {
+export default function ModelPullDialog({ baseUrl, isDark, visible, onClose, onMinimize, onPullComplete, onProgressUpdate }: ModelPullDialogProps) {
   const [modelName, setModelName] = useState('');
   const [pullState, setPullState] = useState<PullState>('idle');
   const [statusText, setStatusText] = useState('');
@@ -93,6 +94,8 @@ export default function ModelPullDialog({ baseUrl, isDark, onClose, onMinimize, 
   const inputClass = `w-full p-2.5 rounded-lg border text-sm ${isDark ? 'bg-dark-300 border-dark-100 text-gray-200 placeholder-gray-500' : 'bg-white border-light-400 text-gray-800 placeholder-gray-400'}`;
   const textMuted = isDark ? 'text-gray-400' : 'text-gray-600';
   const textPrimary = isDark ? 'text-gray-200' : 'text-gray-800';
+
+  if (!visible) return null;
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">

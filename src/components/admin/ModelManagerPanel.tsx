@@ -901,20 +901,19 @@ export default function ModelManagerPanel() {
         </div>
       )}
 
-      {/* Pull Dialog */}
-      {showPullDialog && (
-        <ModelPullDialog
-          baseUrl={resolveHost()}
-          isDark={isDark}
-          onClose={() => setShowPullDialog(false)}
-          onMinimize={() => setShowPullDialog(false)}
-          onPullComplete={(name) => {
-            addToast('success', 'Model Ready', `${name} is now available`);
-            refreshModels();
-          }}
-          onProgressUpdate={setBgPull}
-        />
-      )}
+      {/* Pull Dialog — always mounted so state survives minimize/restore */}
+      <ModelPullDialog
+        baseUrl={resolveHost()}
+        isDark={isDark}
+        visible={showPullDialog}
+        onClose={() => setShowPullDialog(false)}
+        onMinimize={() => setShowPullDialog(false)}
+        onPullComplete={(name) => {
+          addToast('success', 'Model Ready', `${name} is now available`);
+          refreshModels();
+        }}
+        onProgressUpdate={setBgPull}
+      />
 
       {/* Info Dialog */}
       {infoModel && (
