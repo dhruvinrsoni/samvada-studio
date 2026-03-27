@@ -1,4 +1,5 @@
 import { ChatProvider, useChat } from './context/ChatContext';
+import type { ChatAction } from './types';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { useIsMobile, useIsTablet } from './hooks/useMediaQuery';
 import { usePermissionOnboarding } from './hooks/usePermissionOnboarding';
@@ -19,11 +20,99 @@ import SystemHealthCenter from './components/common/SystemHealthCenter';
 import ToastContainer from './components/toast/ToastContainer';
 import { PWAInstallPrompt, PWAUpdateNotification, PWAOfflineIndicator } from './components/pwa';
 import { usePWA } from './hooks/usePWA';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback, Dispatch } from 'react';
 import BRAND from './constants/brand';
+import { seedCommandPalette } from './components/common/CommandPalette';
 import { ObservabilityProvider } from './context/ObservabilityContext';
 import { MemoryProvider } from './context/MemoryContext';
 import { RAGProvider } from './context/RAGContext';
+
+function CommandPalettetrigger({ isDark, dispatch, isMobile }: {
+  isDark: boolean;
+  dispatch: Dispatch<ChatAction>;
+  isMobile: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [hoverText, setHoverText] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const collapseTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const expand = useCallback(() => {
+    if (isMobile) return;
+    clearTimeout(collapseTimer.current);
+    setExpanded(true);
+    setTimeout(() => inputRef.current?.focus(), 60);
+  }, [isMobile]);
+
+  const scheduleCollapse = useCallback(() => {
+    collapseTimer.current = setTimeout(() => {
+      if (!hoverText) {
+        setExpanded(false);
+        setHoverText('');
+      }
+    }, 300);
+  }, [hoverText]);
+
+  const handleInput = useCallback((value: string) => {
+    if (value) seedCommandPalette(value);
+    setExpanded(false);
+    setHoverText('');
+    dispatch({ type: 'TOGGLE_COMMAND_PALETTE' });
+  }, [dispatch]);
+
+  return (
+    <div
+      className="relative flex items-center"
+      onMouseEnter={expand}
+      onMouseLeave={scheduleCollapse}
+    >
+      <button
+        onClick={() => {
+          setExpanded(false);
+          setHoverText('');
+          dispatch({ type: 'TOGGLE_COMMAND_PALETTE' });
+        }}
+        className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
+          isDark
+            ? 'text-gray-400 hover:bg-dark-100'
+            : 'text-gray-600 hover:bg-light-300'
+        }`}
+        title="Command Palette (Ctrl+K)"
+      >
+        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </button>
+
+      {expanded && !isMobile && (
+        <div className={`absolute right-0 top-1/2 -translate-y-1/2 flex items-center rounded-lg overflow-hidden shadow-lg border transition-all z-10 ${
+          isDark ? 'bg-dark-200 border-dark-300' : 'bg-white border-gray-200'
+        }`}>
+          <svg className="w-4 h-4 ml-2.5 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            ref={inputRef}
+            type="text"
+            value={hoverText}
+            onChange={e => handleInput(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleInput('');
+              else if (e.key === 'Escape') { setExpanded(false); setHoverText(''); }
+            }}
+            placeholder="Type a command..."
+            className={`w-44 px-2 py-1.5 text-sm bg-transparent outline-none ${
+              isDark ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'
+            }`}
+          />
+          <kbd className={`mr-2 px-1.5 py-0.5 text-[10px] rounded flex-shrink-0 ${
+            isDark ? 'bg-dark-300 text-gray-500' : 'bg-gray-100 text-gray-500'
+          }`}>Ctrl+K</kbd>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AppContent() {
   const { state, dispatch, createChat, isDark } = useChat();
@@ -216,20 +305,8 @@ function AppContent() {
             </button>
           )}
 
-          {/* Command Palette */}
-          <button
-            onClick={() => dispatch({ type: 'TOGGLE_COMMAND_PALETTE' })}
-            className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
-              isDark 
-                ? 'text-gray-400 hover:bg-dark-100' 
-                : 'text-gray-600 hover:bg-light-300'
-            }`}
-            title="Command Palette (Ctrl+K)"
-          >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </button>
+          {/* Command Palette -- hover to reveal inline input */}
+          <CommandPalettetrigger isDark={isDark} dispatch={dispatch} isMobile={isMobile} />
 
           {/* Divider - Hide on mobile */}
           {!isMobile && (

@@ -2,6 +2,13 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { captureViewport, captureFull, downloadBlob, copyBlobToClipboard, generateFilename } from '../../utils/screenshotService';
 
+let pendingSeed = '';
+
+/** Seed text that will pre-fill the palette on next open. */
+export function seedCommandPalette(text: string) {
+  pendingSeed = text;
+}
+
 type CommandCategory = 'chat' | 'navigation' | 'settings' | 'export';
 
 interface Command {
@@ -253,10 +260,12 @@ export default function CommandPalette() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [dispatch]);
 
-  // Focus input when opened
+  // Focus input when opened; consume any pending seed text
   useEffect(() => {
     if (state.isCommandPaletteOpen) {
-      setQuery('');
+      const seed = pendingSeed;
+      pendingSeed = '';
+      setQuery(seed);
       setSelectedIndex(0);
       setTimeout(() => inputRef.current?.focus(), 50);
     }

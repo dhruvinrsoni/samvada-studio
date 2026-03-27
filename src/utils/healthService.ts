@@ -30,17 +30,6 @@ export interface OllamaConnectivityResult {
   error?: string;
 }
 
-/**
- * Check if the app is running on localhost or hosted remotely
- * @returns true if running on localhost, false if hosted (GitHub Pages, Netlify, etc.)
- */
-function isLocalhost(): boolean {
-  const hostname = window.location.hostname;
-  return hostname === 'localhost' || 
-         hostname === '127.0.0.1' || 
-         hostname === '[::1]' || 
-         hostname.includes('local');
-}
 
 export interface ProviderHealthResult {
   status: HealthStatus;
