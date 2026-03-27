@@ -340,7 +340,7 @@ export default function ModelManagerPanel() {
         </div>
       </div>
 
-      {/* Background pull progress (shown when dialog is minimized) */}
+      {/* Background pull progress — dialog-initiated pull (minimized) */}
       {bgPull && bgPull.pulling && !showPullDialog && (
         <div className={`rounded-lg p-3 border ${isDark ? 'bg-dark-300 border-dark-100' : 'bg-light-200 border-light-400'}`}>
           <div className="flex items-center justify-between mb-1.5">
@@ -363,6 +363,46 @@ export default function ModelManagerPanel() {
               style={{ width: `${bgPull.percent}%` }}
             />
           </div>
+        </div>
+      )}
+
+      {/* Background pull progress — browse-initiated pulls (always visible when browse section is collapsed or scrolled) */}
+      {Object.keys(pullingFromBrowse).length > 0 && !showBrowse && (
+        <div className="space-y-2">
+          {Object.entries(pullingFromBrowse).map(([name, info]) => (
+            <div key={name} className={`rounded-lg p-3 border ${isDark ? 'bg-dark-300 border-dark-100' : 'bg-light-200 border-light-400'}`}>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className={`text-xs font-medium ${textPrimary}`}>
+                  Pulling {name}...
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-medium ${textPrimary}`}>{info.percent}%</span>
+                  <button
+                    onClick={() => setShowBrowse(true)}
+                    className="text-xs text-theme-primary hover:text-theme-primary-hover font-medium"
+                  >
+                    Show in Browse
+                  </button>
+                  <button
+                    onClick={() => {
+                      pullControllersRef.current[name]?.abort();
+                      delete pullControllersRef.current[name];
+                      setPullingFromBrowse(prev => { const next = { ...prev }; delete next[name]; return next; });
+                    }}
+                    className="text-xs text-red-500 hover:text-red-400 font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+              <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-dark-100' : 'bg-light-400'}`}>
+                <div
+                  className="h-full bg-theme-primary rounded-full transition-all duration-300"
+                  style={{ width: `${info.percent}%` }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -534,14 +574,29 @@ export default function ModelManagerPanel() {
                       </div>
 
                       {pulling ? (
-                        <div className="flex items-center gap-2 flex-shrink-0 w-32">
-                          <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-dark-100' : 'bg-gray-200'}`}>
-                            <div
-                              className="h-full bg-theme-primary rounded-full transition-all"
-                              style={{ width: `${pulling.percent}%` }}
-                            />
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-1.5 w-28">
+                            <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-dark-100' : 'bg-gray-200'}`}>
+                              <div
+                                className="h-full bg-theme-primary rounded-full transition-all"
+                                style={{ width: `${pulling.percent}%` }}
+                              />
+                            </div>
+                            <span className={`text-xs font-medium w-8 text-right ${textMuted}`}>{pulling.percent}%</span>
                           </div>
-                          <span className={`text-xs font-medium w-8 text-right ${textMuted}`}>{pulling.percent}%</span>
+                          <button
+                            onClick={() => {
+                              pullControllersRef.current[m.name]?.abort();
+                              delete pullControllersRef.current[m.name];
+                              setPullingFromBrowse(prev => { const next = { ...prev }; delete next[m.name]; return next; });
+                            }}
+                            className="p-1 rounded text-red-500 hover:text-red-400 hover:bg-red-900/20 transition-colors"
+                            title="Cancel pull"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
                         </div>
                       ) : (
                         <button
