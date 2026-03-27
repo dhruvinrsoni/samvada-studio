@@ -350,6 +350,24 @@ function AppContent() {
             </div>
           </button>
 
+          {/* Knowledge Base / RAG */}
+          <button
+            onClick={() => {
+              if (!state.isAdminPanelOpen) dispatch({ type: 'TOGGLE_ADMIN_PANEL' });
+              window.dispatchEvent(new CustomEvent('open-admin-tab', { detail: 'knowledge' }));
+            }}
+            className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
+              isDark
+                ? 'text-gray-400 hover:bg-dark-100'
+                : 'text-gray-600 hover:bg-light-300'
+            }`}
+            title="Knowledge Base (RAG)"
+          >
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+            </svg>
+          </button>
+
           {/* Divider - Hide on mobile */}
           {!isMobile && (
             <div className={`h-5 sm:h-6 w-px ${state.theme === 'dark' ? 'bg-dark-100' : 'bg-light-400'}`} />

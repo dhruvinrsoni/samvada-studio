@@ -111,6 +111,15 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
   }, [state.providers, dispatch]);
 
   useEffect(() => {
+    const handleTabSwitch = (e: Event) => {
+      const tab = (e as CustomEvent).detail;
+      if (tab) setActiveTab(tab);
+    };
+    window.addEventListener('open-admin-tab', handleTabSwitch);
+    return () => window.removeEventListener('open-admin-tab', handleTabSwitch);
+  }, []);
+
+  useEffect(() => {
     const controller = new AbortController();
 
     const fetchCiStatus = async () => {
