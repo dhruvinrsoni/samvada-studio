@@ -193,7 +193,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
     const handleWheel = (e: WheelEvent) => {
       if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
         e.preventDefault();
-        el.scrollLeft += e.deltaY;
+        el.scrollBy({ left: e.deltaY, behavior: 'smooth' });
       }
     };
     el.addEventListener('wheel', handleWheel, { passive: false });
@@ -355,7 +355,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
       />
       
       {/* Panel - responsive width and height */}
-      <div className={`relative w-full max-w-[98vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[95vh] sm:max-h-[90vh] mx-0 sm:mx-4 rounded-xl shadow-2xl overflow-hidden flex flex-col ${
+      <div className={`relative w-full max-w-[98vw] sm:max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl max-h-[95vh] sm:max-h-[90vh] mx-0 sm:mx-4 rounded-xl shadow-2xl overflow-hidden flex flex-col ${
         isDark ? 'bg-dark-200' : 'bg-white'
       }`}>
         {/* Header - responsive with vertical tabs on mobile */}
@@ -376,7 +376,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
             </button>
           </div>
           {/* Tabs - horizontal scroll on mobile, always show labels */}
-          <div ref={tabBarRef} className="flex gap-1 sm:gap-1.5 overflow-x-auto pb-1 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0 snap-x snap-mandatory scroll-smooth">
+          <div ref={tabBarRef} className="flex gap-1 sm:gap-1.5 overflow-x-auto pb-1 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0 snap-x snap-mandatory scroll-smooth" style={{ scrollBehavior: 'smooth' }}>
             <button
               onClick={() => setActiveTab('providers')}
               className={`px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1 sm:gap-1.5 snap-start ${
