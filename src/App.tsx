@@ -114,6 +114,82 @@ function CommandPalettetrigger({ isDark, dispatch, isMobile }: {
   );
 }
 
+function SearchEverywhereTrigger({ isDark, dispatch }: {
+  isDark: boolean;
+  dispatch: Dispatch<ChatAction>;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [hoverText, setHoverText] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const collapseTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const expand = useCallback(() => {
+    clearTimeout(collapseTimer.current);
+    setExpanded(true);
+    setTimeout(() => inputRef.current?.focus(), 60);
+  }, []);
+
+  const scheduleCollapse = useCallback(() => {
+    collapseTimer.current = setTimeout(() => {
+      if (!hoverText) {
+        setExpanded(false);
+        setHoverText('');
+      }
+    }, 300);
+  }, [hoverText]);
+
+  const openSearch = useCallback((seed: string) => {
+    if (seed) dispatch({ type: 'SET_GLOBAL_SEARCH_QUERY', payload: seed });
+    setExpanded(false);
+    setHoverText('');
+    dispatch({ type: 'TOGGLE_GLOBAL_SEARCH' });
+  }, [dispatch]);
+
+  return (
+    <button
+      onClick={() => openSearch('')}
+      onMouseEnter={expand}
+      onMouseLeave={scheduleCollapse}
+      className={`relative flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex-1 mx-2 sm:mx-3 md:mx-4 max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg ${
+        isDark
+          ? 'bg-theme-primary/25 text-theme-primary-light hover:bg-theme-primary/35 border border-theme-primary/40'
+          : 'bg-theme-primary/20 text-theme-primary-dark hover:bg-theme-primary/30 border border-theme-primary/35'
+      }`}
+      title="Search everywhere (Ctrl+Shift+F)"
+    >
+      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+
+      {expanded ? (
+        <input
+          ref={inputRef}
+          type="text"
+          value={hoverText}
+          onClick={e => e.stopPropagation()}
+          onChange={e => openSearch(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') { e.stopPropagation(); openSearch(''); }
+            else if (e.key === 'Escape') { setExpanded(false); setHoverText(''); }
+          }}
+          placeholder="Type to search..."
+          className="flex-1 text-xs sm:text-sm bg-transparent outline-none min-w-0 placeholder-current/50"
+        />
+      ) : (
+        <span className="text-xs sm:text-sm truncate hidden xs:inline">
+          Search everywhere...
+        </span>
+      )}
+
+      <kbd className={`px-1 sm:px-1.5 py-0.5 text-xs rounded ml-auto hidden lg:inline flex-shrink-0 ${
+        isDark ? 'bg-theme-primary/30 text-theme-primary-light' : 'bg-theme-primary/25 text-theme-primary-dark'
+      }`}>
+        Ctrl+Shift+F
+      </kbd>
+    </button>
+  );
+}
+
 function AppContent() {
   const { state, dispatch, createChat, isDark } = useChat();
   const { toasts, removeToast } = useToast();
@@ -246,29 +322,9 @@ function AppContent() {
           </div>
         </div>
 
-        {/* Global Search Trigger - fills the empty space */}
+        {/* Global Search Trigger - fills the empty space, hover to type */}
         {!isMobile && (
-          <button
-            onClick={() => dispatch({ type: 'TOGGLE_GLOBAL_SEARCH' })}
-            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg transition-all flex-1 mx-2 sm:mx-3 md:mx-4 max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg ${
-                isDark
-                  ? 'bg-theme-primary/25 text-theme-primary-light hover:bg-theme-primary/35 border border-theme-primary/40'
-                  : 'bg-theme-primary/20 text-theme-primary-dark hover:bg-theme-primary/30 border border-theme-primary/35'
-            }`}
-            title="Search everywhere (Ctrl+Shift+F)"
-          >
-            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <span className="text-xs sm:text-sm truncate hidden xs:inline">
-              Search everywhere...
-            </span>
-            <kbd className={`px-1 sm:px-1.5 py-0.5 text-xs rounded ml-auto hidden lg:inline flex-shrink-0 ${
-              isDark ? 'bg-theme-primary/30 text-theme-primary-light' : 'bg-theme-primary/25 text-theme-primary-dark'
-            }`}>
-              Ctrl+Shift+F
-            </kbd>
-          </button>
+          <SearchEverywhereTrigger isDark={isDark} dispatch={dispatch} />
         )}
 
         {/* Right Side Action Buttons */}
