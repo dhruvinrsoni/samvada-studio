@@ -101,7 +101,10 @@ function CommandPalettetrigger({ isDark, dispatch, isMobile, isTablet }: {
             onChange={e => handleInput(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter') handleInput('');
-              else if (e.key === 'Escape') { setExpanded(false); setHoverText(''); }
+              else if (e.key === 'Escape') {
+                if (hoverText) { setHoverText(''); }
+                else { setExpanded(false); }
+              }
             }}
             placeholder="Type a command..."
             className={`w-36 sm:w-44 px-2 py-1.5 text-sm bg-transparent outline-none ${
@@ -142,10 +145,12 @@ function SearchEverywhereTrigger({ isDark, dispatch }: {
   }, [hoverText]);
 
   const openSearch = useCallback((seed: string) => {
-    if (seed) dispatch({ type: 'SET_GLOBAL_SEARCH_QUERY', payload: seed });
     setExpanded(false);
     setHoverText('');
     dispatch({ type: 'TOGGLE_GLOBAL_SEARCH' });
+    if (seed) {
+      setTimeout(() => dispatch({ type: 'SET_GLOBAL_SEARCH_QUERY', payload: seed }), 0);
+    }
   }, [dispatch]);
 
   return (
@@ -170,10 +175,13 @@ function SearchEverywhereTrigger({ isDark, dispatch }: {
           type="text"
           value={hoverText}
           onClick={e => e.stopPropagation()}
-          onChange={e => openSearch(e.target.value)}
+          onChange={e => { setHoverText(e.target.value); openSearch(e.target.value); }}
           onKeyDown={e => {
-            if (e.key === 'Enter') { e.stopPropagation(); openSearch(''); }
-            else if (e.key === 'Escape') { setExpanded(false); setHoverText(''); }
+            if (e.key === 'Enter') { e.stopPropagation(); openSearch(hoverText); }
+            else if (e.key === 'Escape') {
+              if (hoverText) { setHoverText(''); }
+              else { setExpanded(false); }
+            }
           }}
           placeholder="Type to search..."
           className="flex-1 text-xs sm:text-sm bg-transparent outline-none min-w-0 placeholder-current/50"
