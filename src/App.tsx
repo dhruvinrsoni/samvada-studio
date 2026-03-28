@@ -27,22 +27,25 @@ import { ObservabilityProvider } from './context/ObservabilityContext';
 import { MemoryProvider } from './context/MemoryContext';
 import { RAGProvider } from './context/RAGContext';
 
-function CommandPalettetrigger({ isDark, dispatch, isMobile }: {
+function CommandPalettetrigger({ isDark, dispatch, isMobile, isTablet }: {
   isDark: boolean;
   dispatch: Dispatch<ChatAction>;
   isMobile: boolean;
+  isTablet: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [hoverText, setHoverText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const collapseTimer = useRef<ReturnType<typeof setTimeout>>();
 
+  const canHoverExpand = !isMobile && !isTablet;
+
   const expand = useCallback(() => {
-    if (isMobile) return;
+    if (!canHoverExpand) return;
     clearTimeout(collapseTimer.current);
     setExpanded(true);
     setTimeout(() => inputRef.current?.focus(), 60);
-  }, [isMobile]);
+  }, [canHoverExpand]);
 
   const scheduleCollapse = useCallback(() => {
     collapseTimer.current = setTimeout(() => {
@@ -84,8 +87,8 @@ function CommandPalettetrigger({ isDark, dispatch, isMobile }: {
         </svg>
       </button>
 
-      {expanded && !isMobile && (
-        <div className={`absolute right-0 top-1/2 -translate-y-1/2 flex items-center rounded-lg overflow-hidden shadow-lg border transition-all z-10 ${
+      {expanded && canHoverExpand && (
+        <div className={`absolute right-0 top-1/2 -translate-y-1/2 flex items-center rounded-lg overflow-hidden shadow-lg border transition-all z-10 max-w-[calc(100vw-120px)] ${
           isDark ? 'bg-dark-200 border-dark-300' : 'bg-white border-gray-200'
         }`}>
           <svg className="w-4 h-4 ml-2.5 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,7 +104,7 @@ function CommandPalettetrigger({ isDark, dispatch, isMobile }: {
               else if (e.key === 'Escape') { setExpanded(false); setHoverText(''); }
             }}
             placeholder="Type a command..."
-            className={`w-44 px-2 py-1.5 text-sm bg-transparent outline-none ${
+            className={`w-36 sm:w-44 px-2 py-1.5 text-sm bg-transparent outline-none ${
               isDark ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'
             }`}
           />
@@ -362,7 +365,7 @@ function AppContent() {
           )}
 
           {/* Command Palette -- hover to reveal inline input */}
-          <CommandPalettetrigger isDark={isDark} dispatch={dispatch} isMobile={isMobile} />
+          <CommandPalettetrigger isDark={isDark} dispatch={dispatch} isMobile={isMobile} isTablet={isTablet} />
 
           {/* Divider - Hide on mobile */}
           {!isMobile && (
