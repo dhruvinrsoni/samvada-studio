@@ -8,6 +8,7 @@ import { useToast } from '../../context/ToastContext';
 import { generateId } from '../../utils/helpers';
 import type { OllamaModelInfo, OllamaRunningModel, LLMProviderConfig } from '../../types';
 import ModelPullDialog from './ModelPullDialog';
+import type { ModelPullDialogHandle } from './ModelPullDialog';
 import ModelInfoDialog from './ModelInfoDialog';
 
 type SortField = 'name' | 'size' | 'family' | 'params' | 'quantization' | 'modified';
@@ -51,7 +52,10 @@ export default function ModelManagerPanel() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showRunning, setShowRunning] = useState(true);
   const [ollamaStatus, setOllamaStatus] = useState<OllamaStatus>('unknown');
-  const [bgPull, setBgPull] = useState<{ modelName: string; percent: number; pulling: boolean } | null>(null);
+  const [bgPulls, setBgPulls] = useState<Record<string, { percent: number; pulling: boolean; status?: string; digest?: string; completed?: number; total?: number }>>({}); 
+  const bgPullControllersRef = useRef<Record<string, AbortController>>({});
+  const pullDialogRef = useRef<ModelPullDialogHandle>(null);
+  const [expandedBgPulls, setExpandedBgPulls] = useState<Set<string>>(new Set());
 
   // Browse & Pull (registry)
   const [showBrowse, setShowBrowse] = useState(false);
@@ -340,29 +344,68 @@ export default function ModelManagerPanel() {
         </div>
       </div>
 
-      {/* Background pull progress — dialog-initiated pull (minimized) */}
-      {bgPull && bgPull.pulling && !showPullDialog && (
-        <div className={`rounded-lg p-3 border ${isDark ? 'bg-dark-300 border-dark-100' : 'bg-light-200 border-light-400'}`}>
-          <div className="flex items-center justify-between mb-1.5">
-            <span className={`text-xs font-medium ${textPrimary}`}>
-              Pulling {bgPull.modelName}...
-            </span>
-            <div className="flex items-center gap-2">
-              <span className={`text-xs font-medium ${textPrimary}`}>{bgPull.percent}%</span>
-              <button
-                onClick={() => setShowPullDialog(true)}
-                className="text-xs text-theme-primary hover:text-theme-primary-hover font-medium"
-              >
-                Show Details
-              </button>
-            </div>
-          </div>
-          <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-dark-100' : 'bg-light-400'}`}>
-            <div
-              className="h-full bg-theme-primary rounded-full transition-all duration-300"
-              style={{ width: `${bgPull.percent}%` }}
-            />
-          </div>
+      {/* Background pull progress — dialog-initiated pulls (detached / minimized) */}
+      {Object.entries(bgPulls).filter(([, info]) => info.pulling).length > 0 && (
+        <div className="space-y-2">
+          {Object.entries(bgPulls).filter(([, info]) => info.pulling).map(([name, info]) => {
+            const isExpanded = expandedBgPulls.has(name);
+            return (
+              <div key={name} className={`rounded-lg p-3 border ${isDark ? 'bg-dark-300 border-dark-100' : 'bg-light-200 border-light-400'}`}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className={`text-xs font-medium ${textPrimary}`}>
+                    Pulling {name}...
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-medium ${textPrimary}`}>{info.percent}%</span>
+                    <button
+                      onClick={() => setExpandedBgPulls(prev => {
+                        const next = new Set(prev);
+                        if (next.has(name)) next.delete(name); else next.add(name);
+                        return next;
+                      })}
+                      className="text-xs text-theme-primary hover:text-theme-primary-hover font-medium"
+                    >
+                      {isExpanded ? 'Collapse' : 'Show Details'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        bgPullControllersRef.current[name]?.abort();
+                        delete bgPullControllersRef.current[name];
+                        setBgPulls(prev => { const next = { ...prev }; delete next[name]; return next; });
+                        setExpandedBgPulls(prev => { const next = new Set(prev); next.delete(name); return next; });
+                      }}
+                      className="text-xs text-red-500 hover:text-red-400 font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+                <div className={`w-full ${isExpanded ? 'h-2' : 'h-1.5'} rounded-full overflow-hidden ${isDark ? 'bg-dark-100' : 'bg-light-400'}`}>
+                  <div
+                    className="h-full bg-theme-primary rounded-full transition-all duration-300"
+                    style={{ width: `${info.percent}%` }}
+                  />
+                </div>
+                {isExpanded && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs ${textMuted}`}>{info.status || 'Downloading...'}</span>
+                      {info.digest && (
+                        <span className={`text-xs font-mono ${textMuted}`}>{info.digest.substring(0, 12)}</span>
+                      )}
+                    </div>
+                    {(info.total ?? 0) > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs ${textMuted}`}>
+                          {formatBytes(info.completed ?? 0)} / {formatBytes(info.total!)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -456,7 +499,10 @@ export default function ModelManagerPanel() {
           {/* Action buttons */}
           <div className="flex items-end gap-2">
             <button
-              onClick={() => setShowPullDialog(true)}
+              onClick={() => {
+                pullDialogRef.current?.resetForNewPull();
+                setShowPullDialog(true);
+              }}
               className="px-3 py-2 bg-theme-primary text-white rounded-lg hover:bg-theme-primary-hover text-sm font-medium whitespace-nowrap"
             >
               ⬇ Pull Model
@@ -766,7 +812,10 @@ export default function ModelManagerPanel() {
               <p className="text-sm mb-2">No models found on this host</p>
               <p className="text-xs mb-4">Pull a model to get started</p>
               <button
-                onClick={() => setShowPullDialog(true)}
+                onClick={() => {
+                  pullDialogRef.current?.resetForNewPull();
+                  setShowPullDialog(true);
+                }}
                 className="px-4 py-2 bg-theme-primary text-white rounded-lg hover:bg-theme-primary-hover text-sm"
               >
                 ⬇ Pull Your First Model
@@ -903,16 +952,29 @@ export default function ModelManagerPanel() {
 
       {/* Pull Dialog — always mounted so state survives minimize/restore */}
       <ModelPullDialog
+        ref={pullDialogRef}
         baseUrl={resolveHost()}
         isDark={isDark}
         visible={showPullDialog}
         onClose={() => setShowPullDialog(false)}
         onMinimize={() => setShowPullDialog(false)}
         onPullComplete={(name) => {
+          setBgPulls(prev => { const next = { ...prev }; delete next[name]; return next; });
+          delete bgPullControllersRef.current[name];
           addToast('success', 'Model Ready', `${name} is now available`);
           refreshModels();
         }}
-        onProgressUpdate={setBgPull}
+        onProgressUpdate={(info) => {
+          setBgPulls(prev => ({ ...prev, [info.modelName]: { percent: info.percent, pulling: info.pulling, status: info.status, digest: info.digest, completed: info.completed, total: info.total } }));
+          if (!info.pulling) {
+            delete bgPullControllersRef.current[info.modelName];
+            setExpandedBgPulls(prev => { const next = new Set(prev); next.delete(info.modelName); return next; });
+          }
+        }}
+        onDetachPull={(info) => {
+          bgPullControllersRef.current[info.modelName] = info.controller;
+          setBgPulls(prev => ({ ...prev, [info.modelName]: { percent: info.percent, pulling: true } }));
+        }}
       />
 
       {/* Info Dialog */}

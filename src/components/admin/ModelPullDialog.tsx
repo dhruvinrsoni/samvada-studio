@@ -1,6 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useImperativeHandle, forwardRef } from 'react';
 import { pullModel, formatBytes } from '../../services/ollamaModelService';
-import type { OllamaPullProgress } from '../../types';
 
 interface ModelPullDialogProps {
   baseUrl: string;
@@ -9,12 +8,18 @@ interface ModelPullDialogProps {
   onClose: () => void;
   onMinimize?: () => void;
   onPullComplete: (modelName: string) => void;
-  onProgressUpdate?: (info: { modelName: string; percent: number; pulling: boolean }) => void;
+  onProgressUpdate?: (info: { modelName: string; percent: number; pulling: boolean; status?: string; digest?: string; completed?: number; total?: number }) => void;
+  onDetachPull?: (info: { modelName: string; percent: number; controller: AbortController }) => void;
+}
+
+export interface ModelPullDialogHandle {
+  resetForNewPull: () => void;
 }
 
 type PullState = 'idle' | 'pulling' | 'success' | 'error' | 'cancelled';
 
-export default function ModelPullDialog({ baseUrl, isDark, visible, onClose, onMinimize, onPullComplete, onProgressUpdate }: ModelPullDialogProps) {
+const ModelPullDialog = forwardRef<ModelPullDialogHandle, ModelPullDialogProps>(
+  function ModelPullDialog({ baseUrl, isDark, visible, onClose, onMinimize, onPullComplete, onProgressUpdate, onDetachPull }, ref) {
   const [modelName, setModelName] = useState('');
   const [pullState, setPullState] = useState<PullState>('idle');
   const [statusText, setStatusText] = useState('');
@@ -23,26 +28,35 @@ export default function ModelPullDialog({ baseUrl, isDark, visible, onClose, onM
   const [total, setTotal] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
   const controllerRef = useRef<AbortController | null>(null);
+  const pullGenRef = useRef(0);
 
   const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-  const handleProgress = useCallback((progress: OllamaPullProgress) => {
-    setStatusText(progress.status);
-    if (progress.digest) setCurrentDigest(progress.digest.substring(0, 12));
-    if (progress.total != null) setTotal(progress.total);
-    if (progress.completed != null) setCompleted(progress.completed);
-    if (onProgressUpdate) {
-      const pct = progress.total && progress.total > 0
-        ? Math.round(((progress.completed ?? 0) / progress.total) * 100) : 0;
-      onProgressUpdate({ modelName: modelName.trim(), percent: pct, pulling: true });
-    }
-  }, [onProgressUpdate, modelName]);
+  useImperativeHandle(ref, () => ({
+    resetForNewPull: () => {
+      if (pullState === 'pulling' && controllerRef.current) {
+        const currentName = modelName.trim();
+        if (onDetachPull && currentName) {
+          onDetachPull({ modelName: currentName, percent: progressPercent, controller: controllerRef.current });
+        }
+        controllerRef.current = null;
+        pullGenRef.current += 1;
+      }
+
+      setPullState('idle');
+      setModelName('');
+      setStatusText('');
+      setCurrentDigest('');
+      setCompleted(0);
+      setTotal(0);
+      setErrorMessage('');
+    },
+  }));
 
   const handlePull = () => {
     const name = modelName.trim();
     if (!name) return;
 
-    // Basic client-side validation
     if (/[^a-zA-Z0-9._:/-]/.test(name)) {
       setPullState('error');
       setErrorMessage(`Invalid model name "${name}". Use only letters, numbers, dots, colons, slashes, and hyphens (e.g. llama3.2, mistral:7b).`);
@@ -56,18 +70,35 @@ export default function ModelPullDialog({ baseUrl, isDark, visible, onClose, onM
     setTotal(0);
     setErrorMessage('');
 
+    const gen = ++pullGenRef.current;
+
     controllerRef.current = pullModel(
       baseUrl,
       name,
-      handleProgress,
+      (progress) => {
+        const pct = progress.total && progress.total > 0
+          ? Math.round(((progress.completed ?? 0) / progress.total) * 100) : 0;
+        onProgressUpdate?.({ modelName: name, percent: pct, pulling: true, status: progress.status, digest: progress.digest, completed: progress.completed ?? undefined, total: progress.total ?? undefined });
+
+        if (pullGenRef.current !== gen) return;
+        setStatusText(progress.status);
+        if (progress.digest) setCurrentDigest(progress.digest.substring(0, 12));
+        if (progress.total != null) setTotal(progress.total);
+        if (progress.completed != null) setCompleted(progress.completed);
+      },
       () => {
-        setPullState('success');
-        setStatusText('success');
         onPullComplete(name);
         onProgressUpdate?.({ modelName: name, percent: 100, pulling: false });
         window.dispatchEvent(new Event('ollama-models-changed'));
+
+        if (pullGenRef.current !== gen) return;
+        setPullState('success');
+        setStatusText('success');
       },
       (err) => {
+        onProgressUpdate?.({ modelName: name, percent: 0, pulling: false });
+
+        if (pullGenRef.current !== gen) return;
         if (err.message === 'Pull cancelled') {
           setPullState('cancelled');
           setStatusText('Cancelled');
@@ -75,7 +106,6 @@ export default function ModelPullDialog({ baseUrl, isDark, visible, onClose, onM
           setPullState('error');
           setErrorMessage(err.message);
         }
-        onProgressUpdate?.({ modelName: name, percent: 0, pulling: false });
       },
     );
   };
@@ -224,4 +254,6 @@ export default function ModelPullDialog({ baseUrl, isDark, visible, onClose, onM
       </div>
     </div>
   );
-}
+});
+
+export default ModelPullDialog;
