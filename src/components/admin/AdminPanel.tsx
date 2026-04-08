@@ -465,7 +465,7 @@ export default function AdminPanel({ pwaStatus }: AdminPanelProps) {
                     : 'text-gray-600 hover:bg-light-300 hover:text-gray-800'
               }`}
             >
-              <span className="text-sm sm:text-base">RAG</span>
+              <span className="text-sm sm:text-base">📚</span>
               <span className="text-[11px] sm:text-xs md:text-sm">Knowledge</span>
             </button>
             <button
