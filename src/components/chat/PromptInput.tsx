@@ -1,10 +1,35 @@
-import { useRef, KeyboardEvent, useEffect, useState } from 'react';
+import { useRef, KeyboardEvent, useEffect, useState, useCallback, DragEvent, ClipboardEvent } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { usePromptNavigation } from '../../hooks/usePromptNavigation';
+import { ImageAttachment } from '../../types';
 import VoiceInput from './VoiceInput';
 
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
+const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+
+function fileToImageAttachment(file: File): Promise<ImageAttachment> {
+  return new Promise((resolve, reject) => {
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      reject(new Error(`Unsupported image type: ${file.type}`));
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      reject(new Error(`Image too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max 10MB.`));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const base64 = dataUrl.split(',')[1] ?? '';
+      resolve({ data: base64, mimeType: file.type });
+    };
+    reader.onerror = () => reject(new Error('Failed to read image file'));
+    reader.readAsDataURL(file);
+  });
+}
+
 interface PromptInputProps {
-  onSend: (content: string) => void;
+  onSend: (content: string, images?: ImageAttachment[]) => void;
   onKeyDown: (e: KeyboardEvent<HTMLTextAreaElement>, content: string) => void;
   disabled?: boolean;
   value?: string;
@@ -24,6 +49,10 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
     type: 'numbered',
     currentNumber: 1,
   });
+
+  const [attachedImages, setAttachedImages] = useState<ImageAttachment[]>([]);
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Undo/Redo History
   const [history, setHistory] = useState<string[]>([value]);
@@ -106,13 +135,64 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
   }, [value]);
 
   const handleSend = () => {
-    if (value.trim() && !disabled) {
-      onSend(value);
+    if ((value.trim() || attachedImages.length > 0) && !disabled) {
+      onSend(value, attachedImages.length > 0 ? attachedImages : undefined);
       onChange?.('');
+      setAttachedImages([]);
       setListMode({ active: false, type: 'numbered', currentNumber: 1 });
-      resetNavigation(); // Reset navigation when sending
+      resetNavigation();
     }
   };
+
+  const addImages = useCallback(async (files: File[]) => {
+    const imageFiles = files.filter(f => ACCEPTED_IMAGE_TYPES.includes(f.type));
+    if (imageFiles.length === 0) return;
+    try {
+      const newAttachments = await Promise.all(imageFiles.map(fileToImageAttachment));
+      setAttachedImages(prev => [...prev, ...newAttachments]);
+    } catch (err: any) {
+      console.warn('Image attachment failed:', err.message);
+    }
+  }, []);
+
+  const removeImage = useCallback((index: number) => {
+    setAttachedImages(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handlePaste = useCallback((e: ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const imageFiles: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item && item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) imageFiles.push(file);
+      }
+    }
+    if (imageFiles.length > 0) {
+      e.preventDefault();
+      addImages(imageFiles);
+    }
+  }, [addImages]);
+
+  const handleDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    const hasImages = Array.from(e.dataTransfer.types).includes('Files');
+    if (hasImages) setIsDraggingImage(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    setIsDraggingImage(false);
+  }, []);
+
+  const handleDrop = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    setIsDraggingImage(false);
+    const files = Array.from(e.dataTransfer.files);
+    addImages(files);
+  }, [addImages]);
 
   // Helper function to get the current line index from cursor position
   const getCurrentLineIndex = (textarea: HTMLTextAreaElement): number => {
@@ -569,12 +649,52 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
         )}
       </div>
 
-      <div className="relative">
+      {/* Image Thumbnails */}
+      {attachedImages.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-2">
+          {attachedImages.map((img, idx) => (
+            <div key={idx} className="relative group">
+              <img
+                src={`data:${img.mimeType};base64,${img.data}`}
+                alt={`Attachment ${idx + 1}`}
+                className={`w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border ${
+                  isDark ? 'border-dark-300' : 'border-light-400'
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => removeImage(idx)}
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Remove image"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div
+        className={`relative ${isDraggingImage ? `ring-2 ring-theme-primary rounded-lg ${isDark ? 'bg-theme-primary/10' : 'bg-theme-primary/5'}` : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {isDraggingImage && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg pointer-events-none">
+            <span className={`text-sm font-medium px-3 py-1.5 rounded-full ${isDark ? 'bg-dark-200 text-theme-primary' : 'bg-white text-theme-primary'}`}>
+              Drop image here
+            </span>
+          </div>
+        )}
         <textarea
           ref={textareaRef}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
           onKeyDown={handleKeyDownInternal}
+          onPaste={handlePaste}
           onMouseEnter={() => textareaRef.current?.focus()}
           disabled={disabled}
           placeholder={
@@ -582,7 +702,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
               ? "Select a provider in Admin Settings to start"
               : multiLineMode
                 ? "Multi-line: Enter for newline, Shift+Enter to send"
-                : "Type message... (Enter to send)"
+                : "Type message... (Enter to send, paste/drop images)"
           }
           className={`w-full p-2 sm:p-3 md:p-4 compact:p-1.5 pr-20 sm:pr-24 md:pr-28 border rounded-lg focus:outline-none focus:border-theme-primary resize-none min-h-[48px] sm:min-h-[56px] md:min-h-[60px] compact:min-h-[36px] max-h-[200px] sm:max-h-[250px] md:max-h-[300px] font-mono text-xs sm:text-sm ${
             !hasProvider
@@ -595,10 +715,10 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
         />
         <div className="absolute right-1.5 sm:right-2 md:right-3 bottom-1.5 sm:bottom-2 md:bottom-3 flex items-center gap-1 sm:gap-1.5 md:gap-2">
           {/* Clear Button - Show when has content */}
-          {value && (
+          {(value || attachedImages.length > 0) && (
             <button
               type="button"
-              onClick={() => onChange?.('')}
+              onClick={() => { onChange?.(''); setAttachedImages([]); }}
               className={`p-1.5 sm:p-2 rounded-lg transition-all min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center ${
                 isDark
                   ? 'text-theme-primary hover:bg-theme-primary/10'
@@ -611,7 +731,34 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
               </svg>
             </button>
           )}
-          
+
+          {/* Image Attach Button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className={`p-1.5 sm:p-2 rounded-lg transition-all min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center ${
+              isDark
+                ? 'text-theme-primary hover:bg-theme-primary/10'
+                : 'text-theme-primary hover:bg-theme-primary/5'
+            }`}
+            title="Attach image (png, jpg, webp, gif)"
+          >
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPTED_IMAGE_TYPES.join(',')}
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files) addImages(Array.from(e.target.files));
+              e.target.value = '';
+            }}
+          />
+
           <button
             type="button"
             onClick={() => setShowToolbar(!showToolbar)}
@@ -637,7 +784,7 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
           </div>
           <button
             onClick={handleSend}
-            disabled={disabled || !value.trim()}
+            disabled={disabled || (!value.trim() && attachedImages.length === 0)}
             className="p-1.5 sm:p-2 bg-theme-primary hover:bg-theme-primary-hover disabled:bg-theme-primary/25 disabled:cursor-not-allowed text-white disabled:text-white/40 rounded-lg transition-colors min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center"
             title="Send (Ctrl+Enter or Shift+Enter)"
           >
