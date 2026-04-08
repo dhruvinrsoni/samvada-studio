@@ -366,6 +366,10 @@ export const callLLMProvider = async (
     throw error;
   }
 
+  // Strip images from history to avoid bloating requests with large base64 payloads.
+  // Only the current turn's images are sent; prior turns retain text only.
+  const strippedHistory = history?.map(({ images: _imgs, ...rest }) => rest);
+
   try {
     let response: Response;
     let content: string;
@@ -384,7 +388,7 @@ export const callLLMProvider = async (
                                  provider.model.includes('o3') ||
                                  provider.model.includes('gpt-5');
         
-        const historyMessages = (history ?? []).map(formatOpenAIHistoryMsg);
+        const historyMessages = (strippedHistory ?? []).map(formatOpenAIHistoryMsg);
         const requestBody: Record<string, unknown> = {
           model: provider.model,
           messages: [
@@ -439,7 +443,7 @@ export const callLLMProvider = async (
           body: JSON.stringify({
             messages: [
               ...(systemParts ?? []).map(p => ({ role: 'system' as const, content: p.content })),
-              ...(history ?? []).map(formatOpenAIHistoryMsg),
+              ...(strippedHistory ?? []).map(formatOpenAIHistoryMsg),
               { role: 'user' as const, content: formatOpenAIContent(prompt, images) },
             ],
             temperature: provider.settings.temperature,
@@ -475,9 +479,9 @@ export const callLLMProvider = async (
               model: provider.model,
               max_tokens: provider.settings.maxTokens,
               messages: [
-                ...(history ?? []).map(m => ({
+                ...(strippedHistory ?? []).map(m => ({
                   role: m.role as 'user' | 'assistant',
-                  content: m.images?.length ? formatAnthropicContent(m.content, m.images) : m.content,
+                  content: m.content,
                 })),
                 { role: 'user', content: formatAnthropicContent(prompt, images) },
               ],
@@ -528,15 +532,10 @@ export const callLLMProvider = async (
         });
 
         // Gemini uses role: 'user' | 'model' in contents array
-        const geminiHistory = (history ?? []).map(m => {
-          const parts: Record<string, unknown>[] = [{ text: m.content }];
-          if (m.role === 'user' && m.images?.length) {
-            for (const img of m.images) {
-              parts.push({ inline_data: { mime_type: img.mimeType, data: img.data } });
-            }
-          }
-          return { role: m.role === 'assistant' ? 'model' : 'user', parts };
-        });
+        const geminiHistory = (strippedHistory ?? []).map(m => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }],
+        }));
 
         const geminiUserParts: Record<string, unknown>[] = [{
           text: systemParts?.length && !supportsSystemInstruction
@@ -589,7 +588,7 @@ export const callLLMProvider = async (
       case 'ollama': {
         const resolvedEndpoint = resolveOllamaEndpoint(provider);
         const baseUrl = resolvedEndpoint.replace(/\/api\/(generate|chat)$/, '');
-        const hasHistory = history && history.length > 0;
+        const hasHistory = strippedHistory && strippedHistory.length > 0;
 
         logDebug('Ollama Request', {
           requestId,
@@ -612,12 +611,8 @@ export const callLLMProvider = async (
                 content: systemParts.map(p => p.content).join('\n\n'),
               });
             }
-            for (const m of history) {
-              ollamaMessages.push({
-                role: m.role,
-                content: m.content,
-                ...(m.images?.length ? { images: m.images.map(i => i.data) } : {}),
-              });
+            for (const m of (strippedHistory ?? [])) {
+              ollamaMessages.push({ role: m.role, content: m.content });
             }
             ollamaMessages.push({
               role: 'user',
@@ -729,7 +724,7 @@ export const callLLMProvider = async (
             model: provider.model,
             messages: [
               ...(systemParts ?? []).map(p => ({ role: 'system' as const, content: p.content })),
-              ...(history ?? []).map(formatOpenAIHistoryMsg),
+              ...(strippedHistory ?? []).map(formatOpenAIHistoryMsg),
               { role: 'user' as const, content: formatOpenAIContent(prompt, images) },
             ],
             temperature: provider.settings.temperature,

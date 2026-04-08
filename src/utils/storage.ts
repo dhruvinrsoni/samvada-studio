@@ -93,8 +93,17 @@ export const saveState = (state: AppState): void => {
       }
       return value;
     });
+
+    const sizeMB = serialized.length / (1024 * 1024);
+    if (sizeMB > 4) {
+      console.warn(`[Samvada] localStorage usage: ${sizeMB.toFixed(1)}MB — approaching browser limit. Consider removing old chats with large image attachments.`);
+    }
+
     localStorage.setItem(STORAGE_KEY, serialized);
   } catch (error) {
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      console.error('[Samvada] localStorage quota exceeded — image-heavy chats may need to be deleted to free space.');
+    }
     console.error('Failed to save state:', error);
   }
 };

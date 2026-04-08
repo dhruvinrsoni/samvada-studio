@@ -5,7 +5,31 @@ import { ImageAttachment } from '../../types';
 import VoiceInput from './VoiceInput';
 
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_IMAGE_DIMENSION = 1024;
 const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+
+function compressImage(dataUrl: string, mimeType: string): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      if (img.width <= MAX_IMAGE_DIMENSION && img.height <= MAX_IMAGE_DIMENSION) {
+        resolve(dataUrl);
+        return;
+      }
+      const scale = Math.min(MAX_IMAGE_DIMENSION / img.width, MAX_IMAGE_DIMENSION / img.height);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { resolve(dataUrl); return; }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const outType = mimeType === 'image/png' ? 'image/png' : 'image/jpeg';
+      resolve(canvas.toDataURL(outType, 0.85));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
 
 function fileToImageAttachment(file: File): Promise<ImageAttachment> {
   return new Promise((resolve, reject) => {
@@ -18,10 +42,12 @@ function fileToImageAttachment(file: File): Promise<ImageAttachment> {
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
+    reader.onload = async () => {
+      const rawDataUrl = reader.result as string;
+      const dataUrl = await compressImage(rawDataUrl, file.type);
       const base64 = dataUrl.split(',')[1] ?? '';
-      resolve({ data: base64, mimeType: file.type });
+      const outMime = dataUrl.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
+      resolve({ data: base64, mimeType: file.type === 'image/gif' ? 'image/gif' : outMime });
     };
     reader.onerror = () => reject(new Error('Failed to read image file'));
     reader.readAsDataURL(file);
