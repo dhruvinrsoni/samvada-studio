@@ -517,6 +517,22 @@ export default function PromptResponseItem({ chatId, promptResponse, pnrIndex, o
                   </div>
                 ) : (
                   <div className="relative">
+                    {activePrompt.images && activePrompt.images.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {activePrompt.images.map((img, idx) => (
+                          <img
+                            key={idx}
+                            src={`data:${img.mimeType};base64,${img.data}`}
+                            alt={`Attached ${idx + 1}`}
+                            className={`max-w-[200px] max-h-[200px] rounded-lg border cursor-pointer hover:opacity-90 transition-opacity ${
+                              isDark ? 'border-dark-300' : 'border-light-400'
+                            }`}
+                            onClick={() => window.open(`data:${img.mimeType};base64,${img.data}`, '_blank')}
+                            title="Open full size in new tab"
+                          />
+                        ))}
+                      </div>
+                    )}
                     <MessageContent content={activePrompt.content} />
                     <button
                       onClick={() => { setEditedPrompt(activePrompt.content); setIsEditingPrompt(true); }}
