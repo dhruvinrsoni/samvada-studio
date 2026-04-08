@@ -272,10 +272,16 @@ export interface GlobalSearchState {
   isOpen: boolean;
 }
 
+export interface ImageAttachment {
+  data: string;       // base64-encoded image data (no data URI prefix)
+  mimeType: string;   // e.g. "image/png", "image/jpeg", "image/webp"
+}
+
 // Provider-agnostic conversation turn for chat history
 export interface ChatHistoryMessage {
   role: 'user' | 'assistant';
   content: string;
+  images?: ImageAttachment[];
 }
 
 export interface Message {
@@ -289,6 +295,7 @@ export interface Message {
   replyTo?: string; // Message ID this is replying to
   tokenCount?: number;
   promptVersionIndex?: number; // which prompt version generated this response (undefined = 0)
+  images?: ImageAttachment[];
 }
 
 export interface Draft {
