@@ -1,6 +1,6 @@
 // LLM Service - Supports multiple providers
 import { generateId } from './helpers';
-import type { Message, Draft, LLMProviderConfig, ChatSettings, ChatHistoryMessage } from '../types';
+import type { Message, Draft, LLMProviderConfig, ChatSettings, ChatHistoryMessage, ImageAttachment } from '../types';
 import { logDebug, logError, logWarning } from './debug';
 import { parseProviderError, type ProviderError } from './providerErrors';
 import { getAutoProxy, normalizeProxyUrl, isHeaderBasedProxy } from '../services/proxyDiscovery';
@@ -295,7 +295,8 @@ export const callLLMProvider = async (
   provider: LLMProviderConfig,
   prompt: string,
   systemParts?: SystemMessagePart[],
-  history?: ChatHistoryMessage[]
+  history?: ChatHistoryMessage[],
+  images?: ImageAttachment[],
 ): Promise<LLMResponse> => {
   const startTime = Date.now();
   const requestId = generateId();
@@ -769,7 +770,8 @@ export const getLLMResponse = async (
   systemPrompt?: string,
   provider?: LLMProviderConfig | null,
   chatSettings?: ChatSettings,
-  history?: ChatHistoryMessage[]
+  history?: ChatHistoryMessage[],
+  images?: ImageAttachment[],
 ): Promise<LLMResponse> => {
   if (!provider) {
     const error = new Error('No LLM provider selected. Please configure a provider in Admin Settings.');
@@ -808,7 +810,7 @@ export const getLLMResponse = async (
   }
 
   try {
-    return await callLLMProvider(provider, prompt, systemParts, history);
+    return await callLLMProvider(provider, prompt, systemParts, history, images);
   } catch (error) {
     console.error('LLM API call failed:', error);
     throw new Error(`Failed to get response from ${provider.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);

@@ -41,7 +41,11 @@ export function buildChatHistory(
     // (Anthropic requires strictly alternating roles)
     if (!activeResponse) continue;
 
-    history.push({ role: 'user', content: activePrompt.content });
+    history.push({
+      role: 'user',
+      content: activePrompt.content,
+      ...(activePrompt.images?.length ? { images: activePrompt.images } : {}),
+    });
     history.push({ role: 'assistant', content: activeResponse.content });
   }
 

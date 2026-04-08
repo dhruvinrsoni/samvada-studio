@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { Chat, ChatSettings, PromptResponse, Message, Example, ContextPanel, LLMProviderConfig } from '../types';
+import type { Chat, ChatSettings, PromptResponse, Message, Example, ContextPanel, LLMProviderConfig, ImageAttachment } from '../types';
 import { sanitizeUserInput, sanitizeLLMResponse } from './contentSanitizer';
 
 export const generateId = (): string => uuidv4();
@@ -28,13 +28,15 @@ export const createNewChat = (title?: string, provider?: LLMProviderConfig): Cha
 
 export const createMessage = (
   role: 'user' | 'assistant' | 'system',
-  content: string
+  content: string,
+  images?: ImageAttachment[],
 ): Message => ({
   id: generateId(),
   role,
   content: role === 'user' ? sanitizeUserInput(content) : sanitizeLLMResponse(content),
   timestamp: new Date(),
   isStarred: false,
+  ...(images?.length ? { images } : {}),
 });
 
 export const createPromptResponse = (prompt: Message): PromptResponse => ({

@@ -15,7 +15,7 @@ import PromptInput from './PromptInput';
 import ChatSettings from './ChatSettings';
 import ContextUtilization from './ContextUtilization';
 import TokenCounter from './TokenCounter';
-import type { LLMProviderConfig, Chat, RAGSearchResult } from '../../types';
+import type { LLMProviderConfig, Chat, RAGSearchResult, ImageAttachment } from '../../types';
 import type { PWAStatus } from '../../hooks/usePWA';
 import { useRAG } from '../../context/RAGContext';
 import RAGAttachmentSelector from '../rag/RAGAttachmentSelector';
@@ -199,8 +199,8 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
     addToast('info', 'Generation cancelled');
   }, [addToast]);
 
-  const handleSendPrompt = useCallback(async (content: string) => {
-    if (!activeChat || !content.trim() || isLoading) return;
+  const handleSendPrompt = useCallback(async (content: string, images?: ImageAttachment[]) => {
+    if (!activeChat || (!content.trim() && !images?.length) || isLoading) return;
 
     // Build the full prompt with active context panels
     const activeContextPanels = state.contextPanels.filter(panel => panel.isActive);
@@ -251,7 +251,7 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
       }
     }
 
-    const prompt = createMessage('user', content);
+    const prompt = createMessage('user', content, images);
     const pnr = createPromptResponse(prompt);
 
     if (ragResults.length > 0) {
@@ -322,7 +322,8 @@ export default function ChatArea({ quotedText = '', onClearQuote, onQuote, templ
         undefined,
         provider,
         effectiveChatSettings,
-        chatHistory
+        chatHistory,
+        images,
       );
 
       // Check if cancelled while awaiting
