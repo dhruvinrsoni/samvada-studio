@@ -290,6 +290,38 @@ const sanitizeLLMResponse = (content: string | null | undefined): string => {
   return text;
 };
 
+// Format user message content for OpenAI-compatible APIs (OpenAI, Azure, Custom)
+function formatOpenAIContent(text: string, imgs?: ImageAttachment[]): string | Array<Record<string, unknown>> {
+  if (!imgs?.length) return text;
+  return [
+    { type: 'text', text },
+    ...imgs.map(img => ({
+      type: 'image_url',
+      image_url: { url: `data:${img.mimeType};base64,${img.data}` },
+    })),
+  ];
+}
+
+// Format user message content for Anthropic API
+function formatAnthropicContent(text: string, imgs?: ImageAttachment[]): string | Array<Record<string, unknown>> {
+  if (!imgs?.length) return text;
+  return [
+    ...imgs.map(img => ({
+      type: 'image',
+      source: { type: 'base64', media_type: img.mimeType, data: img.data },
+    })),
+    { type: 'text', text },
+  ];
+}
+
+// Format history message content for OpenAI-compatible APIs (includes images from prior turns)
+function formatOpenAIHistoryMsg(m: ChatHistoryMessage): Record<string, unknown> {
+  return {
+    role: m.role as 'user' | 'assistant',
+    content: m.images?.length ? formatOpenAIContent(m.content, m.images) : m.content,
+  };
+}
+
 // Real API call to LLM provider
 export const callLLMProvider = async (
   provider: LLMProviderConfig,
@@ -352,18 +384,13 @@ export const callLLMProvider = async (
                                  provider.model.includes('o3') ||
                                  provider.model.includes('gpt-5');
         
-        const historyMessages = (history ?? []).map(m => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-        }));
+        const historyMessages = (history ?? []).map(formatOpenAIHistoryMsg);
         const requestBody: Record<string, unknown> = {
           model: provider.model,
           messages: [
-            // Each SystemMessagePart becomes its own { role: "system" } entry.
-            // Separate entries are less likely to be echoed than a single concatenated blob.
             ...(systemParts ?? []).map(p => ({ role: 'system' as const, content: p.content })),
             ...historyMessages,
-            { role: 'user' as const, content: prompt },
+            { role: 'user' as const, content: formatOpenAIContent(prompt, images) },
           ],
         };
         
@@ -412,8 +439,8 @@ export const callLLMProvider = async (
           body: JSON.stringify({
             messages: [
               ...(systemParts ?? []).map(p => ({ role: 'system' as const, content: p.content })),
-              ...(history ?? []).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-              { role: 'user' as const, content: prompt },
+              ...(history ?? []).map(formatOpenAIHistoryMsg),
+              { role: 'user' as const, content: formatOpenAIContent(prompt, images) },
             ],
             temperature: provider.settings.temperature,
             max_tokens: provider.settings.maxTokens,
@@ -448,11 +475,12 @@ export const callLLMProvider = async (
               model: provider.model,
               max_tokens: provider.settings.maxTokens,
               messages: [
-                ...(history ?? []).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-                { role: 'user', content: prompt },
+                ...(history ?? []).map(m => ({
+                  role: m.role as 'user' | 'assistant',
+                  content: m.images?.length ? formatAnthropicContent(m.content, m.images) : m.content,
+                })),
+                { role: 'user', content: formatAnthropicContent(prompt, images) },
               ],
-              // Anthropic accepts system as an array of { type, text } content blocks —
-              // each rule arrives as a separate block rather than a concatenated string.
               ...(systemParts?.length
                 ? { system: systemParts.map(p => ({ type: 'text' as const, text: p.content })) }
                 : {}),
@@ -500,10 +528,26 @@ export const callLLMProvider = async (
         });
 
         // Gemini uses role: 'user' | 'model' in contents array
-        const geminiHistory = (history ?? []).map(m => ({
-          role: m.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: m.content }],
-        }));
+        const geminiHistory = (history ?? []).map(m => {
+          const parts: Record<string, unknown>[] = [{ text: m.content }];
+          if (m.role === 'user' && m.images?.length) {
+            for (const img of m.images) {
+              parts.push({ inline_data: { mime_type: img.mimeType, data: img.data } });
+            }
+          }
+          return { role: m.role === 'assistant' ? 'model' : 'user', parts };
+        });
+
+        const geminiUserParts: Record<string, unknown>[] = [{
+          text: systemParts?.length && !supportsSystemInstruction
+            ? `${systemParts.map(p => p.content).join('\n\n')}\n\n${prompt}`
+            : prompt,
+        }];
+        if (images?.length) {
+          for (const img of images) {
+            geminiUserParts.push({ inline_data: { mime_type: img.mimeType, data: img.data } });
+          }
+        }
 
         response = await fetch(geminiEndpoint, {
           method: 'POST',
@@ -511,21 +555,12 @@ export const callLLMProvider = async (
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            // For modern models: each SystemMessagePart becomes its own { text } part in system_instruction.
-            // For legacy models: parts are joined and prepended directly to the user message.
             ...(systemParts?.length && supportsSystemInstruction
               ? { system_instruction: { parts: systemParts.map(p => ({ text: p.content })) } }
               : {}),
             contents: [
               ...geminiHistory,
-              {
-                role: 'user',
-                parts: [{
-                  text: systemParts?.length && !supportsSystemInstruction
-                    ? `${systemParts.map(p => p.content).join('\n\n')}\n\n${prompt}`
-                    : prompt,
-                }],
-              },
+              { role: 'user', parts: geminiUserParts },
             ],
             generationConfig: {
               temperature: provider.settings.temperature,
@@ -569,7 +604,7 @@ export const callLLMProvider = async (
           if (hasHistory) {
             // ── Multi-turn: /api/chat — native messages array ──
             const chatEndpoint = `${baseUrl}/api/chat`;
-            const ollamaMessages: { role: string; content: string }[] = [];
+            const ollamaMessages: { role: string; content: string; images?: string[] }[] = [];
 
             if (systemParts?.length) {
               ollamaMessages.push({
@@ -578,9 +613,17 @@ export const callLLMProvider = async (
               });
             }
             for (const m of history) {
-              ollamaMessages.push({ role: m.role, content: m.content });
+              ollamaMessages.push({
+                role: m.role,
+                content: m.content,
+                ...(m.images?.length ? { images: m.images.map(i => i.data) } : {}),
+              });
             }
-            ollamaMessages.push({ role: 'user', content: prompt });
+            ollamaMessages.push({
+              role: 'user',
+              content: prompt,
+              ...(images?.length ? { images: images.map(i => i.data) } : {}),
+            });
 
             response = await fetch(chatEndpoint, {
               method: 'POST',
@@ -622,6 +665,7 @@ export const callLLMProvider = async (
                   : prompt,
                 stream: false,
                 options: { temperature: provider.settings.temperature },
+                ...(images?.length ? { images: images.map(i => i.data) } : {}),
               }),
             });
 
@@ -685,8 +729,8 @@ export const callLLMProvider = async (
             model: provider.model,
             messages: [
               ...(systemParts ?? []).map(p => ({ role: 'system' as const, content: p.content })),
-              ...(history ?? []).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-              { role: 'user' as const, content: prompt },
+              ...(history ?? []).map(formatOpenAIHistoryMsg),
+              { role: 'user' as const, content: formatOpenAIContent(prompt, images) },
             ],
             temperature: provider.settings.temperature,
             max_tokens: provider.settings.maxTokens,
