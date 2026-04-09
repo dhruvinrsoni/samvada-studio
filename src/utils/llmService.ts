@@ -370,6 +370,18 @@ export const callLLMProvider = async (
   // Only the current turn's images are sent; prior turns retain text only.
   const strippedHistory = history?.map(({ images: _imgs, ...rest }) => rest);
 
+  // Validate image data integrity — filter out any images with missing/empty base64
+  if (images?.length) {
+    const invalid = images.filter(i => !i.data || i.data.length === 0);
+    if (invalid.length > 0) {
+      logWarning('Image Validation', {
+        requestId,
+        message: `${invalid.length} image(s) have empty base64 data and will be skipped`,
+      });
+      images = images.filter(i => i.data && i.data.length > 0);
+    }
+  }
+
   try {
     let response: Response;
     let content: string;

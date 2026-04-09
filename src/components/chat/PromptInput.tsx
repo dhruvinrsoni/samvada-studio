@@ -46,6 +46,10 @@ function fileToImageAttachment(file: File): Promise<ImageAttachment> {
       const rawDataUrl = reader.result as string;
       const dataUrl = await compressImage(rawDataUrl, file.type);
       const base64 = dataUrl.split(',')[1] ?? '';
+      if (!base64) {
+        reject(new Error('Image produced empty base64 data after processing'));
+        return;
+      }
       const outMime = dataUrl.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
       resolve({ data: base64, mimeType: file.type === 'image/gif' ? 'image/gif' : outMime });
     };
@@ -162,7 +166,11 @@ export default function PromptInput({ onSend, onKeyDown, disabled, value = '', o
 
   const handleSend = () => {
     if ((value.trim() || attachedImages.length > 0) && !disabled) {
-      onSend(value, attachedImages.length > 0 ? attachedImages : undefined);
+      const validImages = attachedImages.filter(img => img.data && img.data.length > 0);
+      if (attachedImages.length > 0 && validImages.length < attachedImages.length) {
+        console.warn('[Image] Dropped %d image(s) with empty data', attachedImages.length - validImages.length);
+      }
+      onSend(value, validImages.length > 0 ? validImages : undefined);
       onChange?.('');
       setAttachedImages([]);
       setListMode({ active: false, type: 'numbered', currentNumber: 1 });
