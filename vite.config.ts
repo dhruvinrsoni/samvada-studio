@@ -249,6 +249,7 @@ export default defineConfig({
         orientation: 'any',
         scope: pwaConfig.scope,
         start_url: pwaConfig.start_url,
+        id: pwaConfig.scope,
         lang: 'en',
         dir: 'ltr',
         categories: ['productivity', 'utilities', 'developer tools'],
